@@ -1,0 +1,46 @@
+/* PopupForm.scss */
+
+.popup-form {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 999;
+    text-align: center;
+    
+
+    &:hover{
+    box-shadow: 0 45px 65px rgba(0,0,0,0.50), 0 35px 22px rgba(0,0,0,0.16);
+
+    }
+  
+    /* Improved styling for buttons in a column */
+    button {
+      display: block; /* Change from inline to block */
+      width: 100%;
+      padding: 10px 20px;
+      margin: 5px 0; /* Add margin to separate buttons */
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      background-color: #1c1d22;
+      color: #fff;
+      transition: background-color 0.3s ease;
+  
+      &:hover {
+        background-color: #5d5d61;
+        
+      }
+  
+      &:focus {
+        outline: none;
+      }
+    }
+  
+    /* Add other styles as needed */
+  }
+  
