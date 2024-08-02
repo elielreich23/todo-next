@@ -1,5 +1,4 @@
 
-import Sidebar from "../../components/sideBar/sideBar";
 
 
 
@@ -8,7 +7,7 @@ export default function RootLayout({
   }) {
     return (
 <>
-<Sidebar/>
+hello
 </>
     
     );
