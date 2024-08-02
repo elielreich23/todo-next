@@ -23,9 +23,9 @@ const Todo = () => {
   return (
    <>
     {/* i want to create the card sections still didn't figure it all out  */}
-    <div className={styles.card-section}>
+    <div className={styles.card_section}>
       <h2>Card Section</h2>
-      <div className={styles.cards-container}>
+      <div className={styles.cards_container}>
         {cards.map((card) => (
           <div key={card.id} className={styles.card}>
             <p>{card.text}</p>
@@ -33,10 +33,10 @@ const Todo = () => {
           </div>
         ))}
       </div>
-      <div className={styles.card-header}>
+     {/* <div className={styles.card_header}>
         
         <button onClick={handleAddCard}>+</button>
-      </div>
+      </div>*/}
     </div>
    </>
   );

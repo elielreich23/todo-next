@@ -1,5 +1,5 @@
 
-.card-section{
+.card_section{
     position: absolute;
     margin-top: 8.5rem;
     margin-left: 25rem;
@@ -9,7 +9,7 @@
     border: 2px dotted #ccc;
     border-radius: 8px;
 
-    .card-container{
+    .card_container{
         display: flex;
       flex-wrap: w;
       gap: 15;
@@ -17,4 +17,6 @@
         overflow-y: scroll;
       }
     }
+
+   
 }

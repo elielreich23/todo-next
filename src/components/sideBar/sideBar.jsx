@@ -1,8 +1,9 @@
+"use client"
 import styles from "./styles.module.scss";
 import { iconData } from "./iconData";
 import { useState } from "react";
-import PopupForm from "../PopupForm";
-import Todo from "../Todo-section";
+import PopupForm from "../popUpForm/form";
+import Todo from "../todoSection/index";
 
 const Sidebar = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -26,7 +27,7 @@ const Sidebar = () => {
           })}
         </div>
         <div className={styles.whitepane}>
-          <div className={styles.whitepane-heading}>
+          <div className={styles.whitepane_heading}>
             <h1>Projects</h1>
             <div className={styles.plus} onClick={openPopup}>+</div>
           </div>
