@@ -30,7 +30,11 @@
             <input type="password" placeholder="Password" className={styles.input} />
             <a href="#" className={`${styles.link} ${styles.textWhite}`}>Forgot password? <span className={styles.link}>Click here</span></a>
             
-            <button className={styles.loginButton}>Login</button>
+            <button className={styles.loginButton}>
+              <Link href="../../dashboard/">
+              Login 
+              </Link>
+              </button>
           
           </div>
         </div>

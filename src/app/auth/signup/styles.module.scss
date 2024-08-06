@@ -100,7 +100,7 @@
   }
   
   .loginButton {
-    background: #ff914d;
+    background: linear-gradient(145deg,  #653100a2, #1c1d2291);
     border: none;
     padding: 1rem;
     color: #fff;
@@ -108,5 +108,11 @@
     cursor: pointer;
     border-radius: 25px;
     box-shadow: 5px 5px 10px #151516, -5px -5px 10px #27282f;
+    align-self: center;
+    width: 60%;
+
+    &:hover{
+        background: linear-gradient(145deg,  #cf6909a2, #1c1d2291);
+
+    }
   }
-  
