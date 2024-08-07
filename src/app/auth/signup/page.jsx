@@ -6,7 +6,7 @@ export default function Signup() {
   return (
     <div className={styles.container}>
       <div className={styles.left}>
-        <div className={styles.logo}>Taskero</div>
+        <div className={styles.logo}>Tasker</div>
         <h1 className={styles.welcomeMessage}>Welcome to Taskero</h1>
         <p>
           Already have an account? 
