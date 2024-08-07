@@ -1,0 +1,107 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #1C1D22;
+  position: relative;
+}
+
+.logo {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(circle, rgba(28,29,34,1) 0%, rgba(14,14,14,1) 100%);
+  border-radius: 25px;
+  padding: 2rem;
+  // box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  width: 100%;
+  max-width: 400px;
+}
+
+.title {
+  font-size: 2rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 2rem;
+}
+
+.label {
+  font-size: 1rem;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  align-self: flex-start;
+}
+
+.input {
+  background: linear-gradient(145deg, #2e2f36, #17171b);
+  border: none;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  color: #fff;
+  border-radius: 25px;
+  box-shadow: 5px 5px 10px #151516, -5px -5px 10px #27282f;
+  width: 100%;
+}
+
+.resetButton {
+  background: linear-gradient(145deg,  #653100a2, #1c1d2291);
+  border: none;
+  padding: 1rem;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 25px;
+  box-shadow: 5px 5px 10px #151516, -5px -5px 10px #27282f;
+  width: 100%;
+  margin-top: 2rem;
+}
+
+.resetButton:hover {
+  background: linear-gradient(145deg, #e98527a2, #1c1d2291);
+}
+
+.authButtons {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.login {
+  color: #FEA451;
+  text-decoration: none;
+  font-size: 1rem;
+  align-self: center;
+}
+
+.signup {
+  padding: 0.5rem 1rem;
+  color: #fff;
+  background-color: #FEA451;
+  border-radius: 15px;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+}
+
+.signup:hover {
+  background-color: #793e07;
+}
