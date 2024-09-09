@@ -1,0 +1,66 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #000; /* Change to fit your design */
+  }
+  
+  .logo {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+  }
+  
+  .navLinks {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+  
+    li {
+      a {
+        text-decoration: none;
+        color: #fff;
+        font-size: 1rem;
+        transition: color 0.3s ease;
+  
+        &:hover {
+          color: #f97316; /* Orange for hover */
+        }
+      }
+    }
+  }
+  
+  .authButtons {
+    display: flex;
+    gap: 1rem;
+  
+    .loginButton, .signupButton {
+      padding: 0.5rem 1rem;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+  
+    .loginButton {
+      background-color: transparent;
+      color: #fff;
+      border: 1px solid #fff;
+      
+      &:hover {
+        background-color: #f97316;
+        color: #fff;
+      }
+    }
+  
+    .signupButton {
+      background-color: #f97316;
+      color: #fff;
+      
+      &:hover {
+        background-color: #fff;
+        color: #f97316;
+      }
+    }
+  }
+  

@@ -1,8 +1,14 @@
 import "../styles/globals.css"
-export default function Home() {
+import Navbar from './landing/Navbar';
+import Hero from './landing/Hero';
+import Features from './landing/Features';
+
+export default function LandingPage() {
   return (
-    <main >
-     hello
-    </main>
+    <>
+      <Navbar />
+      <Hero />
+      <Features />
+    </>
   );
 }
