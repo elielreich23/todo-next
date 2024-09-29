@@ -138,12 +138,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Eliel Reich**  
   GitHub: [@elielreich23](https://github.com/elielreich23)
 
----
+  - **Dimedji**  
+  GitHub: [@elielreich23](https://github.com/Oladee)
 
-*Thank you for checking out the ToDo App! Feel free to explore, contribute, and share your feedback!*
-
-```
 
 ---
-
-Let me know if you'd like any modifications or additions!
