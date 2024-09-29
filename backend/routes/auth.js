@@ -1,9 +1,11 @@
 const express = require('express');
-const { signup, login } = require('../controllers/authControl');
+const asynchandler = require('express-async-handler');
+const authcontroller = require('../controllers/authControllers');
 
 const router = express.Router();
 
-router.post('/signup', signup);
-router.post('/login', login);
+router.post('/api/v1/signup', asynchandler(authcontroller.signup));
+
+router.post('/api/v1/signin', asynchandler(authcontroller.signin));
 
 module.exports = router;
