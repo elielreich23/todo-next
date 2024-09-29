@@ -138,8 +138,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Eliel Reich**  
   GitHub: [@elielreich23](https://github.com/elielreich23)
 
-  - **Dimedji**  
-  GitHub: [@elielreich23](https://github.com/Oladee)
-
-
+- **Dimedji**  
+  GitHub: [@Oladee](https://github.com/Oladee)
 ---
+
+## ✨ Designed By
+
+- **Adeyemi**  
+  GitHub: [@elielreich23](https://github.com/elielreich23)
