@@ -22,6 +22,8 @@ const Header = () => {
         <h1>Your Ultimate Task Management Solution</h1>
         <p>Organize tasks efficiently, achieve more, and meet deadlines effortlessly.</p>
         <button className={styles.getStarted}>Get Started</button>
+        <button className={styles.howItWorks}>How it works</button>
+
       </div>
     </header>
   );
