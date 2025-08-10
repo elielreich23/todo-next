@@ -1,9 +1,8 @@
-import React from 'react'
-
-function page() {
+// app/welcome/page.tsx
+export default function WelcomePage() {
   return (
-    <div>page</div>
-  )
+    <div style={{ textAlign: 'center', marginTop: '50px', fontSize: '2rem' }}>
+      Hello World
+    </div>
+  );
 }
-
-export default page
