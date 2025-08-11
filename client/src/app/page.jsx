@@ -1,12 +1,17 @@
-import "../styles/globals.css"
+import React from 'react';
+import Header from './landing/Header';
+import Hero from './landing/Hero';
 import Features from './landing/Features';
-import Header from "./landing/Header";
+import HowItWorks from './landing/HowItWorks';
+import '../styles/globals.css';
 
 export default function LandingPage() {
   return (
-    <>
-      <Header/>
+    <main className="landing-page">
+      <Header />
+      <Hero />
       <Features />
-    </>
+      <HowItWorks />
+    </main>
   );
 }
