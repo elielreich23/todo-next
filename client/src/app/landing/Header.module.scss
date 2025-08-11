@@ -1,0 +1,99 @@
+.header {
+  background: var(--header-bg);
+  padding: 1rem 2rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: lowercase;
+}
+
+.navLinks {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+
+  li {
+    a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+  }
+}
+
+.authLinks {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  .login {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+
+  .signup {
+    background: var(--button-bg);
+    color: var(--text-primary);
+    padding: 0.5rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+
+    &:hover {
+      background: var(--button-hover);
+      border-color: var(--accent-color);
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .header {
+    padding: 1rem;
+  }
+
+  .navLinks {
+    display: none;
+  }
+
+  .authLinks {
+    gap: 0.5rem;
+
+    .signup {
+      padding: 0.4rem 1rem;
+      font-size: 0.9rem;
+    }
+  }
+}
