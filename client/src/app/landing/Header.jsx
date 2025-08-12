@@ -1,23 +1,34 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
-import styles from './Header.module.scss';
 
 const Header = () => {
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
-    <header className={styles.header}>
-      <nav className={styles.navbar}>
-        <div className={styles.logo}>taskers</div>
+    <header className="header">
+      <nav className="navbar">
+        <div className="logo">taskers</div>
         
-        <ul className={styles.navLinks}>
-          <li><a href="#about">About</a></li>
-          <li><a href="#pricing">Pricing</a></li>
-          <li><a href="#contact">Contact Us</a></li>
-          <li><a href="#faqs">FAQs</a></li>
+        <ul className="navLinks">
+          <li><button onClick={() => scrollToSection('features')}>Features</button></li>
+          <li><button onClick={() => scrollToSection('how-it-works')}>How It Works</button></li>
+          <li><button onClick={() => scrollToSection('features')}>About</button></li>
+          <li><button onClick={() => scrollToSection('how-it-works')}>FAQs</button></li>
         </ul>
         
-        <div className={styles.authLinks}>
-          <Link href="/auth/signin" className={styles.login}>Login</Link>
-          <Link href="/auth/signup" className={styles.signup}>Sign Up</Link>
+        <div className="authLinks">
+          <Link href="/auth/signin" className="login">Login</Link>
+          <Link href="/auth/signup" className="signup">Sign Up</Link>
         </div>
       </nav>
     </header>
