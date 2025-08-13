@@ -19,7 +19,7 @@ export default function ForgotPassword() {
       </form>
       <div className={styles.authButtons}>
 
-         <Link href="../../auth/signin/"className={styles.login}>Login</Link>
+         <Link href="../../auth/signin/" className={styles.login}>Login</Link>
         <Link href="../../auth/signup" className={styles.signup}>Sign Up</Link>
       </div>
     </div>

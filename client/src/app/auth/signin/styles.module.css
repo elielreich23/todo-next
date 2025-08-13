@@ -1,1 +1,338 @@
-.container{display:flex;height:100vh;width:100vw;background-color:#1c1d22}.left{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:2rem;background-size:contain;position:relative}.logo{position:absolute;top:1rem;left:3rem;font-size:1.5rem;font-weight:bold}.welcomeMessage{font-size:5rem;margin-left:2rem;top:-3.5rem;position:relative}.paragraph{position:relative;font-size:large;top:-5.5rem;font-family:"Exo 2";left:-7rem}.createAccountLink{color:#fea451;text-decoration:none;margin-left:.5rem}.terms{position:absolute;bottom:1rem;text-align:center;font-size:.75rem;color:#fff}.terms a{color:#fea451}.right{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:2rem}.form{display:flex;flex-direction:column;width:100%;max-width:400px;margin-top:2rem}.googleButton{background:#fff;border:none;padding:1rem;color:#fff;margin-bottom:3rem;font-family:exo_2;font-size:1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:10px;background:linear-gradient(105deg, rgba(255, 160, 72, 0.2392156863), rgba(0, 0, 0, 0.3490196078));box-shadow:5px 5px 10px #5e3717,-5px -5px 10px #0c0c0e}.googleButton:hover{background:linear-gradient(105deg, #361f0c, #000000);box-shadow:5px 5px 10px #5e3717,-5px -5px 10px #0c0c0e}.input{background:linear-gradient(145deg, #2e2f36, #17171b);border:none;padding:1rem;margin-bottom:2.5rem;color:#fff;border-radius:25px;box-shadow:5px 5px 10px #151516,-5px -5px 10px #27282f}.link{color:#fea451;text-decoration:none;margin-right:.5rem;margin-top:-2rem;margin-bottom:1rem;text-align:right}.textWhite{color:#fff}.loginButton{background:linear-gradient(145deg, rgba(101, 49, 0, 0.6352941176), rgba(28, 29, 34, 0.568627451));border:none;padding:1rem;color:#fff;font-size:1rem;cursor:pointer;border-radius:25px;box-shadow:5px 5px 10px #151516,-5px -5px 10px #27282f;align-self:center;width:60%;margin-top:2rem}.loginButton:hover{background:linear-gradient(145deg, rgba(207, 105, 9, 0.6352941176), rgba(28, 29, 34, 0.568627451))}.loginButton a{color:inherit;text-decoration:none}
+.container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background decorative elements */
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(139, 69, 19, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(75, 0, 130, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, rgba(0, 128, 0, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Left Section - Welcome Message */
+.left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.logo {
+  position: absolute;
+  top: 2rem;
+  left: 3rem;
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #fff;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+}
+
+.welcomeMessage {
+  font-size: 4.5rem;
+  font-weight: 800;
+  margin: 0;
+  text-align: center;
+  background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  z-index: 3;
+}
+
+.paragraph {
+  font-size: 1.2rem;
+  margin: 1rem 0;
+  text-align: center;
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.createAccountLink {
+  color: #fea451;
+  text-decoration: none;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.createAccountLink:hover {
+  color: #ff8c00;
+}
+
+/* Decorative circles */
+.circle1, .circle2, .circle3, .circle4 {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid;
+  opacity: 0.6;
+  animation: float 6s ease-in-out infinite;
+}
+
+.circle1 {
+  width: 120px;
+  height: 120px;
+  top: 20%;
+  left: 15%;
+  border-color: #8a2be2;
+  animation-delay: 0s;
+}
+
+.circle2 {
+  width: 80px;
+  height: 80px;
+  top: 60%;
+  left: 10%;
+  border-color: #32cd32;
+  animation-delay: 1.5s;
+}
+
+.circle3 {
+  width: 100px;
+  height: 100px;
+  top: 30%;
+  right: 20%;
+  border-color: #4169e1;
+  animation-delay: 3s;
+}
+
+.circle4 {
+  width: 60px;
+  height: 60px;
+  bottom: 25%;
+  right: 15%;
+  border-color: #fea451;
+  animation-delay: 4.5s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+.terms {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 0.8rem;
+  color: #ccc;
+  line-height: 1.4;
+}
+
+.terms a {
+  color: #fea451;
+  text-decoration: none;
+  margin: 0 0.2rem;
+}
+
+.terms a:hover {
+  color: #ff8c00;
+}
+
+/* Right Section - Signin Form */
+.right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 450px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+}
+
+.formTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+}
+
+.formSubtitle {
+  font-size: 1rem;
+  color: #ccc;
+  text-align: center;
+  margin-bottom: 2.5rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.googleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.2) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.googleButton:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.3) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+}
+
+.googleIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputLabel {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.input {
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.input:focus {
+  outline: none;
+  border-color: #fea451;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(254, 164, 81, 0.1);
+}
+
+.forgotPassword {
+  text-align: right;
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-top: -0.5rem;
+}
+
+.forgotPasswordLink {
+  color: #fea451;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.forgotPasswordLink:hover {
+  color: #ff8c00;
+}
+
+.loginButton {
+  background: linear-gradient(135deg, #fea451 0%, #ff8c00 100%);
+  border: none;
+  padding: 1rem;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(254, 164, 81, 0.3);
+  margin-top: 1rem;
+}
+
+.loginButton:hover {
+  background: linear-gradient(135deg, #ff8c00 0%, #ff6b00 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(254, 164, 81, 0.4);
+}
+
+.loginButton:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+  
+  .left, .right {
+    flex: none;
+    height: 50vh;
+  }
+  
+  .welcomeMessage {
+    font-size: 3rem;
+  }
+  
+  .formContainer {
+    padding: 2rem;
+    margin: 1rem;
+  }
+  
+  .logo {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-bottom: 1rem;
+  }
+  
+  .terms {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-top: 1rem;
+  }
+}
