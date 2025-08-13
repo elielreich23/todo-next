@@ -16,7 +16,7 @@ export default function Home() {
   };
 
   const handleGetStarted = () => {
-    router.push('../../auth/signup');
+    router.push('/dashboard');
   };
 
   const handleHowItWorks = () => {
@@ -180,21 +180,21 @@ export default function Home() {
       <section id="pricing" className="pricing">
         <h2>We have something for you</h2>
         <div className="pricing-cards">
-          <div className="pricing-card basic">
-            <h3>Basic Plan</h3>
-            <div className="price">
-              <span className="amount">$99.99</span>
-              <span className="period">/30days</span>
-            </div>
-            <p className="billing">(billed yearly)</p>
-            <div className="features">
-              <h4>Features</h4>
-              <div className="feature-item">+21 new message</div>
-              <div className="feature-item">+21 new message</div>
-              <div className="feature-item">+21 new message</div>
-            </div>
-            <button className="subscribe-btn" onClick={handleSignup}>Subscribe now</button>
-          </div>
+                     <div className="pricing-card basic">
+             <h3>Basic Plan</h3>
+             <div className="price">
+               <span className="amount">$99.99</span>
+               <span className="period">/30days</span>
+             </div>
+             <p className="billing">(billed yearly)</p>
+             <div className="features">
+               <h4>Features</h4>
+               <div className="feature-item">+21 new message</div>
+               <div className="feature-item">+21 new message</div>
+               <div className="feature-item">+21 new message</div>
+             </div>
+             <button className="subscribe-btn" onClick={() => router.push('/dashboard')}>Subscribe now</button>
+           </div>
           
           <div className="pricing-card enterprise featured">
             <h3>Enterprise</h3>
@@ -209,7 +209,7 @@ export default function Home() {
               <div className="feature-item">+21 new message</div>
               <div className="feature-item">+21 new message</div>
             </div>
-            <button className="subscribe-btn featured" onClick={handleSignup}>Subscribe now</button>
+                         <button className="subscribe-btn featured" onClick={() => router.push('/dashboard')}>Subscribe now</button>
           </div>
           
           <div className="pricing-card standard">
@@ -225,16 +225,16 @@ export default function Home() {
               <div className="feature-item">+21 new message</div>
               <div className="feature-item">+21 new message</div>
             </div>
-            <button className="subscribe-btn" onClick={handleSignup}>Subscribe now</button>
+                         <button className="subscribe-btn" onClick={() => router.push('/dashboard')}>Subscribe now</button>
           </div>
         </div>
         
         <div className="taskers-section">
           <div className="taskers-brand">taskers</div>
-          <div className="taskers-buttons">
-            <button className="get-started-btn">Get Started →</button>
-            <button className="show-all-plans-btn">Show all Plans</button>
-          </div>
+                     <div className="taskers-buttons">
+             <button className="get-started-btn" onClick={() => router.push('/dashboard')}>Get Started →</button>
+             <button className="show-all-plans-btn" onClick={() => router.push('/dashboard')}>Show all Plans</button>
+           </div>
         </div>
       </section>
 
@@ -277,7 +277,7 @@ export default function Home() {
               <div className="form-group">
                 <textarea placeholder="Your Message" className="form-textarea" rows="4"></textarea>
               </div>
-              <button className="submit-btn" onClick={handleSignup}>Submit</button>
+                             <button className="submit-btn" onClick={() => router.push('/dashboard')}>Submit</button>
             </div>
           </div>
         </div>

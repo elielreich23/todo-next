@@ -1,116 +1,56 @@
-/* eslint-disable react/no-unescaped-entities */
-"use client"; // Ensure this component is treated as a Client Component
+"use client";
 
-import { useState } from 'react';
-import axios from 'axios';
-import styles from './styles.module.scss';
-import "../../../styles/global.scss";
+import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
-export default function Signin() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
-  const handleSignin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await axios.post('http://localhost:5000/auth/signin', {
-        email: email.toLowerCase(),
-        password,
-      });
-
-      if (response.data.success) {
-        // Store the token and user data
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // Set default authorization header for future requests
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-        
-        // Navigate to the dashboard
-        router.push('/dashboard');
-      } else {
-        setError(response.data.message || 'Authentication failed');
-      }
-    } catch (err) {
-      if (err.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        setError(err.response.data.message || 'Authentication failed');
-      } else if (err.request) {
-        // The request was made but no response was received
-        setError('No response from server. Please try again later.');
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        setError('An error occurred. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+export default function SignInPage() {
   return (
-    <div className={styles.container}>
-      <div className={styles.left}>
-        <div className={styles.logo}>Tasker</div>
-        <div className={styles.bubbles}></div>
-        <h1 className={styles.welcomeMessage}>Welcome back!</h1>
-        <p className={styles.paragraph}>
-          Don't have an account?  
-          <Link href="../../auth/signup/" className={styles.createAccountLink}>
-            Create Account
-          </Link>
-        </p>
-        <p className={styles.terms}>
-          By clicking sign in or continue with Google, <br/> you agree to our <a href="#">Terms of use</a> and <a href="#">policy</a>.
-        </p>
-      </div>
-      <div className={styles.right}>
-        <form className={styles.form} onSubmit={handleSignin}>
-          <button type="button" className={styles.googleButton}>
-            <img src="/google-icon.svg" alt="Google Icon" style={{ marginRight: '0.5rem' }} />
-            Continue with Google
-          </button>
-          <input
-            type="email"
-            placeholder="Email Address"
-            className={styles.input}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={isLoading}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className={styles.input}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={isLoading}
-          />
-          <a href="#" className={`${styles.link} ${styles.textWhite}`}>
-            Forgot password? <span className={styles.link}>Click here</span>
-          </a>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6">
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <input
+                name="email"
+                type="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+              />
+            </div>
+            <div>
+              <input
+                name="password"
+                type="password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+              />
+            </div>
+          </div>
 
-          {error && <p className={styles.error}>{error}</p>}
+          <div>
+            <button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign in
+            </button>
+          </div>
 
-          <button 
-            type="submit" 
-            className={styles.loginButton}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Signing in...' : 'Login'}
-          </button>
+          <div className="text-center">
+            <Link href="/auth/signup" className="text-indigo-600 hover:text-indigo-500">
+              Don't have an account? Sign up
+            </Link>
+          </div>
         </form>
       </div>
     </div>
+    
   );
 }
