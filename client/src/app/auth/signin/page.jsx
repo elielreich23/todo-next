@@ -2,16 +2,84 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useUser } from '../../../contexts/UserContext';
 import styles from './styles.module.css';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { login, isAuthenticated } = useUser();
 
-  const handleSubmit = (e) => {
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    router.push('/dashboard');
+    return null;
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle signin logic here
-    console.log('Signin attempt:', { email, password });
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Login successful - store user data in context
+        const userData = {
+          username: data.user.username,
+          email: data.user.email,
+          fullName: data.user.full_name,
+          id: data.user.id
+        };
+        
+        // Login user through context (this will persist to localStorage)
+        login(userData);
+        
+        // Redirect to dashboard
+        router.push('/dashboard');
+      } else {
+        // Check if it's an unregistered user error
+        if (response.status === 401 && data.detail === 'Invalid email or password') {
+          setError(
+            <span>
+              Wrong password or invalid account. 
+              <Link href="/auth/signup" className={styles.signupLink}>
+                Create account
+              </Link>
+            </span>
+          );
+        } else if (response.status === 401 && data.detail === 'Account is deactivated') {
+          setError('This account has been deactivated. Please contact support.');
+        } else {
+          setError(data.detail || 'Login failed. Please try again.');
+        }
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      if (err.code === 'ERR_NETWORK') {
+        setError("Network error: Cannot connect to server. Please check if the backend is running.");
+      } else {
+        setError("Failed to login. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleSignin = () => {
@@ -53,6 +121,13 @@ export default function SignInPage() {
           <h2 className={styles.formTitle}>Sign in</h2>
           <p className={styles.formSubtitle}>All in one platform to get tasks done</p>
           
+          {/* Error Display */}
+          {error && (
+            <div className={styles.error}>
+              {error}
+            </div>
+          )}
+          
           <form className={styles.form} onSubmit={handleSubmit}>
             {/* Google Signin Button */}
             <button 
@@ -79,6 +154,7 @@ export default function SignInPage() {
                 className={styles.input}
                 placeholder="Email Address"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -92,6 +168,7 @@ export default function SignInPage() {
                 className={styles.input}
                 placeholder="Password"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -104,10 +181,24 @@ export default function SignInPage() {
             </div>
 
             {/* Login Button */}
-            <button type="submit" className={styles.loginButton}>
-              Login
+            <button 
+              type="submit" 
+              className={styles.loginButton}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Signing in...' : 'Login'}
             </button>
           </form>
+          
+          {/* Helpful signup guidance */}
+          <div className={styles.signupGuidance}>
+            <p>
+              New to Taskers? 
+              <Link href="/auth/signup" className={styles.signupGuidanceLink}>
+                Sign up for free
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

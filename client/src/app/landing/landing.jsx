@@ -3,9 +3,11 @@
 import React from "react";
 import { useRouter } from 'next/navigation';
 import './style/landing.scss';
+import { useUser } from '../../contexts/UserContext';
 
 export default function Home() {
   const router = useRouter();
+  const { isAuthenticated } = useUser();
 
   const handleLogin = () => {
     router.push('../../auth/signin');
@@ -16,7 +18,11 @@ export default function Home() {
   };
 
   const handleGetStarted = () => {
-    router.push('/dashboard');
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    } else {
+      router.push('/auth/signin');
+    }
   };
 
   const handleHowItWorks = () => {
@@ -193,7 +199,7 @@ export default function Home() {
                <div className="feature-item">+21 new message</div>
                <div className="feature-item">+21 new message</div>
              </div>
-             <button className="subscribe-btn" onClick={() => router.push('/dashboard')}>Subscribe now</button>
+             <button className="subscribe-btn" onClick={handleGetStarted}>Subscribe now</button>
            </div>
           
           <div className="pricing-card enterprise featured">
@@ -209,7 +215,7 @@ export default function Home() {
               <div className="feature-item">+21 new message</div>
               <div className="feature-item">+21 new message</div>
             </div>
-                         <button className="subscribe-btn featured" onClick={() => router.push('/dashboard')}>Subscribe now</button>
+                         <button className="subscribe-btn featured" onClick={handleGetStarted}>Subscribe now</button>
           </div>
           
           <div className="pricing-card standard">
@@ -225,15 +231,15 @@ export default function Home() {
               <div className="feature-item">+21 new message</div>
               <div className="feature-item">+21 new message</div>
             </div>
-                         <button className="subscribe-btn" onClick={() => router.push('/dashboard')}>Subscribe now</button>
+                         <button className="subscribe-btn" onClick={handleGetStarted}>Subscribe now</button>
           </div>
         </div>
         
         <div className="taskers-section">
           <div className="taskers-brand">taskers</div>
                      <div className="taskers-buttons">
-             <button className="get-started-btn" onClick={() => router.push('/dashboard')}>Get Started →</button>
-             <button className="show-all-plans-btn" onClick={() => router.push('/dashboard')}>Show all Plans</button>
+             <button className="get-started-btn" onClick={handleGetStarted}>Get Started →</button>
+             <button className="show-all-plans-btn" onClick={handleGetStarted}>Show all Plans</button>
            </div>
         </div>
       </section>
@@ -277,7 +283,7 @@ export default function Home() {
               <div className="form-group">
                 <textarea placeholder="Your Message" className="form-textarea" rows="4"></textarea>
               </div>
-                             <button className="submit-btn" onClick={() => router.push('/dashboard')}>Submit</button>
+              <button className="submit-btn" onClick={handleGetStarted}>Submit</button>
             </div>
           </div>
         </div>
@@ -336,3 +342,5 @@ export default function Home() {
     </div>
   );
 }
+
+

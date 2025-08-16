@@ -1,7 +1,7 @@
 .container {
   display: flex;
-  height: 100vh;
-  width: 100vw;
+  min-height: 100vh;
+  width: 100%;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   position: relative;
   overflow: hidden;
@@ -322,6 +322,69 @@
   height: 20px;
 }
 
+/* Large Desktop Enhancements */
+@media (min-width: 1600px) {
+  .welcomeMessage {
+    font-size: 5rem;
+  }
+  .formContainer {
+    max-width: 520px;
+    padding: 3.5rem;
+  }
+}
+
+/* Laptop/Large Tablet */
+@media (max-width: 1200px) {
+  .welcomeMessage {
+    font-size: 3.75rem;
+  }
+  .formContainer {
+    max-width: 420px;
+    padding: 2.5rem;
+  }
+  .logo {
+    top: 1.5rem;
+    left: 2rem;
+  }
+}
+
+/* Small Laptop / Tablet Landscape */
+@media (max-width: 992px) {
+  .container {
+    flex-direction: column;
+  }
+  .left, .right {
+    flex: none;
+    height: auto;
+    padding: 1.5rem;
+  }
+  .welcomeMessage {
+    font-size: 3rem;
+  }
+  .formContainer {
+    margin: 1rem;
+    padding: 2rem;
+    max-width: 500px;
+  }
+  .circle1, .circle2, .circle3, .circle4 {
+    display: none;
+  }
+  .logo {
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-bottom: 1rem;
+  }
+  .terms {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-top: 1rem;
+  }
+}
+
+/* Phone / Small Tablet */
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {
@@ -330,15 +393,16 @@
   
   .left, .right {
     flex: none;
-    height: 50vh;
+    height: auto;
+    padding: 1rem;
   }
   
   .welcomeMessage {
-    font-size: 3rem;
+    font-size: 2.25rem;
   }
   
   .formContainer {
-    padding: 2rem;
+    padding: 1.5rem;
     margin: 1rem;
   }
   

@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import './style/styles.scss';
+import { useUser } from '../../contexts/UserContext';
 
 export default function Dashboard({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { logout } = useUser();
   const [isWhiteSidebarOpen, setIsWhiteSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -41,9 +43,8 @@ export default function Dashboard({ children }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('user');
-    router.push('/auth/signin');
+    logout();
+    router.replace('/auth/signin');
   };
 
   const navigateTo = (page) => {
@@ -288,3 +289,5 @@ export default function Dashboard({ children }) {
     </div>
   );
 }
+
+
