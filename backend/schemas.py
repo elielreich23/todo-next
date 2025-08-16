@@ -8,6 +8,10 @@ class UserSignupRequest(BaseModel):
     password: str
     full_name: Optional[str] = None
 
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -24,3 +28,9 @@ class SignupResponse(BaseModel):
     success: bool
     message: str
     user: UserResponse
+
+class LoginResponse(BaseModel):
+    success: bool
+    message: str
+    user: UserResponse
+    token: Optional[str] = None
