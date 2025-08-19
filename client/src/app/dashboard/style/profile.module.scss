@@ -400,3 +400,20 @@
     }
   }
 }
+
+/* Dark mode overrides scoped to dashboard */
+:global(.dashboard.dark-mode) {
+  .profilePage { background: #1a1f27; color: #e5e7eb; }
+  .header { border-bottom: 1px solid #2a2f36; }
+  .header h1 { color: #e5e7eb; }
+  .tab { color: #9aa4b2; }
+  .tab.active { color: #60a5fa; border-bottom-color: #60a5fa; }
+  .tabActions { color: #9aa4b2; }
+  .moreButton { color: #9aa4b2; }
+  .profileContent { background: #141922; box-shadow: none; }
+  .userInfo p { color: #9aa4b2; }
+  .formField label { color: #cbd5e1; }
+  .readonlyInput { background: #0f141c; border-color: #2a2f36; color: #cbd5e1; }
+  .editableInput { background: #0f141c; color: #e5e7eb; border-color: #3b4250; }
+  .actionButtons { border-top-color: #2a2f36; }
+}

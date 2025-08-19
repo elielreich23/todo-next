@@ -16,10 +16,10 @@
 
   .headerLeft {
     h1 {
-      font-size: 2.5rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      color: #2c3e50;
-      margin: 0 0 0.5rem 0;
+      color: #111111; /* make black/per spec */
+      margin: 0 0 0.25rem 0;
     }
 
     p {
@@ -274,6 +274,123 @@
       width: 20px;
       height: 20px;
     }
+  }
+}
+
+/* Kanban Board */
+.boardWrapper {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+.boardColumn {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 360px;
+}
+
+.columnHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 4px 10px 4px;
+
+  .title {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .addTaskBtn {
+    background: none;
+    border: 1px dashed #cbd5e0;
+    color: #6c757d;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #007bff;
+      color: #007bff;
+      background: #f8f9ff;
+    }
+  }
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.taskCard {
+  text-align: left;
+  background: #f9fafb;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  padding: 12px 12px;
+  cursor: grab;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
+  }
+
+  .taskTitle {
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  .taskMeta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6c757d;
+  }
+}
+
+@media (max-width: 960px) {
+  .boardWrapper { grid-template-columns: 1fr; }
+}
+
+/* Dark mode overrides scoped to the dashboard container */
+:global(.dashboard.dark-mode) {
+  .dashboardPage {
+    background: #1a1f27;
+    color: #e5e7eb;
+  }
+
+  .header {
+    border-bottom-color: #2a2f36;
+    .headerLeft {
+      h1 { color: #e5e7eb; }
+      p { color: #9aa4b2; }
+    }
+  }
+
+  .boardColumn {
+    background: #141922;
+    border-color: #2a2f36;
+  }
+
+  .columnHeader {
+    .title { color: #e5e7eb; }
+    .addTaskBtn {
+      border-color: #3b4250;
+      color: #9aa4b2;
+      &:hover { border-color: #60a5fa; color: #60a5fa; background: #0f141c; }
+    }
+  }
+
+  .taskCard {
+    background: #0f141c;
+    border-color: #2a2f36;
+    .taskTitle { color: #e5e7eb; }
+    .taskMeta { color: #9aa4b2; }
   }
 }
 

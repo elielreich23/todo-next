@@ -281,6 +281,7 @@
           .icon {
             font-size: 0.8rem;
           }
+          svg { transition: transform .2s ease; }
         }
       }
 
@@ -297,6 +298,9 @@
           transition: all 0.3s ease;
           font-size: 0.9rem;
           color: #4a5568;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
 
           &:hover {
             background: #f7fafc;
@@ -307,6 +311,23 @@
             color: #2d3748;
             font-weight: 500;
           }
+
+          .delete-btn {
+            opacity: 0;
+            margin-left: 8px;
+            border: none;
+            background: transparent;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 4px;
+            transition: opacity .15s ease, color .15s ease, background .15s ease;
+
+            &:hover { color: #e53e3e; background: rgba(229,62,62,.08); }
+          }
+
+          &.active .delete-btn { opacity: 1; }
+          &:hover .delete-btn { opacity: 1; }
         }
       }
     }
@@ -351,6 +372,27 @@
       }
     }
   }
+}
+.dashboard.dark-mode .main-content { background: #1a1f27; color: #e5e7eb; }
+.dashboard.dark-mode .white-sidebar { background: #111418; border-right-color: #2a2f36; }
+.dashboard.dark-mode .white-sidebar .sidebar-header { border-bottom-color: #2a2f36; }
+.dashboard.dark-mode .white-sidebar .header-actions .add-btn, .dashboard.dark-mode .white-sidebar .header-actions .collapse-btn { background: #0f141c; border-color: #2a2f36; color: #d1d5db; }
+.dashboard.dark-mode .white-sidebar .section-list .list-item { color: #cbd5e1; }
+.dashboard.dark-mode .white-sidebar .section-list .list-item:hover { background: #171a20; }
+.dashboard.dark-mode .white-sidebar .section-list .list-item.active { background: #1f2430; color: #fff; }
+
+.white-sidebar .section:not(.open) .expand-btn svg { transform: rotate(-90deg); }
+.white-sidebar .section.open .expand-btn svg { transform: rotate(0deg); }
+
+/* dark mode tweaks */
+.dashboard.dark-mode .white-sidebar { background: #111418; border-right-color: #2a2f36; }
+.dashboard.dark-mode .white-sidebar .sidebar-header { border-bottom-color: #2a2f36; }
+.dashboard.dark-mode .white-sidebar .section-list .list-item:hover { background: #171a20; }
+.dashboard.dark-mode .white-sidebar .section-list .list-item.active { background: #1f2430; }
+
+/* Utility trigger to ensure modal stacks above sidebars */
+.dashboard .modal-open {
+  overflow: hidden;
 }
 
 /* Main Content Area */

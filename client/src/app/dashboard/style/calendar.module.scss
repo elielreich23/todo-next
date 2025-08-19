@@ -42,3 +42,13 @@
     line-height: 1.6;
   }
 }
+
+/* Dark mode */
+:global(.dashboard.dark-mode) {
+  .calendarPage { background: #1a1f27; color: #e5e7eb; }
+  .header h1 { color: #e5e7eb; }
+  .header p { color: #9aa4b2; }
+  .content { background: #141922; box-shadow: none; }
+  .section h2 { color: #e5e7eb; }
+  .section p { color: #9aa4b2; }
+}
