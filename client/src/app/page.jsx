@@ -1,3 +1,5 @@
+//there is a lot to be done here
+
 import React from 'react';
 import Home from './landing/landing';
 import '../styles/globals.css'; 

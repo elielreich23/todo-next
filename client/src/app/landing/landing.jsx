@@ -1,5 +1,5 @@
 "use client";
-
+//this should stay intact if merged
 import React from "react";
 import { useRouter } from 'next/navigation';
 import './style/landing.scss';
