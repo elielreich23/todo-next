@@ -290,6 +290,9 @@
   border-radius: 12px;
   padding: 12px;
   min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 220px);
 }
 
 .columnHeader {
@@ -325,6 +328,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .taskCard {
@@ -332,24 +337,165 @@
   background: #f9fafb;
   border: 1px solid #e9ecef;
   border-radius: 10px;
-  padding: 12px 12px;
+  padding: 16px;
   cursor: grab;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
 
   &:hover {
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     transform: translateY(-1px);
   }
 
-  .taskTitle {
-    font-weight: 600;
-    color: #2c3e50;
+  .taskCardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+
+    .taskTitle {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 14px;
+      line-height: 1.3;
+      flex: 1;
+      margin-right: 8px;
+    }
+
+    .taskMenu {
+      position: relative;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .dropdownMenu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        min-width: 160px;
+        padding: 8px 0;
+
+        button {
+          display: block;
+          width: 100%;
+          text-align: left;
+          padding: 8px 16px;
+          border: none;
+          background: none;
+          cursor: pointer;
+          font-size: 14px;
+          color: #2c3e50;
+
+          &:hover {
+            background-color: #f8f9fa;
+          }
+        }
+
+        .moveToProject {
+          border-top: 1px solid #e9ecef;
+          padding-top: 8px;
+          margin-top: 8px;
+
+          span {
+            display: block;
+            padding: 8px 16px;
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: 500;
+          }
+
+          button {
+            font-size: 13px;
+            padding: 6px 16px;
+          }
+        }
+      }
+    }
   }
 
-  .taskMeta {
-    margin-top: 4px;
+  .taskProject {
     font-size: 12px;
     color: #6c757d;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .taskProgress {
+    margin-bottom: 12px;
+
+    span {
+      font-size: 12px;
+      color: #6c757d;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .progressBar {
+      width: 100%;
+      height: 6px;
+      background-color: #e9ecef;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 4px;
+
+      .progressFill {
+        height: 100%;
+        background: linear-gradient(90deg, #ff6b35, #f7931e);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+    }
+
+    .progressText {
+      font-size: 11px;
+      color: #6c757d;
+      font-weight: 600;
+    }
+  }
+
+  .taskFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+
+    .taskDate {
+      background: #f8f9fa;
+      color: #6c757d;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .taskMeta {
+      display: flex;
+      gap: 8px;
+
+      .metaItem {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: #6c757d;
+        font-weight: 500;
+
+        svg {
+          color: #9ca3af;
+        }
+      }
+    }
   }
 }
 
@@ -357,40 +503,322 @@
   .boardWrapper { grid-template-columns: 1fr; }
 }
 
-/* Dark mode overrides scoped to the dashboard container */
-:global(.dashboard.dark-mode) {
-  .dashboardPage {
-    background: #1a1f27;
-    color: #e5e7eb;
-  }
+/* Dark mode overrides - these will be applied when the parent has dark-mode class */
+.dashboardPage.darkMode {
+  background: #1a1f27;
+  color: #e5e7eb;
+}
 
-  .header {
-    border-bottom-color: #2a2f36;
-    .headerLeft {
-      h1 { color: #e5e7eb; }
-      p { color: #9aa4b2; }
+.header.darkMode {
+  border-bottom-color: #2a2f36;
+  
+  .headerLeft {
+    h1 { color: #e5e7eb; }
+    p { color: #9aa4b2; }
+  }
+}
+
+.boardColumn.darkMode {
+  background: #141922;
+  border-color: #2a2f36;
+}
+
+.columnHeader.darkMode {
+  .title { color: #e5e7eb; }
+  
+  .addTaskBtn {
+    border-color: #3b4250;
+    color: #9aa4b2;
+    
+    &:hover { 
+      border-color: #60a5fa; 
+      color: #60a5fa; 
+      background: #0f141c; 
     }
   }
+}
 
-  .boardColumn {
-    background: #141922;
-    border-color: #2a2f36;
-  }
-
-  .columnHeader {
-    .title { color: #e5e7eb; }
-    .addTaskBtn {
-      border-color: #3b4250;
-      color: #9aa4b2;
-      &:hover { border-color: #60a5fa; color: #60a5fa; background: #0f141c; }
-    }
-  }
-
-  .taskCard {
-    background: #0f141c;
-    border-color: #2a2f36;
+.taskCard.darkMode {
+  background: #0f141c;
+  border-color: #2a2f36;
+  
+  .taskCardHeader {
     .taskTitle { color: #e5e7eb; }
-    .taskMeta { color: #9aa4b2; }
+    
+    .taskMenu {
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+      
+      .dropdownMenu {
+        background: #1f2937;
+        border-color: #374151;
+        
+        button {
+          color: #e5e7eb;
+          
+          &:hover {
+            background-color: #374151;
+          }
+        }
+        
+        .moveToProject {
+          border-top-color: #374151;
+          
+          span {
+            color: #9ca3af;
+          }
+        }
+      }
+    }
+  }
+  
+  .taskProject { color: #9ca3af; }
+  
+  .taskProgress {
+    span { color: #9ca3af; }
+    
+    .progressBar {
+      background-color: #374151;
+    }
+    
+    .progressText { color: #9ca3af; }
+  }
+  
+  .taskFooter {
+    .taskDate {
+      background: #374151;
+      color: #9ca3af;
+    }
+    
+    .taskMeta {
+      .metaItem {
+        color: #9ca3af;
+        
+        svg {
+          color: #6b7280;
+        }
+      }
+    }
+  }
+}
+
+/* Task Details Modal Dark Mode */
+.taskDetailsModal.darkMode {
+  .taskDetailsContent {
+    background: #1f2937;
+    border: 1px solid #374151;
+  }
+
+  .taskDetailsHeader {
+    border-bottom-color: #374151;
+
+    h2 {
+      color: #e5e7eb;
+    }
+
+    button {
+      color: #9ca3af;
+
+      &:hover {
+        background: #374151;
+        color: #e5e7eb;
+      }
+    }
+  }
+
+  .taskDetailsBody {
+    .taskSection {
+      h3 {
+        color: #e5e7eb;
+      }
+
+      p {
+        color: #9ca3af;
+      }
+    }
+  }
+
+  /* File Upload Dark Mode */
+  .fileUploadArea {
+    border-color: #4b5563;
+
+    &:hover {
+      border-color: #60a5fa;
+      background: #111827;
+    }
+  }
+
+  .fileUploadLabel {
+    color: #9ca3af;
+
+    svg {
+      color: #6b7280;
+    }
+  }
+
+  .uploadingFiles {
+    background: #111827;
+
+    h4 {
+      color: #e5e7eb;
+    }
+  }
+
+  .fileItem {
+    background: #374151;
+
+    .fileInfo {
+      .fileName {
+        color: #e5e7eb;
+      }
+
+      .fileSize {
+        color: #9ca3af;
+      }
+    }
+  }
+
+  .uploadBtn {
+    background: #3b82f6;
+
+    &:hover {
+      background: #2563eb;
+    }
+  }
+
+  /* Attachments Dark Mode */
+  .attachmentsList {
+    .attachmentItem {
+      background: #111827;
+      border-color: #374151;
+
+      .attachmentInfo {
+        .attachmentName {
+          color: #e5e7eb;
+        }
+
+        .attachmentSize, .attachmentDate {
+          color: #9ca3af;
+        }
+      }
+
+      .downloadBtn {
+        background: #059669;
+
+        &:hover {
+          background: #047857;
+        }
+      }
+    }
+  }
+
+  /* Comments Dark Mode */
+  .commentsList {
+    .commentItem {
+      background: #111827;
+      border-color: #374151;
+
+      .commentHeader {
+        .commentAuthor {
+          color: #e5e7eb;
+        }
+
+        .commentDate {
+          color: #9ca3af;
+        }
+      }
+
+      .commentText {
+        color: #e5e7eb;
+      }
+    }
+  }
+
+  .addCommentSection {
+    .commentTextarea {
+      background: #374151;
+      border-color: #4b5563;
+      color: #e5e7eb;
+
+      &:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+      }
+    }
+
+    .addCommentBtn {
+      background: #3b82f6;
+
+      &:hover {
+        background: #2563eb;
+      }
+    }
+  }
+}
+
+/* Create Task Modal Dark Mode */
+.create-task-modal.darkMode {
+  .file-upload-section, .comments-section {
+    background: #111827;
+
+    h3 {
+      color: #e5e7eb;
+    }
+
+    .upload-info, .comments-info {
+      color: #9ca3af;
+    }
+  }
+
+  .file-upload-area {
+    border-color: #4b5563;
+
+    &:hover {
+      border-color: #60a5fa;
+      background: #111827;
+    }
+  }
+
+  .file-upload-label {
+    color: #9ca3af;
+
+    svg {
+      color: #6b7280;
+    }
+  }
+
+  .uploaded-files {
+    h4 {
+      color: #e5e7eb;
+    }
+  }
+
+  .file-item {
+    background: #374151;
+
+    .file-info {
+      .file-name {
+        color: #e5e7eb;
+      }
+
+      .file-size {
+        color: #9ca3af;
+      }
+    }
+  }
+
+  .comment-input-group {
+    .comment-textarea {
+      background: #374151;
+      border-color: #4b5563;
+      color: #e5e7eb;
+
+      &:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+      }
+    }
   }
 }
 
@@ -447,6 +875,529 @@
     .actionBtn {
       width: 100%;
       justify-content: center;
+    }
+  }
+}
+
+/* Task Details Modal */
+.taskDetailsModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 2rem;
+}
+
+.taskDetailsContent {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.taskDetailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+
+  button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f8f9fa;
+      color: #2c3e50;
+    }
+  }
+}
+
+.taskDetailsBody {
+  padding: 1.5rem;
+}
+
+.taskSection {
+  margin-bottom: 2rem;
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 1rem 0;
+  }
+
+  p {
+    color: #6c757d;
+    line-height: 1.6;
+    margin: 0;
+  }
+}
+
+/* File Upload Styles */
+.fileUploadArea {
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #007bff;
+    background: #f8f9ff;
+  }
+}
+
+.fileInput {
+  display: none;
+}
+
+.fileUploadLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #6c757d;
+
+  svg {
+    color: #9ca3af;
+  }
+
+  span {
+    font-size: 0.9rem;
+  }
+}
+
+.uploadingFiles {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+
+  h4 {
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    color: #2c3e50;
+  }
+}
+
+.fileItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+
+  .fileInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .fileName {
+      font-weight: 500;
+      color: #2c3e50;
+      font-size: 0.9rem;
+    }
+
+    .fileSize {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+  }
+
+  .removeFileBtn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: #c82333;
+    }
+  }
+}
+
+.uploadBtn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #0056b3;
+  }
+}
+
+/* Attachments List */
+.attachmentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+  .attachmentItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+
+    .attachmentInfo {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .attachmentName {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 0.9rem;
+      }
+
+      .attachmentSize, .attachmentDate {
+        font-size: 0.8rem;
+        color: #6c757d;
+      }
+    }
+
+    .attachmentActions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .downloadBtn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #218838;
+      }
+    }
+
+    .removeBtn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #c82333;
+      }
+    }
+  }
+
+/* Comments Styles */
+.commentsList {
+  margin-bottom: 1.5rem;
+
+  h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 600;
+  }
+}
+
+.commentItem {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 1px solid #e9ecef;
+
+  .commentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    .commentAuthor {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.9rem;
+    }
+
+    .commentDate {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+  }
+
+  .commentText {
+    color: #2c3e50;
+    line-height: 1.5;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .removeCommentBtn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+
+    &:hover {
+      background: #c82333;
+    }
+  }
+}
+
+.addCommentSection {
+  .commentTextarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    resize: vertical;
+    margin-bottom: 1rem;
+
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+  }
+
+  .addCommentBtn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #0056b3;
+    }
+  }
+}
+
+/* Create Task Modal Styles */
+.create-task-modal {
+  .file-upload-section, .comments-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.1rem;
+      color: #2c3e50;
+    }
+
+    .upload-info, .comments-info {
+      margin: 0 0 1rem 0;
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+  }
+
+  .file-upload-area {
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #007bff;
+      background: #f8f9ff;
+    }
+  }
+
+  .file-input {
+    display: none;
+  }
+
+  .file-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: #6c757d;
+
+    svg {
+      color: #9ca3af;
+    }
+
+    span {
+      font-size: 0.9rem;
+    }
+  }
+
+  .uploaded-files {
+    margin-top: 1rem;
+
+    h4 {
+      margin: 0 0 1rem 0;
+      font-size: 0.9rem;
+      color: #2c3e50;
+    }
+  }
+
+  .comments-list {
+    margin-top: 1rem;
+
+    h4 {
+      margin: 0 0 1rem 0;
+      font-size: 0.9rem;
+      color: #2c3e50;
+    }
+  }
+
+  .file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+
+    .file-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .file-name {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 0.9rem;
+      }
+
+      .file-size {
+        font-size: 0.8rem;
+        color: #6c757d;
+      }
+    }
+
+    .remove-file-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        background: #c82333;
+      }
+    }
+  }
+
+  .comment-input-group {
+    margin-bottom: 1rem;
+
+    .comment-textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+      }
+    }
+
+    .remove-comment-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #c82333;
+      }
+    }
+  }
+
+  .add-comment-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #0056b3;
     }
   }
 }

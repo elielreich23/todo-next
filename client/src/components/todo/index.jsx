@@ -1,42 +1,245 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import WizardModal from '../WizardModal/WizardModal';
 import { useProjects } from '../../contexts/ProjectsContext';
+import { useUser } from '../../contexts/UserContext';
 
 export default function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus }) {
-  const { createTask } = useProjects();
+  const { createTask, projects } = useProjects();
+  const { user } = useUser();
+  const currentProject = projects.find(p => p.id === projectId);
+  const [attachments, setAttachments] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const maxSize = 200 * 1024 * 1024; // 200MB
+    
+    files.forEach(file => {
+      if (file.size > maxSize) {
+        alert(`File ${file.name} is too large. Maximum size is 200MB.`);
+        return;
+      }
+      
+      const attachment = {
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        file: file,
+        uploadedAt: new Date(),
+        uploadedBy: user?.name || 'Unknown User'
+      };
+      
+      setAttachments(prev => [...prev, attachment]);
+    });
+    
+    // Reset input
+    event.target.value = '';
+  };
+
+  const removeFile = (fileId) => {
+    setAttachments(prev => prev.filter(f => f.id !== fileId));
+  };
+
+  const addComment = () => {
+    if (newComment.trim()) {
+      const comment = {
+        id: Date.now() + Math.random(),
+        text: newComment.trim(),
+        author: user?.name || 'Unknown User',
+        createdAt: new Date()
+      };
+      setComments(prev => [...prev, comment]);
+      setNewComment('');
+    }
+  };
+
+  const removeComment = (commentId) => {
+    setComments(prev => prev.filter(c => c.id !== commentId));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const steps = [
     [
       { name: 'title', label: 'Task Title', placeholder: 'Task Title', type: 'text' },
-      { name: 'category', label: 'Category', placeholder: 'Select Category', type: 'select', options: ['Design', 'Development', 'Marketing', 'Research'] },
-      { name: 'contributors', label: 'Contributors', placeholder: 'Add contributors', type: 'text', helpText: 'You can add up to 50 team members' },
-      { name: 'duration', label: 'Task Duration', placeholder: 'Select a duration', type: 'select', options: ['1 day', '3 days', '1 week', '2 weeks'] },
+      { name: 'project', label: 'Project', placeholder: 'Project name', type: 'text', defaultValue: currentProject?.name },
+      { name: 'category', label: 'Category', placeholder: 'Select Category', type: 'select', options: ['Design', 'Development', 'Marketing', 'Research', 'UX', 'Content'] },
+      { name: 'contributors', label: 'Contributors', placeholder: 'Add contributors (comma separated)', type: 'text', helpText: 'You can add up to 50 team members' },
     ],
     [
       { name: 'description', label: 'Description', placeholder: 'Describe the task', type: 'textarea' },
+      { name: 'duration', label: 'Task Duration', placeholder: 'Select a duration', type: 'select', options: ['1 day', '3 days', '1 week', '2 weeks', '1 month'] },
     ],
     [
+      { name: 'progress', label: 'Progress Steps', placeholder: 'Number of completed steps', type: 'number', helpText: 'e.g., 7' },
+      { name: 'totalSteps', label: 'Total Steps', placeholder: 'Total number of steps', type: 'number', helpText: 'e.g., 10' },
       { name: 'dueDate', label: 'Due Date', placeholder: '', type: 'date' },
       { name: 'status', label: 'Status', placeholder: 'Select status', type: 'select', options: ['todo', 'in-progress', 'done'] },
     ],
     [
-      { name: 'notes', label: 'Notes', placeholder: 'Optional notes', type: 'textarea' },
+      { name: 'notes', label: 'Additional Notes', placeholder: 'Optional notes', type: 'textarea' },
+    ],
+    [
+      { 
+        name: 'fileUpload', 
+        label: 'File Attachments', 
+        placeholder: 'Upload files up to 200MB', 
+        type: 'custom',
+        renderCustom: (field, values, handleChange) => (
+          <div className="file-upload-section">
+            <p className="upload-info">Upload files up to 200MB. Drag and drop or click to select.</p>
+            
+            <div className="file-upload-area" onClick={() => document.getElementById('fileInput').click()}>
+              <input
+                id="fileInput"
+                type="file"
+                multiple
+                accept="*/*"
+                onChange={handleFileUpload}
+                className="file-input"
+              />
+              <label className="file-upload-label">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" fill="currentColor"/>
+                  <path d="M14 2v6h6" fill="currentColor"/>
+                </svg>
+                <span>Click to upload files or drag and drop</span>
+                <span style={{ fontSize: '0.8rem', color: '#6c757d' }}>Max size: 200MB per file</span>
+              </label>
+            </div>
+
+            {attachments.length > 0 && (
+              <div className="uploaded-files">
+                <h4>Selected Files ({attachments.length})</h4>
+                {attachments.map(file => (
+                  <div key={file.id} className="file-item">
+                    <div className="file-info">
+                      <div className="file-name">{file.name}</div>
+                      <div className="file-size">{formatFileSize(file.size)}</div>
+                    </div>
+                    <button
+                      className="remove-file-btn"
+                      onClick={() => removeFile(file.id)}
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      },
+    ],
+    [
+      { 
+        name: 'comments', 
+        label: 'Initial Comments', 
+        placeholder: 'Add any initial comments', 
+        type: 'custom',
+        renderCustom: (field, values, handleChange) => (
+          <div className="comments-section">
+            <p className="comments-info">Add any initial comments or notes for this task.</p>
+            
+            <div className="comment-input-group">
+              <textarea
+                className="comment-textarea"
+                placeholder="Add a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                rows={3}
+              />
+              <button
+                type="button"
+                className="add-comment-btn"
+                onClick={addComment}
+                disabled={!newComment.trim()}
+              >
+                Add Comment
+              </button>
+            </div>
+
+            {comments.length > 0 && (
+              <div className="comments-list">
+                <h4>Comments ({comments.length})</h4>
+                {comments.map(comment => (
+                  <div key={comment.id} className="comment-item">
+                    <div className="comment-header">
+                      <span className="comment-author">{comment.author}</span>
+                      <span className="comment-date">
+                        {comment.createdAt.toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="comment-text">{comment.text}</div>
+                    <button
+                      type="button"
+                      className="remove-comment-btn"
+                      onClick={() => removeComment(comment.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      },
     ],
   ];
+
+  const stepDescriptions = [
+    'Basic Information',
+    'Task Details',
+    'Progress & Timeline',
+    'Additional Notes',
+    'File Attachments',
+    'Initial Comments'
+  ];
+
+
 
   return (
     <WizardModal
       isOpen={isOpen}
+      onClose={onClose}
       title="Add new task"
       subtitle="You are creating a new task"
       steps={steps}
+      stepDescriptions={stepDescriptions}
       ctas={{ submitLabel: 'CREATE TASK' }}
-      onClose={onClose}
       onSubmit={(vals) => {
-        createTask(projectId, { title: vals.title, dueDate: vals.dueDate, status: vals.status || defaultStatus || 'todo' });
+        createTask(projectId, {
+          title: vals.title,
+          project: vals.project,
+          category: vals.category,
+          contributors: vals.contributors ? vals.contributors.split(',').map(s => s.trim()) : [],
+          description: vals.description,
+          duration: vals.duration,
+          progress: parseInt(vals.progress) || 0,
+          totalSteps: parseInt(vals.totalSteps) || 0,
+          dueDate: vals.dueDate,
+          status: vals.status || defaultStatus || 'todo',
+          attachments: attachments,
+          comments: comments,
+          notes: vals.notes
+        });
         onClose?.();
+        // Reset state
+        setAttachments([]);
+        setComments([]);
+        setNewComment('');
       }}
     />
   );

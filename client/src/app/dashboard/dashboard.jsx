@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import './style/styles.scss';
 import { useUser } from '../../contexts/UserContext';
@@ -17,6 +17,7 @@ export default function Dashboard({ children }) {
   const { projects, tasks, selectedProjectId, selectProject, createProject } = useProjects();
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isTasksOpen, setIsTasksOpen] = useState(true);
+  const whiteSidebarRef = useRef(null);
 
   // Load theme from localStorage on component mount
   useEffect(() => {
@@ -25,6 +26,25 @@ export default function Dashboard({ children }) {
       setIsDarkMode(savedTheme === 'dark');
     }
   }, []);
+
+  // Close white sidebar when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!isWhiteSidebarOpen) return;
+      const sidebarEl = whiteSidebarRef.current;
+      if (sidebarEl && !sidebarEl.contains(event.target)) {
+        setIsWhiteSidebarOpen(false);
+      }
+    };
+
+    // Use capture phase to avoid immediately closing on the same click that opens it
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('touchstart', handleClickOutside, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
+    };
+  }, [isWhiteSidebarOpen]);
 
   // Determine which page is currently active
   const getActivePage = () => {
@@ -209,7 +229,7 @@ export default function Dashboard({ children }) {
       </div>
 
       {/* White Collapsible Sidebar */}
-      <div className={`white-sidebar ${isWhiteSidebarOpen ? 'open' : ''}`}>
+      <div className={`white-sidebar ${isWhiteSidebarOpen ? 'open' : ''}`} ref={whiteSidebarRef}>
         <div className="sidebar-header">
           <h2>Projects</h2>
           <div className="header-actions">
