@@ -70,6 +70,11 @@ export default function WizardModal({
   };
 
   const renderField = (field) => {
+    // Handle custom field rendering
+    if (field.type === 'custom' && field.renderCustom) {
+      return field.renderCustom(field, values, handleChange);
+    }
+
     const commonProps = {
       id: field.name,
       name: field.name,

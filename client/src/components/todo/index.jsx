@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import WizardModal from '../WizardModal/WizardModal';
 import { useProjects } from '../../contexts/ProjectsContext';
 import { useUser } from '../../contexts/UserContext';
+import styles from '../WizardModal/wizardModal.module.css';
 
 export default function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus }) {
   const { createTask, projects } = useProjects();
@@ -12,9 +13,17 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
   const [attachments, setAttachments] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
+    addFiles(files);
+    // Reset input
+    event.target.value = '';
+  };
+
+  const addFiles = (files) => {
     const maxSize = 200 * 1024 * 1024; // 200MB
     
     files.forEach(file => {
@@ -30,14 +39,28 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         type: file.type,
         file: file,
         uploadedAt: new Date(),
-        uploadedBy: user?.name || 'Unknown User'
+        uploadedBy: user?.fullName || 'Unknown User'
       };
       
       setAttachments(prev => [...prev, attachment]);
     });
-    
-    // Reset input
-    event.target.value = '';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files);
   };
 
   const removeFile = (fileId) => {
@@ -49,7 +72,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       const comment = {
         id: Date.now() + Math.random(),
         text: newComment.trim(),
-        author: user?.name || 'Unknown User',
+        author: user?.fullName || 'Unknown User',
         createdAt: new Date()
       };
       setComments(prev => [...prev, comment]);
@@ -96,39 +119,48 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         placeholder: 'Upload files up to 200MB', 
         type: 'custom',
         renderCustom: (field, values, handleChange) => (
-          <div className="file-upload-section">
-            <p className="upload-info">Upload files up to 200MB. Drag and drop or click to select.</p>
+          <div className={styles.fileUploadSection}>
+            <h3>File Attachments</h3>
+            <p className={styles.uploadInfo}>Upload files up to 200MB. Drag and drop or click to select.</p>
             
-            <div className="file-upload-area" onClick={() => document.getElementById('fileInput').click()}>
+            <div 
+              className={`${styles.fileUploadArea} ${isDragOver ? styles.dragOver : ''}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <input
-                id="fileInput"
+                ref={fileInputRef}
                 type="file"
                 multiple
                 accept="*/*"
                 onChange={handleFileUpload}
-                className="file-input"
+                className={styles.fileInput}
               />
-              <label className="file-upload-label">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+              <label className={styles.fileUploadLabel}>
+                <svg viewBox="0 0 24 24" fill="none">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" fill="currentColor"/>
                   <path d="M14 2v6h6" fill="currentColor"/>
                 </svg>
                 <span>Click to upload files or drag and drop</span>
-                <span style={{ fontSize: '0.8rem', color: '#6c757d' }}>Max size: 200MB per file</span>
+                <span>Max size: 200MB per file</span>
               </label>
             </div>
 
             {attachments.length > 0 && (
-              <div className="uploaded-files">
+              <div className={styles.uploadedFiles}>
                 <h4>Selected Files ({attachments.length})</h4>
                 {attachments.map(file => (
-                  <div key={file.id} className="file-item">
-                    <div className="file-info">
-                      <div className="file-name">{file.name}</div>
-                      <div className="file-size">{formatFileSize(file.size)}</div>
+                  <div key={file.id} className={styles.fileItem}>
+                    <div className={styles.fileInfo}>
+                      <div className={styles.fileName}>{file.name}</div>
+                      <div className={styles.fileSize}>
+                        {formatFileSize(file.size)} • {file.type || 'Unknown type'}
+                      </div>
                     </div>
                     <button
-                      className="remove-file-btn"
+                      className={styles.removeFileBtn}
                       onClick={() => removeFile(file.id)}
                       type="button"
                     >
@@ -149,12 +181,13 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         placeholder: 'Add any initial comments', 
         type: 'custom',
         renderCustom: (field, values, handleChange) => (
-          <div className="comments-section">
-            <p className="comments-info">Add any initial comments or notes for this task.</p>
+          <div className={styles.commentsSection}>
+            <h3>Initial Comments</h3>
+            <p className={styles.commentsInfo}>Add any initial comments or notes for this task.</p>
             
-            <div className="comment-input-group">
+            <div className={styles.commentInputGroup}>
               <textarea
-                className="comment-textarea"
+                className={styles.commentTextarea}
                 placeholder="Add a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -162,7 +195,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
               />
               <button
                 type="button"
-                className="add-comment-btn"
+                className={styles.addCommentBtn}
                 onClick={addComment}
                 disabled={!newComment.trim()}
               >
@@ -171,20 +204,22 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
             </div>
 
             {comments.length > 0 && (
-              <div className="comments-list">
+              <div className={styles.commentsList}>
                 <h4>Comments ({comments.length})</h4>
                 {comments.map(comment => (
-                  <div key={comment.id} className="comment-item">
-                    <div className="comment-header">
-                      <span className="comment-author">{comment.author}</span>
-                      <span className="comment-date">
-                        {comment.createdAt.toLocaleDateString()}
-                      </span>
+                  <div key={comment.id} className={styles.commentItem}>
+                    <div className={styles.commentInfo}>
+                      <div className={styles.commentHeader}>
+                        <span className={styles.commentAuthor}>{comment.author}</span>
+                        <span className={styles.commentDate}>
+                          {comment.createdAt.toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className={styles.commentText}>{comment.text}</div>
                     </div>
-                    <div className="comment-text">{comment.text}</div>
                     <button
                       type="button"
-                      className="remove-comment-btn"
+                      className={styles.removeCommentBtn}
                       onClick={() => removeComment(comment.id)}
                     >
                       Remove
@@ -207,8 +242,6 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
     'File Attachments',
     'Initial Comments'
   ];
-
-
 
   return (
     <WizardModal

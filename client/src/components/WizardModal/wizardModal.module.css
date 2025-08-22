@@ -64,7 +64,7 @@
 }
 
 .dot.active {
-  background: #22c55e; /* green for active like design */
+  background: #22c55e;
 }
 
 .stepHint {
@@ -153,26 +153,26 @@
   }
 }
 
-// File Upload and Comments Styles
+/* File Upload and Comments Styles */
 .fileUploadSection, .commentsSection {
   margin-top: 1rem;
   padding: 1.5rem;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
+}
 
-  h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
-    color: #2c3e50;
-    font-weight: 600;
-  }
+.fileUploadSection h3, .commentsSection h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+  font-weight: 600;
+}
 
-  .uploadInfo, .commentsInfo {
-    margin: 0 0 1rem 0;
-    font-size: 0.9rem;
-    color: #6c757d;
-  }
+.uploadInfo, .commentsInfo {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #6c757d;
 }
 
 .fileUploadArea {
@@ -183,17 +183,17 @@
   transition: all 0.2s ease;
   cursor: pointer;
   background: #ffffff;
+}
 
-  &:hover {
-    border-color: #111;
-    background: #f8f9ff;
-  }
+.fileUploadArea:hover {
+  border-color: #111;
+  background: #f8f9ff;
+}
 
-  &.dragOver {
-    border-color: #111;
-    background: #f0f8ff;
-    transform: scale(1.02);
-  }
+.fileUploadArea.dragOver {
+  border-color: #111;
+  background: #f0f8ff;
+  transform: scale(1.02);
 }
 
 .fileInput {
@@ -207,32 +207,32 @@
   gap: 0.5rem;
   cursor: pointer;
   color: #6c757d;
+}
 
-  svg {
-    color: #9ca3af;
-    width: 48px;
-    height: 48px;
-  }
+.fileUploadLabel svg {
+  color: #9ca3af;
+  width: 48px;
+  height: 48px;
+}
 
-  span {
-    font-size: 0.9rem;
-    
-    &:last-child {
-      font-size: 0.8rem;
-      color: #6c757d;
-    }
-  }
+.fileUploadLabel span {
+  font-size: 0.9rem;
+}
+
+.fileUploadLabel span:last-child {
+  font-size: 0.8rem;
+  color: #6c757d;
 }
 
 .uploadedFiles, .commentsList {
   margin-top: 1rem;
+}
 
-  h4 {
-    margin: 0 0 1rem 0;
-    font-size: 0.9rem;
-    color: #2c3e50;
-    font-weight: 600;
-  }
+.uploadedFiles h4, .commentsList h4 {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 600;
 }
 
 .fileItem, .commentItem {
@@ -244,23 +244,23 @@
   border-radius: 6px;
   margin-bottom: 0.5rem;
   border: 1px solid #e9ecef;
+}
 
-  .fileInfo, .commentInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
+.fileInfo, .commentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
 
-    .fileName, .commentText {
-      font-weight: 500;
-      color: #2c3e50;
-    }
+.fileName, .commentText {
+  font-weight: 500;
+  color: #2c3e50;
+}
 
-    .fileSize, .commentMeta {
-      font-size: 0.8rem;
-      color: #6c757d;
-    }
-  }
+.fileSize, .commentMeta {
+  font-size: 0.8rem;
+  color: #6c757d;
 }
 
 .removeFileBtn, .removeCommentBtn {
@@ -272,10 +272,10 @@
   cursor: pointer;
   font-size: 0.8rem;
   transition: background 0.2s ease;
+}
 
-  &:hover {
-    background: #c82333;
-  }
+.removeFileBtn:hover, .removeCommentBtn:hover {
+  background: #c82333;
 }
 
 .commentInputGroup {
@@ -293,11 +293,11 @@
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
+}
 
-  &:focus {
-    border-color: #111;
-    box-shadow: 0 0 0 3px rgba(17,17,17,0.08);
-  }
+.commentTextarea:focus {
+  border-color: #111;
+  box-shadow: 0 0 0 3px rgba(17,17,17,0.08);
 }
 
 .addCommentBtn {
@@ -311,15 +311,15 @@
   font-size: 14px;
   transition: background 0.2s ease;
   align-self: flex-start;
+}
 
-  &:hover {
-    background: #333;
-  }
+.addCommentBtn:hover {
+  background: #333;
+}
 
-  &:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-  }
+.addCommentBtn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
 }
 
 .commentHeader {
@@ -327,16 +327,14 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
-
-  .commentAuthor {
-    font-weight: 600;
-    color: #2c3e50;
-  }
-
-  .commentDate {
-    font-size: 0.8rem;
-    color: #6c757d;
-  }
 }
 
+.commentAuthor {
+  font-weight: 600;
+  color: #2c3e50;
+}
 
+.commentDate {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
