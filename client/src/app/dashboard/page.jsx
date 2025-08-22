@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useProjects } from '../../contexts/ProjectsContext';
 import { useUser } from '../../contexts/UserContext';
-import CreateTaskModal from '../../components/todo';
+import { CreateTaskModal, TaskEditModal } from '../../components/todo';
 import styles from './dashboard.module.scss';
 
 export default function DashboardPage() {
@@ -156,7 +156,14 @@ export default function DashboardPage() {
             </div>
             <div className={styles.cards}>
               {projectTasks.filter(t=>t.status===col.key).map(t => (
-                <div key={t.id} className={styles.taskCard} draggable onDragStart={(e)=>{ e.dataTransfer.setData('taskId', String(t.id)); }}>
+                <div 
+                  key={t.id} 
+                  className={styles.taskCard} 
+                  draggable 
+                  onDragStart={(e)=>{ e.dataTransfer.setData('taskId', String(t.id)); }}
+                  onClick={() => setEditingTaskId(t.id)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className={styles.taskCardHeader}>
                     <div className={styles.taskTitle}>{t.title}</div>
                     <div className={styles.taskMenu} onClick={(e) => { e.stopPropagation(); handleDropdownToggle(t.id); }}>
@@ -394,6 +401,16 @@ export default function DashboardPage() {
         projectId={selectedProjectId}
         defaultStatus="todo"
       />
+
+      {/* Task Edit Modal */}
+      {editingTaskId && (
+        <TaskEditModal
+          isOpen={!!editingTaskId}
+          onClose={() => setEditingTaskId(null)}
+          task={tasks.find(t => t.id === editingTaskId)}
+          projectId={selectedProjectId}
+        />
+      )}
     </div>
   );
 }

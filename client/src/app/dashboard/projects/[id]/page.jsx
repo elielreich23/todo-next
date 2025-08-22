@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useProjects } from '../../../../contexts/ProjectsContext';
 import ProjectWizard from '../../../../components/ProjectWizard/ProjectWizard';
-import CreateTaskModal from '../../../../components/todo/index';
+import { CreateTaskModal, TaskEditModal } from '../../../../components/todo';
 import projStyles from './project.module.scss';
 
 export default function ProjectDetailPage() {
@@ -13,6 +13,7 @@ export default function ProjectDetailPage() {
   const { projects, updateProject, getProjectTasks, createTask, deleteProject } = useProjects();
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
 
   const projectId = useMemo(() => Number(params?.id), [params]);
   const project = projects.find((p) => p.id === projectId);
@@ -91,7 +92,14 @@ export default function ProjectDetailPage() {
           </div>
           <ul className={projStyles.taskList}>
             {tasks.map((t) => (
-              <li key={t.id} className={projStyles.taskItem}>{t.title}</li>
+              <li 
+                key={t.id} 
+                className={projStyles.taskItem}
+                onClick={() => setEditingTaskId(t.id)}
+                style={{ cursor: 'pointer' }}
+              >
+                {t.title}
+              </li>
             ))}
             {tasks.length === 0 && <li className={projStyles.empty}>No tasks yet.</li>}
           </ul>
@@ -100,6 +108,16 @@ export default function ProjectDetailPage() {
 
       <ProjectWizard isOpen={isCreateProjectOpen} onClose={() => setIsCreateProjectOpen(false)} onCreate={() => setIsCreateProjectOpen(false)} />
       <CreateTaskModal isOpen={isCreateTaskOpen} onClose={() => setIsCreateTaskOpen(false)} projectId={projectId} />
+      
+      {/* Task Edit Modal */}
+      {editingTaskId && (
+        <TaskEditModal
+          isOpen={!!editingTaskId}
+          onClose={() => setEditingTaskId(null)}
+          task={tasks.find(t => t.id === editingTaskId)}
+          projectId={projectId}
+        />
+      )}
     </div>
   );
 }

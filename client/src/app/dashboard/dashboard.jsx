@@ -17,6 +17,8 @@ export default function Dashboard({ children }) {
   const { projects, tasks, selectedProjectId, selectProject, createProject } = useProjects();
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isTasksOpen, setIsTasksOpen] = useState(true);
+  const [doubleClickFeedback, setDoubleClickFeedback] = useState(null);
+  const [notification, setNotification] = useState(null);
   const whiteSidebarRef = useRef(null);
 
   // Load theme from localStorage on component mount
@@ -69,6 +71,20 @@ export default function Dashboard({ children }) {
       name: project.name,
       category: project.category,
     });
+  };
+
+  const handleProjectDoubleClick = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    selectProject(projectId);
+    router.push('/dashboard');
+    
+    // Add visual feedback
+    setDoubleClickFeedback(projectId);
+    setTimeout(() => setDoubleClickFeedback(null), 300);
+    
+    // Show notification
+    setNotification(`Project "${project?.name}" loaded in dashboard`);
+    setTimeout(() => setNotification(null), 3000);
   };
 
   const toggleTheme = (theme) => {
@@ -268,7 +284,14 @@ export default function Dashboard({ children }) {
               <ul className="section-list">
                 <li className="list-item">All projects ({projects.length})</li>
                 {projects.map((p) => (
-                  <li key={p.id} className={`list-item ${currentProjectId === p.id ? 'active' : ''}`} onClick={() => { selectProject(p.id); router.push(`/dashboard/projects/${p.id}`); }}>
+                  <li 
+                    key={p.id} 
+                    className={`list-item ${currentProjectId === p.id ? 'active' : ''} ${doubleClickFeedback === p.id ? 'double-click-feedback' : ''}`} 
+                    onClick={() => { selectProject(p.id); router.push(`/dashboard/projects/${p.id}`); }}
+                    onDoubleClick={() => handleProjectDoubleClick(p.id)}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to view project details, double-click to load in dashboard"
+                  >
                     <span>{p.name}</span>
                     {currentProjectId === p.id && (
                       <button className="delete-btn" title="Delete project" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this project?')) { deleteProject(p.id); } }}>
@@ -385,6 +408,18 @@ export default function Dashboard({ children }) {
         onClose={closeProjectWizard}
         onCreate={handleCreateProject}
       />
+
+      {/* Notification Toast */}
+      {notification && (
+        <div className="notification-toast">
+          <div className="notification-content">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>{notification}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
