@@ -57,6 +57,21 @@ export default function WizardModal({
     }
   }, [isOpen]);
 
+  // Initialize form values with default values when modal opens
+  useEffect(() => {
+    if (isOpen && steps && steps.length > 0) {
+      const initialValues = {};
+      steps.forEach(stepFields => {
+        stepFields.forEach(field => {
+          if (field.defaultValue !== undefined) {
+            initialValues[field.name] = field.defaultValue;
+          }
+        });
+      });
+      setValues(initialValues);
+    }
+  }, [isOpen, steps]);
+
   const normalizedSteps = useMemo(() => {
     if (Array.isArray(steps) && steps.length > 0) return steps;
     return [step1Fields, step2Fields].filter((arr) => Array.isArray(arr) && arr.length >= 0);
@@ -78,7 +93,7 @@ export default function WizardModal({
     const commonProps = {
       id: field.name,
       name: field.name,
-      value: values[field.name] || '',
+      value: values[field.name] !== undefined ? values[field.name] : (field.defaultValue || ''),
       onChange: (e) => handleChange(field.name, e.target.value),
       placeholder: field.placeholder || '',
       className: styles.input,

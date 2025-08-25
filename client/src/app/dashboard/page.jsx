@@ -24,8 +24,21 @@ export default function DashboardPage() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    
+    // Debug drag and drop events
+    const handleDragStart = (e) => console.log('Global drag start:', e.target);
+    const handleDragEnd = (e) => console.log('Global drag end:', e.target);
+    const handleDrop = (e) => console.log('Global drop:', e.target);
+    
+    document.addEventListener('dragstart', handleDragStart);
+    document.addEventListener('dragend', handleDragEnd);
+    document.addEventListener('drop', handleDrop);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('dragstart', handleDragStart);
+      document.removeEventListener('dragend', handleDragEnd);
+      document.removeEventListener('drop', handleDrop);
     };
   }, []);
 
@@ -144,28 +157,124 @@ export default function DashboardPage() {
 
       <div className={styles.boardWrapper}>
         {columns.map(col => (
-          <div key={col.key} className={styles.boardColumn}>
+          <div 
+            key={col.key} 
+            className={styles.boardColumn}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Drop on column container:', col.title);
+              
+              // Try multiple data formats
+              let taskId = parseInt(e.dataTransfer.getData('taskId'));
+              if (!taskId) {
+                taskId = parseInt(e.dataTransfer.getData('text/plain'));
+              }
+              
+              if (taskId) {
+                console.log('Moving task:', taskId, 'to status:', col.key);
+                moveTaskStatus(taskId, col.key);
+                console.log(`Task moved to ${col.title}`);
+              } else {
+                console.log('No taskId found in column drop event');
+              }
+            }}
+          >
             <div className={styles.columnHeader}>
               <div className={styles.title}>{col.title}</div>
-              <button 
-                className={styles.addTaskBtn}
-                onClick={() => setIsCreateOpen(true)}
-              >
-                + Add Task
-              </button>
+              {col.key === 'todo' && (
+                <button 
+                  className={styles.addTaskBtn}
+                  onClick={() => setIsCreateOpen(true)}
+                >
+                  + Add Task
+                </button>
+              )}
             </div>
-            <div className={styles.cards}>
+            <div 
+              className={styles.cards}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Drag over on column:', col.title);
+                e.currentTarget.classList.add(styles.dragOver);
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove(styles.dragOver);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.classList.remove(styles.dragOver);
+                
+                // Try multiple data formats
+                let taskId = parseInt(e.dataTransfer.getData('taskId'));
+                if (!taskId) {
+                  taskId = parseInt(e.dataTransfer.getData('text/plain'));
+                }
+                
+                console.log('Drop event triggered:', { 
+                  taskId, 
+                  targetStatus: col.key, 
+                  targetColumn: col.title,
+                  dataTransfer: e.dataTransfer,
+                  types: e.dataTransfer.types
+                });
+                
+                if (taskId) {
+                  console.log('Moving task:', taskId, 'to status:', col.key);
+                  moveTaskStatus(taskId, col.key);
+                  // Show a brief success message
+                  console.log(`Task moved to ${col.title}`);
+                } else {
+                  console.log('No taskId found in drop event');
+                  console.log('Available data types:', e.dataTransfer.types);
+                  console.log('taskId data:', e.dataTransfer.getData('taskId'));
+                  console.log('text/plain data:', e.dataTransfer.getData('text/plain'));
+                }
+              }}
+              role="region"
+              aria-label={`${col.title} column - drop tasks here`}
+              data-column={col.key}
+            >
               {projectTasks.filter(t=>t.status===col.key).map(t => (
                 <div 
                   key={t.id} 
                   className={styles.taskCard} 
-                  draggable 
-                  onDragStart={(e)=>{ e.dataTransfer.setData('taskId', String(t.id)); }}
+                  draggable={true}
+                  onDragStart={(e)=>{ 
+                    console.log('Drag start for task:', t.id, 'with status:', t.status);
+                    e.dataTransfer.setData('taskId', String(t.id));
+                    e.dataTransfer.setData('text/plain', String(t.id));
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.dropEffect = 'move';
+                    e.currentTarget.classList.add(styles.dragging);
+                    
+                    // Verify data was set
+                    console.log('DataTransfer types:', e.dataTransfer.types);
+                    console.log('DataTransfer taskId:', e.dataTransfer.getData('taskId'));
+                  }}
+                  onDragEnd={(e) => {
+                    e.currentTarget.classList.remove(styles.dragging);
+                  }}
                   onClick={() => setEditingTaskId(t.id)}
-                  style={{ cursor: 'pointer' }}
+                  title="Click to edit task"
+                  data-task-id={t.id}
+                  data-task-status={t.status}
                 >
                   <div className={styles.taskCardHeader}>
-                    <div className={styles.taskTitle}>{t.title}</div>
+                    <div className={styles.taskTitle}>
+                      {t.title}
+                    </div>
+                    <div className={styles.taskStatus}>
+                      <span className={`${styles.statusBadge} ${styles[`status${t.status?.charAt(0).toUpperCase() + t.status?.slice(1).replace('-', '')}`]}`}>
+                        {t.status}
+                      </span>
+                    </div>
                     <div className={styles.taskMenu} onClick={(e) => { e.stopPropagation(); handleDropdownToggle(t.id); }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                         <path d="M12 13a1 1 0 100-2 1 1 0 000 2zM19 13a1 1 0 100-2 1 1 0 000 2zM5 13a1 1 0 100-2 1 1 0 000 2z" fill="currentColor"/>
@@ -403,14 +512,22 @@ export default function DashboardPage() {
       />
 
       {/* Task Edit Modal */}
-      {editingTaskId && (
-        <TaskEditModal
-          isOpen={!!editingTaskId}
-          onClose={() => setEditingTaskId(null)}
-          task={tasks.find(t => t.id === editingTaskId)}
-          projectId={selectedProjectId}
-        />
-      )}
+      {editingTaskId && (() => {
+        const taskToEdit = tasks.find(t => t.id === editingTaskId);
+        if (!taskToEdit) {
+          // If task is not found, close the modal
+          setEditingTaskId(null);
+          return null;
+        }
+        return (
+          <TaskEditModal
+            isOpen={!!editingTaskId}
+            onClose={() => setEditingTaskId(null)}
+            task={taskToEdit}
+            projectId={selectedProjectId}
+          />
+        );
+      })()}
     </div>
   );
 }

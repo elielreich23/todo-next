@@ -7,7 +7,7 @@ import { useUser } from '../../contexts/UserContext';
 import styles from '../WizardModal/wizardModal.module.css';
 
 export default function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus }) {
-  const { createTask, projects } = useProjects();
+  const { createTask, createProject, projects } = useProjects();
   const { user } = useUser();
   const currentProject = projects.find(p => p.id === projectId);
   const [attachments, setAttachments] = useState([]);
@@ -95,7 +95,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
   const steps = [
     [
       { name: 'title', label: 'Task Title', placeholder: 'Task Title', type: 'text' },
-      { name: 'project', label: 'Project', placeholder: 'Project name', type: 'text', defaultValue: currentProject?.name },
+      { name: 'project', label: 'Project', placeholder: 'Select Project', type: 'select', options: [...projects.map(p => p.name), '+ Create New Project'], defaultValue: currentProject?.name },
       { name: 'category', label: 'Category', placeholder: 'Select Category', type: 'select', options: ['Design', 'Development', 'Marketing', 'Research', 'UX', 'Content'] },
       { name: 'contributors', label: 'Contributors', placeholder: 'Add contributors (comma separated)', type: 'text', helpText: 'You can add up to 50 team members' },
     ],
@@ -107,7 +107,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       { name: 'progress', label: 'Progress Steps', placeholder: 'Number of completed steps', type: 'number', helpText: 'e.g., 7' },
       { name: 'totalSteps', label: 'Total Steps', placeholder: 'Total number of steps', type: 'number', helpText: 'e.g., 10' },
       { name: 'dueDate', label: 'Due Date', placeholder: '', type: 'date' },
-      { name: 'status', label: 'Status', placeholder: 'Select status', type: 'select', options: ['todo', 'in-progress', 'done'] },
+      { name: 'status', label: 'Status', placeholder: 'Select status', type: 'select', options: ['todo', 'in-progress', 'done'], defaultValue: defaultStatus },
     ],
     [
       { name: 'notes', label: 'Additional Notes', placeholder: 'Optional notes', type: 'textarea' },
@@ -253,9 +253,26 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       stepDescriptions={stepDescriptions}
       ctas={{ submitLabel: 'CREATE TASK' }}
       onSubmit={(vals) => {
-        createTask(projectId, {
+        let targetProjectId = projectId;
+        let projectName = vals.project;
+        
+        // Handle "Create New Project" option
+        if (vals.project === '+ Create New Project') {
+          // Create a new project with a default name
+          const newProject = createProject({ name: 'New Project' });
+          targetProjectId = newProject.id;
+          projectName = newProject.name;
+        } else {
+          // Find the selected project by name to get its ID
+          const selectedProject = projects.find(p => p.name === vals.project);
+          if (selectedProject) {
+            targetProjectId = selectedProject.id;
+          }
+        }
+        
+        createTask(targetProjectId, {
           title: vals.title,
-          project: vals.project,
+          project: projectName,
           category: vals.category,
           contributors: vals.contributors ? vals.contributors.split(',').map(s => s.trim()) : [],
           description: vals.description,
