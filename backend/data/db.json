@@ -1,0 +1,12 @@
+{
+  "users": [
+    { "id": 1, "username": "demo", "email": "demo@example.com", "fullName": "Demo User" }
+  ],
+  "projects": [
+    { "id": 1, "name": "Design system", "category": "Design" },
+    { "id": 2, "name": "User flow", "category": "UX" },
+    { "id": 3, "name": "Ux research", "category": "Research" }
+  ],
+  "tasks": []
+}
+

@@ -46,7 +46,12 @@ async def login(user_data: UserLoginRequest, db: Session = Depends(get_db)):
     return LoginResponse(
         success=True,
         message="Login successful",
-        user=user,
+        user={
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "full_name": user.full_name
+        },
         token=None  # Simple session for now, can be enhanced later
     )
 
@@ -60,7 +65,6 @@ async def signup(user_data: UserSignupRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    
     
     existing_username = db.query(User).filter(User.username == user_data.username).first()
     if existing_username:
@@ -88,12 +92,18 @@ async def signup(user_data: UserSignupRequest, db: Session = Depends(get_db)):
         return SignupResponse(
             success=True,
             message="User created successfully",
-            user=new_user
+            user={
+                "id": new_user.id,
+                "username": new_user.username,
+                "email": new_user.email,
+                "full_name": new_user.full_name
+            }
         )
         
     except Exception as e:
         db.rollback()
+        print(f"Error creating user: {e}")  # Add logging
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user"
+            detail=f"Failed to create user: {str(e)}"
         )
