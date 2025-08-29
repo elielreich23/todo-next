@@ -129,20 +129,20 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const createTask = (projectId: number, data: Partial<Task>): Task => {
     const payload = { projectId, ...data };
     const temp: Task = {
-      id: Date.now(), 
-      projectId, 
+      id: Date.now(),
+      projectId,
       title: data.title || 'New Task', 
-      dueDate: data.dueDate, 
-      status: data.status || 'todo', 
-      description: data.description, 
-      project: data.project, 
-      progress: data.progress || 0, 
-      totalSteps: data.totalSteps || 0, 
-      attachments: data.attachments || [], 
-      comments: data.comments || [], 
-      category: data.category, 
-      contributors: data.contributors, 
-      duration: data.duration, 
+      dueDate: data.dueDate,
+      status: data.status || 'todo',
+      description: data.description,
+      project: data.project,
+      progress: data.progress || 0,
+      totalSteps: data.totalSteps || 0,
+      attachments: data.attachments || [],
+      comments: data.comments || [],
+      category: data.category,
+      contributors: data.contributors,
+      duration: data.duration,
       notes: data.notes,
     };
     setTasks(prev => [temp, ...prev]);
