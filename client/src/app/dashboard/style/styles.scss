@@ -500,8 +500,19 @@
   background: #059669;
   color: #d1fae5;
 }
+<<<<<<< HEAD
  
 
+=======
+
+/* Main content layout */
+.main-content {
+  margin-left: 70px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+>>>>>>> 86c684cc843190f421c064033f26ba3f363c3b2b
 
 /* Responsive Design */
 @media (max-width: 1024px) {

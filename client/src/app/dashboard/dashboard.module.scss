@@ -293,6 +293,34 @@
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 220px);
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s ease;
+  pointer-events: auto;
+   
+  /* Drop zone indicator */
+  &:has(.cards.dragOver) {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  }
+  
+  /* Always show drop zone indicator */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px dashed transparent;
+    border-radius: 12px;
+    pointer-events: none;
+    transition: all 0.2s ease;
+  }
+  
+  &:hover::after {
+    border-color: rgba(0, 123, 255, 0.3);
+  }
 }
 
 .columnHeader {
@@ -330,6 +358,59 @@
   gap: 10px;
   overflow-y: auto;
   min-height: 0;
+  max-height: calc(100vh - 300px);
+  padding-right: 4px;
+  scroll-behavior: smooth;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  
+  /* Custom scrollbar styling */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+  
+  /* Firefox scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+  
+  /* Drag and drop styles */
+  &.dragOver {
+    background: rgba(0, 123, 255, 0.05);
+    border: 2px dashed #007bff;
+    border-radius: 12px;
+    transform: scale(1.02);
+    position: relative;
+    
+    &::before {
+      content: 'Drop task here';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #007bff;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      z-index: 10;
+      pointer-events: none;
+    }
+  }
 }
 
 .taskCard {
@@ -338,13 +419,31 @@
   border: 1px solid #e9ecef;
   border-radius: 10px;
   padding: 16px;
-  cursor: grab;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
   position: relative;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 
   &:hover {
     box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     transform: translateY(-1px);
+    border-color: #007bff;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+  
+  /* Dragging state */
+  &.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg) scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
   }
 
   .taskCardHeader {
@@ -360,6 +459,34 @@
       line-height: 1.3;
       flex: 1;
       margin-right: 8px;
+    }
+    
+    .taskStatus {
+      margin-right: 8px;
+      
+      .statusBadge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .statusTodo {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      
+      .statusInProgress {
+        background: #fef3c7;
+        color: #d97706;
+      }
+      
+      .statusDone {
+        background: #d1fae5;
+        color: #059669;
+      }
     }
 
     .taskMenu {
@@ -500,7 +627,17 @@
 }
 
 @media (max-width: 960px) {
-  .boardWrapper { grid-template-columns: 1fr; }
+  .boardWrapper { 
+    grid-template-columns: 1fr; 
+  }
+  
+  .boardColumn {
+    max-height: calc(100vh - 180px);
+  }
+  
+  .cards {
+    max-height: calc(100vh - 260px);
+  }
 }
 
 /* Dark mode overrides - these will be applied when the parent has dark-mode class */
@@ -854,6 +991,31 @@
 
   .header .headerLeft h1 {
     font-size: 1.75rem;
+  }
+  
+  .boardColumn {
+    max-height: calc(100vh - 160px);
+  }
+  
+  .cards {
+    max-height: calc(100vh - 240px);
+  }
+  
+  /* Mobile drag and drop improvements */
+  .taskCard {
+    &.dragging {
+      transform: scale(1.02);
+      opacity: 0.7;
+    }
+  }
+  
+  .cards.dragOver {
+    transform: scale(1.01);
+    
+    &::before {
+      font-size: 10px;
+      padding: 6px 12px;
+    }
   }
 
   .statCard {
