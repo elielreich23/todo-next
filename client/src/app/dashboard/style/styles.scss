@@ -448,6 +448,7 @@
 /* Main Content Area */
 .main-content {
   flex: 1;
+  margin-left: 70px;
 }
 
 /* Notification Toast */
@@ -499,11 +500,8 @@
   background: #059669;
   color: #d1fae5;
 }
-  margin-left: 70px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+ 
+
 
 /* Responsive Design */
 @media (max-width: 1024px) {
