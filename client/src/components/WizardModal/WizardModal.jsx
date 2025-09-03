@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import styles from './wizardModal.module.scss';
 
 /**
- * A reusable two-step modal wizard used for creating entities (projects, tasks, etc.).
+ * A reusable multi-step modal wizard used for creating entities (projects, tasks, etc.).
  *
  * Props:
  * - isOpen: boolean — controls visibility
@@ -12,9 +12,11 @@ import styles from './wizardModal.module.scss';
  * - subtitle: string — small description under heading
  * - step1Fields: Array<Field> — descriptors for fields in step 1
  * - step2Fields: Array<Field> — descriptors for fields in step 2
+ * - steps: Array<Array<Field>> — optional, supports any number of steps
+ * - stepDescriptions: Array<string> — optional descriptions for steps
  * - ctas: { cancelLabel?: string, nextLabel?: string, backLabel?: string, submitLabel?: string }
  * - onClose: () => void — called when modal is dismissed
- * - onSubmit: (formValues) => void — called when user completes step 2
+ * - onSubmit: (formValues) => void — called when user completes last step
  *
  * Field descriptor shape:
  * { name: string, label: string, placeholder?: string, type?: 'text'|'select'|'textarea'|'date'|'number', options?: Array<string> }
@@ -34,12 +36,15 @@ export default function WizardModal({
   const [step, setStep] = useState(1);
   const [values, setValues] = useState({});
 
-  const { cancelLabel, nextLabel, backLabel, submitLabel } = useMemo(() => ({
-    cancelLabel: ctas.cancelLabel || 'CANCEL',
-    nextLabel: ctas.nextLabel || 'NEXT',
-    backLabel: ctas.backLabel || 'BACK',
-    submitLabel: ctas.submitLabel || 'CREATE',
-  }), [ctas]);
+  const { cancelLabel, nextLabel, backLabel, submitLabel } = useMemo(
+    () => ({
+      cancelLabel: ctas.cancelLabel || 'CANCEL',
+      nextLabel: ctas.nextLabel || 'NEXT',
+      backLabel: ctas.backLabel || 'PREVIOUS',
+      submitLabel: ctas.submitLabel || 'CREATE',
+    }),
+    [ctas]
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -61,8 +66,8 @@ export default function WizardModal({
   useEffect(() => {
     if (isOpen && steps && steps.length > 0) {
       const initialValues = {};
-      steps.forEach(stepFields => {
-        stepFields.forEach(field => {
+      steps.forEach((stepFields) => {
+        stepFields.forEach((field) => {
           if (field.defaultValue !== undefined) {
             initialValues[field.name] = field.defaultValue;
           }
@@ -74,11 +79,14 @@ export default function WizardModal({
 
   const normalizedSteps = useMemo(() => {
     if (Array.isArray(steps) && steps.length > 0) return steps;
-    return [step1Fields, step2Fields].filter((arr) => Array.isArray(arr) && arr.length >= 0);
+    return [step1Fields, step2Fields].filter(
+      (arr) => Array.isArray(arr) && arr.length >= 0
+    );
   }, [steps, step1Fields, step2Fields]);
 
   const totalSteps = normalizedSteps.length || 1;
-  const fieldsForCurrentStep = normalizedSteps[Math.max(0, Math.min(step - 1, totalSteps - 1))] || [];
+  const fieldsForCurrentStep =
+    normalizedSteps[Math.max(0, Math.min(step - 1, totalSteps - 1))] || [];
 
   const handleChange = (name, value) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -93,7 +101,10 @@ export default function WizardModal({
     const commonProps = {
       id: field.name,
       name: field.name,
-      value: values[field.name] !== undefined ? values[field.name] : (field.defaultValue || ''),
+      value:
+        values[field.name] !== undefined
+          ? values[field.name]
+          : field.defaultValue || '',
       onChange: (e) => handleChange(field.name, e.target.value),
       placeholder: field.placeholder || '',
       className: styles.input,
@@ -102,29 +113,34 @@ export default function WizardModal({
     switch (field.type) {
       case 'select':
         return (
-          <select {...commonProps} className={`${styles.input} ${styles.select}`}>
-            <option value="" disabled>{field.placeholder || 'Select'}</option>
+          <select
+            {...commonProps}
+            className={`${styles.input} ${styles.select}`}
+          >
+            <option value="" disabled>
+              {field.placeholder || 'Select'}
+            </option>
             {(field.options || []).map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
             ))}
           </select>
         );
       case 'textarea':
         return (
-          <textarea {...commonProps} className={`${styles.input} ${styles.textarea}`} rows={4} />
+          <textarea
+            {...commonProps}
+            className={`${styles.input} ${styles.textarea}`}
+            rows={4}
+          />
         );
       case 'date':
-        return (
-          <input {...commonProps} type="date" />
-        );
+        return <input {...commonProps} type="date" />;
       case 'number':
-        return (
-          <input {...commonProps} type="number" />
-        );
+        return <input {...commonProps} type="number" />;
       default:
-        return (
-          <input {...commonProps} type={field.type || 'text'} />
-        );
+        return <input {...commonProps} type={field.type || 'text'} />;
     }
   };
 
@@ -143,14 +159,23 @@ export default function WizardModal({
             <p className={styles.subtitle}>{subtitle}</p>
           </div>
           <div className={styles.stepInfo}>
-            <span className={styles.stepText}>Step {step} of {totalSteps}</span>
+            <span className={styles.stepText}>
+              Step {step} of {totalSteps}
+            </span>
             <div className={styles.dots}>
               {Array.from({ length: totalSteps }).map((_, idx) => (
-                <span key={idx} className={`${styles.dot} ${step >= idx + 1 ? styles.active : ''}`}></span>
+                <span
+                  key={idx}
+                  className={`${styles.dot} ${
+                    step >= idx + 1 ? styles.active : ''
+                  }`}
+                ></span>
               ))}
             </div>
             {stepDescriptions?.[step - 1] && (
-              <span className={styles.stepHint}>{stepDescriptions[step - 1]}</span>
+              <span className={styles.stepHint}>
+                {stepDescriptions[step - 1]}
+              </span>
             )}
           </div>
         </div>
@@ -158,23 +183,66 @@ export default function WizardModal({
         <div className={styles.formSection}>
           {fieldsForCurrentStep.map((field) => (
             <div className={styles.formGroup} key={field.name}>
-              <label htmlFor={field.name} className={styles.label}>{field.label}</label>
+              <label htmlFor={field.name} className={styles.label}>
+                {field.label}
+              </label>
               {renderField(field)}
-              {field.helpText && <small className={styles.helpText}>{field.helpText}</small>}
+              {field.helpText && (
+                <small className={styles.helpText}>{field.helpText}</small>
+              )}
             </div>
           ))}
         </div>
 
+        {/* Footer with proper Cancel/Previous logic */}
         <div className={styles.footerRow}>
-          {step < totalSteps ? (
+          {step === 1 ? (
+            // First step → Cancel + Next
             <>
-              <button className={`${styles.button} ${styles.secondary}`} onClick={onClose}>{cancelLabel}</button>
-              <button className={`${styles.button} ${styles.primary}`} onClick={handleNext}>{nextLabel}</button>
+              <button
+                className={`${styles.button} ${styles.secondary}`}
+                onClick={onClose}
+              >
+                {cancelLabel}
+              </button>
+              <button
+                className={`${styles.button} ${styles.primary}`}
+                onClick={handleNext}
+              >
+                {nextLabel}
+              </button>
+            </>
+          ) : step < totalSteps ? (
+            // Middle steps → Previous + Next
+            <>
+              <button
+                className={`${styles.button} ${styles.secondary}`}
+                onClick={handleBack}
+              >
+                {backLabel}
+              </button>
+              <button
+                className={`${styles.button} ${styles.primary}`}
+                onClick={handleNext}
+              >
+                {nextLabel}
+              </button>
             </>
           ) : (
+            // Last step → Previous + Submit
             <>
-              <button className={`${styles.button} ${styles.secondary}`} onClick={handleBack}>{backLabel}</button>
-              <button className={`${styles.button} ${styles.primary}`} onClick={handleSubmit}>{submitLabel}</button>
+              <button
+                className={`${styles.button} ${styles.secondary}`}
+                onClick={handleBack}
+              >
+                {backLabel}
+              </button>
+              <button
+                className={`${styles.button} ${styles.primary}`}
+                onClick={handleSubmit}
+              >
+                {submitLabel}
+              </button>
             </>
           )}
         </div>
@@ -182,5 +250,3 @@ export default function WizardModal({
     </div>
   );
 }
-
-
