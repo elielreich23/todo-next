@@ -40,7 +40,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Initialize loading state
 
-  // Load user data from localStorage on component mount
   useEffect(() => {
     const loadUserFromStorage = () => {
       try {
@@ -69,7 +68,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     loadUserFromStorage();
   }, []);
 
-  // Save user data to localStorage whenever user changes
+  // Save user data to localStorage whenever 
   const setUser = (userData: User | null) => {
     setUserState(userData);
     setIsAuthenticated(!!userData);
