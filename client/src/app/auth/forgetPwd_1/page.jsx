@@ -1,4 +1,4 @@
-import styles from "./styles.module.scss";
+import styles from "./styles.module.css";
 import "../../../styles/global.scss"
 import Link from "next/link";
 

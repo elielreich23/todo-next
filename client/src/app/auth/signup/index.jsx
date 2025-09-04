@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import axios from './api/axios';
 import styles from './styles.module.scss';
 import "../../../styles/global.scss";
+import Link from "next/link";
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -87,7 +88,7 @@ const Register = () => {
                 <section>
                     <h1>Success!</h1>
                     <p>
-                        <a href="#">Sign In</a>
+                        <Link href="/auth/signin">Sign In</Link>
                     </p>
                 </section>
             ) : (
@@ -172,7 +173,7 @@ const Register = () => {
                         Already registered?<br />
                         <span className="line">
                             {/*put router link here*/}
-                            <a href="#">Sign In</a>
+                            <Link href="/auth/signin">Sign In</Link>
                         </span>
                     </p>
                 </section>

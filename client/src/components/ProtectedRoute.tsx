@@ -19,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   useEffect(() => {
     // Only redirect if we're not loading and not authenticated
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/signup');
+      router.replace('/auth/signin');
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -30,7 +30,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Show loading while redirecting
   if (!isAuthenticated) {
-    return <div>Redirecting to signup...</div>;
+    return <div>Redirecting to signin...</div>;
   }
 
   return <>{children}</>;

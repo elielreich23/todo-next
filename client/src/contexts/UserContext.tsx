@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { api } from '../lib/api';
 
 interface User {
   username: string;
@@ -16,6 +17,8 @@ interface UserContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean; // Add loading state
+  remoteLogin?: (params: { username?: string; email?: string }) => Promise<void>;
+  remoteSignup?: (params: { username: string; email: string; fullName?: string }) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -83,6 +86,17 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setUser(userData);
   };
 
+  // Call backend to login (mock: username or email only)
+  const remoteLogin = async (params: { username?: string; email?: string }) => {
+    const userData = await api<User>('/api/auth/login', { method: 'POST', body: JSON.stringify(params) });
+    setUser(userData);
+  };
+
+  const remoteSignup = async (params: { username: string; email: string; fullName?: string }) => {
+    const userData = await api<User>('/api/auth/signup', { method: 'POST', body: JSON.stringify(params) });
+    setUser(userData);
+  };
+
   const logout = () => {
     console.log('Logout called - clearing user data');
     // Clear user state
@@ -100,6 +114,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     logout,
     isAuthenticated,
     isLoading,
+    remoteLogin,
+    remoteSignup,
   };
 
   return (

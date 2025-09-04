@@ -1,0 +1,54 @@
+.statisticsPage {
+  padding: 2rem;
+  background: #f8f9fa;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header {
+  margin-bottom: 2rem;
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  p {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.section {
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0 0 1rem 0;
+  }
+  
+  p {
+    color: #6c757d;
+    line-height: 1.6;
+  }
+}
+
+/* Dark mode */
+:global(.dashboard.dark-mode) {
+  .statisticsPage { background: #1a1f27; color: #e5e7eb; }
+  .header h1 { color: #e5e7eb; }
+  .header p { color: #9aa4b2; }
+  .content { background: #141922; box-shadow: none; }
+  .section h2 { color: #e5e7eb; }
+  .section p { color: #9aa4b2; }
+}

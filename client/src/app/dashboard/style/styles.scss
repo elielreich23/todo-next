@@ -1,5 +1,5 @@
 /* Dashboard Styles */
-@import url('../../styles/globals.css');
+@import url('../../../styles/globals.css');
 
 .dashboard {
   display: flex;
@@ -181,26 +181,7 @@
       display: flex;
       gap: 0.5rem;
 
-      .add-btn {
-        width: 32px;
-        height: 32px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 1.2rem;
-        color: #4a5568;
-        transition: all 0.3s ease;
-
-        &:hover {
-          background: #f7fafc;
-          border-color: #cbd5e0;
-        }
-      }
-
+      .add-btn,
       .collapse-btn {
         width: 32px;
         height: 32px;
@@ -247,21 +228,6 @@
           margin: 0;
         }
 
-        .add-btn.small {
-          width: 20px;
-          height: 20px;
-          border: 1px solid #e2e8f0;
-          background: #ffffff;
-          border-radius: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          font-size: 0.8rem;
-          color: #4a5568;
-          margin-right: 0.5rem;
-        }
-
         .expand-btn {
           width: 24px;
           height: 24px;
@@ -278,9 +244,7 @@
             color: #4a5568;
           }
 
-          .icon {
-            font-size: 0.8rem;
-          }
+          svg { transition: transform .2s ease; }
         }
       }
 
@@ -297,6 +261,10 @@
           transition: all 0.3s ease;
           font-size: 0.9rem;
           color: #4a5568;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: relative;
 
           &:hover {
             background: #f7fafc;
@@ -307,12 +275,28 @@
             color: #2d3748;
             font-weight: 500;
           }
+
+          .delete-btn {
+            opacity: 0;
+            margin-left: 8px;
+            border: none;
+            background: transparent;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 4px;
+            transition: opacity .15s ease, color .15s ease, background .15s ease;
+
+            &:hover { color: #e53e3e; background: rgba(229,62,62,.08); }
+          }
+
+          &.active .delete-btn,
+          &:hover .delete-btn { opacity: 1; }
         }
       }
     }
   }
 
-  /* Theme Toggle at bottom of white sidebar */
   .theme-toggle {
     padding: 1rem;
     border-top: 1px solid #e2e8f0;
@@ -362,24 +346,72 @@
   overflow: hidden;
 }
 
+/* Dark mode overrides */
+.dashboard.dark-mode .main-content { background: #1a1f27; color: #e5e7eb; }
+.dashboard.dark-mode .white-sidebar { background: #111418; border-right-color: #2a2f36; }
+.dashboard.dark-mode .white-sidebar .sidebar-header { border-bottom-color: #2a2f36; }
+.dashboard.dark-mode .white-sidebar .header-actions .add-btn,
+.dashboard.dark-mode .white-sidebar .header-actions .collapse-btn {
+  background: #0f141c; border-color: #2a2f36; color: #d1d5db;
+}
+.dashboard.dark-mode .white-sidebar .section-list .list-item { color: #cbd5e1; }
+.dashboard.dark-mode .white-sidebar .section-list .list-item:hover { background: #171a20; }
+.dashboard.dark-mode .white-sidebar .section-list .list-item.active { background: #1f2430; color: #fff; }
+
+.white-sidebar .section:not(.open) .expand-btn svg { transform: rotate(-90deg); }
+.white-sidebar .section.open .expand-btn svg { transform: rotate(0deg); }
+
+/* Notification Toast */
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  animation: slideInRight 0.3s ease-out;
+}
+
+.notification-content {
+  background: #10b981;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  min-width: 300px;
+  max-width: 400px;
+
+  svg { flex-shrink: 0; color: white; }
+  span { flex: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+.dashboard.dark-mode .notification-content {
+  background: #059669;
+  color: #d1fae5;
+}
+
+/* Double-click animation keyframes */
+@keyframes doubleClickPulse {
+  0% { transform: scale(1); background: #f7fafc; }
+  50% { transform: scale(1.02); background: #e2e8f0; }
+  100% { transform: scale(1); background: #f7fafc; }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .white-sidebar {
-    width: 250px;
-  }
+  .white-sidebar { width: 250px; }
 }
 
 @media (max-width: 768px) {
-  .dark-sidebar {
-    width: 60px;
-  }
-
-  .white-sidebar {
-    width: 100%;
-    left: 60px;
-  }
-
-  .main-content {
-    margin-left: 60px;
-  }
+  .dark-sidebar { width: 60px; }
+  .white-sidebar { width: 100%; left: 60px; }
+  .main-content { margin-left: 60px; }
 }
