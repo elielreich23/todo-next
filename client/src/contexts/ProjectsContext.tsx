@@ -131,7 +131,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     const temp: Task = {
       id: Date.now(),
       projectId,
-      title: data.title !== undefined ? data.title : "New Task",
+      title: data.title !== undefined ? data.title : "New Task", 
       dueDate: data.dueDate,
       status: data.status || 'todo',
       description: data.description,
