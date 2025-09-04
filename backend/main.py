@@ -2,12 +2,18 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import engine, get_db
-from models import Base, User
+from models import Base, User, Project, Task
 from auth import router as auth_router
+from projects import router as projects_router
+from tasks import router as tasks_router
 from passlib.context import CryptContext
 
-# tables 
-Base.metadata.create_all(bind=engine)
+# Create all tables
+try:
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully")
+except Exception as e:
+    print(f"Error creating database tables: {e}")
 
 app = FastAPI(
     title="Taskero API",
@@ -24,8 +30,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include auth router
+# Include routers
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(projects_router, prefix="/api/projects", tags=["Projects"])
+app.include_router(tasks_router, prefix="/api/tasks", tags=["Tasks"])
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -101,9 +109,10 @@ async def create_test_users(db: Session = Depends(get_db)):
         }
     except Exception as e:
         db.rollback()
+        print(f"Error creating test users: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Failed to create test users"
+            detail=f"Failed to create test users: {str(e)}"
         )
 
 @app.get("/users")
