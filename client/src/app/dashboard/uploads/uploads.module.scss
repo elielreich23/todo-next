@@ -1,54 +1,88 @@
+// Primary color pulled from dashboard theme (near-black + pastel accents)
+$primary: #111827;
+$mutedText: #64748b;
+$ring: #e5e7eb;
+$surface: #ffffff;
+$bg: #f8fafc;
+
 .uploadsPage {
-  padding: 2rem;
-  background: #f8f9fa;
+  padding: 24px;
+  background: $bg;
   min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .header {
-  margin-bottom: 2rem;
-  
-  h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #2c3e50;
-    margin: 0 0 0.5rem 0;
-  }
-  
-  p {
-    color: #6c757d;
-    font-size: 1.1rem;
-    margin: 0;
-  }
+  margin-bottom: 16px;
+  h1 { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; }
+  p { color: $mutedText; margin: 0; }
 }
 
-.content {
-  background: white;
+.grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 16px; }
+
+.dropSection {}
+
+.dropZone {
+  border: 1px dashed $ring;
   border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: $surface;
+  box-shadow: 0 2px 12px rgba(16, 24, 40, 0.06);
+  padding: 24px;
+  text-align: center;
+  transition: border-color 120ms ease, background 120ms ease;
 }
 
-.section {
-  h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #2c3e50;
-    margin: 0 0 1rem 0;
-  }
-  
-  p {
-    color: #6c757d;
-    line-height: 1.6;
-  }
+.dragOver {
+  border-color: $primary;
+  background: #f3f4f6;
 }
+
+.dropInner { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.uploadIcon { font-size: 20px; }
+.dropText { font-weight: 600; color: #0f172a; }
+.dropSub { color: $mutedText; font-size: 14px; }
+
+.primaryBtn {
+  height: 36px; padding: 0 14px; border-radius: 8px; border: 0; cursor: pointer;
+  background: $primary; color: #fff; font-weight: 600;
+}
+
+.uploadList { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.uploadItem { display: flex; gap: 10px; align-items: center; background: $surface; border: 1px solid $ring; border-radius: 10px; padding: 12px; cursor: pointer; }
+.uploadItemActive { outline: 2px solid #93c5fd; }
+.fileBadge { width: 28px; height: 28px; border-radius: 6px; background: #e0f2fe; }
+.fileInfo { flex: 1; }
+.fileName { font-weight: 600; color: #0f172a; }
+.fileMeta { color: $mutedText; font-size: 12px; }
+.progressBar { margin-top: 8px; width: 100%; height: 6px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; }
+.progressFill { height: 100%; background: #60a5fa; }
+.deleteIconBtn { border: 0; background: transparent; color: $mutedText; cursor: pointer; }
+
+.previewSection { display: flex; flex-direction: column; gap: 12px; }
+.previewHeader { font-weight: 700; color: #0f172a; }
+.previewCard { background: $surface; border: 1px solid $ring; border-radius: 10px; padding: 12px; }
+.previewContent { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; color: #0f172a; white-space: pre-wrap; }
+.previewPlaceholder { color: $mutedText; border: 1px dashed $ring; border-radius: 10px; padding: 16px; text-align: center; }
+
+.helpCard { background: $surface; border: 1px solid $ring; border-radius: 10px; overflow: hidden; }
+.helpHeader { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8fafc; border: 0; cursor: pointer; }
+.chevron { color: $mutedText; }
+.helpBody { padding: 12px; color: #334155; }
+
+// Modal shared styles (reused from calendar scheme for consistency)
+.modalOverlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.32); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+.modalCard { width: 360px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); display: flex; flex-direction: column; }
+.modalHeader { font-weight: 700; color: #0f172a; padding: 14px 16px 8px 16px; }
+.modalBody { padding: 8px 16px 0 16px; color: #334155; }
+.modalFooter { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px 16px 16px; }
+.deleteBtn { height: 34px; padding: 0 12px; border-radius: 8px; border: 0; background: #ef4444; color: #fff; font-weight: 600; cursor: pointer; }
+.cancelBtn { height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid $ring; background: #fff; cursor: pointer; }
 
 /* Dark mode */
 :global(.dashboard.dark-mode) {
-  .uploadsPage { background: #1a1f27; color: #e5e7eb; }
+  .uploadsPage { background: #0b1220; color: #e5e7eb; }
+  .dropZone { background: #0f1626; border-color: #233044; }
+  .templateRow, .uploadItem, .helpCard { background: #0f1626; border-color: #233044; }
+  .templatesHeader, .fileName, .templateName { color: #e5e7eb; }
   .header h1 { color: #e5e7eb; }
-  .header p { color: #9aa4b2; }
-  .content { background: #141922; box-shadow: none; }
-  .section h2 { color: #e5e7eb; }
-  .section p { color: #9aa4b2; }
+  .header p, .fileMeta, .templateMeta { color: #9aa4b2; }
 }

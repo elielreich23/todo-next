@@ -205,6 +205,13 @@
           height: 16px;
         }
       }
+      .add-btn {
+        border-color: #dbeafe;
+        color: #1e3a8a;
+        background: #eff6ff;
+        box-shadow: 0 1px 0 rgba(30,58,138,0.06), inset 0 0 0 1px rgba(255,255,255,0.6);
+        &:hover { background: #dbeafe; border-color: #bfdbfe; }
+      }
     }
   }
 
