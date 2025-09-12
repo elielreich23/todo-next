@@ -1,13 +1,33 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api } from '../lib/api';
+import { api, refreshToken } from '../lib/api';
 
 interface User {
+  id: number;
   username: string;
   email: string;
-  fullName: string;
-  id?: number;
+  full_name: string;
+}
+
+interface LoginResponse {
+  success: boolean;
+  message: string;
+  user: User;
+  tokens: {
+    access: string;
+    refresh: string;
+  };
+}
+
+interface SignupResponse {
+  success: boolean;
+  message: string;
+  user: User;
+  tokens: {
+    access: string;
+    refresh: string;
+  };
 }
 
 interface UserContextType {
@@ -16,9 +36,9 @@ interface UserContextType {
   login: (userData: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
-  isLoading: boolean; // Add loading state
-  remoteLogin?: (params: { username?: string; email?: string }) => Promise<void>;
-  remoteSignup?: (params: { username: string; email: string; fullName?: string }) => Promise<void>;
+  isLoading: boolean;
+  remoteLogin: (params: { email: string; password: string }) => Promise<void>;
+  remoteSignup: (params: { username: string; email: string; full_name: string; password: string; password_confirm: string }) => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -37,73 +57,101 @@ interface UserProviderProps {
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUserState] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Initialize loading state
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadUserFromStorage = () => {
+    // Load user from tokens and validate
+    const loadUserFromTokens = async () => {
       try {
-        console.log('Loading user from localStorage...');
-        const storedUser = localStorage.getItem('taskero_user');
-        console.log('Stored user data:', storedUser);
+        const accessToken = localStorage.getItem('access_token');
+        const refreshTokenValue = localStorage.getItem('refresh_token');
         
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          console.log('Parsed user data:', userData);
-          setUserState(userData);
-          setIsAuthenticated(true);
-        } else {
-          console.log('No stored user data found');
+        if (accessToken && refreshTokenValue) {
+          // Try to get user profile
+          try {
+            const response = await api<User>('/api/auth/profile/');
+            if (response) {
+              setUserState(response);
+            }
+          } catch (error) {
+            // Token might be expired, try to refresh
+            console.log('Access token expired, attempting refresh...');
+            const newAccessToken = await refreshToken();
+            if (newAccessToken) {
+              // Try again with new token
+              const response = await api<User>('/api/auth/profile/');
+              if (response) {
+                setUserState(response);
+              }
+            } else {
+              // Refresh failed, clear tokens
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('refresh_token');
+            }
+          }
         }
       } catch (error) {
-        console.error('Error loading user from storage:', error);
+        console.error('Error loading user from tokens:', error);
         // Clear corrupted data
-        localStorage.removeItem('taskero_user');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
       } finally {
-        console.log('Setting loading to false');
         setIsLoading(false);
       }
     };
 
-    loadUserFromStorage();
+    loadUserFromTokens();
   }, []);
 
-  // Save user data to localStorage whenever 
   const setUser = (userData: User | null) => {
     setUserState(userData);
-    setIsAuthenticated(!!userData);
-    
-    if (userData) {
-      localStorage.setItem('taskero_user', JSON.stringify(userData));
-    } else {
-      localStorage.removeItem('taskero_user');
-    }
   };
 
   const login = (userData: User) => {
-    console.log('Login called with user data:', userData);
     setUser(userData);
   };
 
-  // Call backend to login (mock: username or email only)
-  const remoteLogin = async (params: { username?: string; email?: string }) => {
-    const userData = await api<User>('/api/auth/login', { method: 'POST', body: JSON.stringify(params) });
-    setUser(userData);
+  const remoteLogin = async (params: { email: string; password: string }) => {
+    const response = await api<LoginResponse>('/api/auth/signin/', { 
+      method: 'POST', 
+      body: JSON.stringify(params) 
+    });
+    
+    if (response.success) {
+      // Store tokens in localStorage
+      localStorage.setItem('access_token', response.tokens.access);
+      localStorage.setItem('refresh_token', response.tokens.refresh);
+      
+      // Set user in context
+      setUser(response.user);
+    } else {
+      throw new Error(response.message || 'Login failed');
+    }
   };
 
-  const remoteSignup = async (params: { username: string; email: string; fullName?: string }) => {
-    const userData = await api<User>('/api/auth/signup', { method: 'POST', body: JSON.stringify(params) });
-    setUser(userData);
+  const remoteSignup = async (params: { username: string; email: string; full_name: string; password: string; password_confirm: string }) => {
+    const response = await api<SignupResponse>('/api/auth/signup/', { 
+      method: 'POST', 
+      body: JSON.stringify(params) 
+    });
+    
+    if (response.success) {
+      // Store tokens in localStorage
+      localStorage.setItem('access_token', response.tokens.access);
+      localStorage.setItem('refresh_token', response.tokens.refresh);
+      
+      // Set user in context
+      setUser(response.user);
+    } else {
+      throw new Error(response.message || 'Signup failed');
+    }
   };
 
   const logout = () => {
-    console.log('Logout called - clearing user data');
-    // Clear user state
-    setUserState(null);
-    setIsAuthenticated(false);
-    // Clear localStorage
-    localStorage.removeItem('taskero_user');
-    console.log('User data cleared, localStorage cleared');
+    // Clear tokens
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setUser(null);
   };
 
   const value: UserContextType = {
@@ -111,7 +159,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setUser,
     login,
     logout,
-    isAuthenticated,
+    isAuthenticated: !!user,
     isLoading,
     remoteLogin,
     remoteSignup,

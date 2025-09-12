@@ -12,7 +12,7 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { login, isAuthenticated } = useUser();
+  const { remoteLogin, isAuthenticated } = useUser();
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -26,56 +26,30 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password
-        })
+      await remoteLogin({
+        email: email.trim(),
+        password: password
       });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Login successful - store user data in context
-        const userData = {
-          username: data.user.username,
-          email: data.user.email,
-          fullName: data.user.full_name,
-          id: data.user.id
-        };
-        
-        // Login user through context (this will persist to localStorage)
-        login(userData);
-        
-        // Redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        // Check if it's an unregistered user error
-        if (response.status === 401 && data.detail === 'Invalid email or password') {
-          setError(
-            <span>
-              Wrong password or invalid account. 
-              <Link href="/auth/signup" className={styles.signupLink}>
-                Create account
-              </Link>
-            </span>
-          );
-        } else if (response.status === 401 && data.detail === 'Account is deactivated') {
-          setError('This account has been deactivated. Please contact support.');
-        } else {
-          setError(data.detail || 'Login failed. Please try again.');
-        }
-      }
+      
+      // If we get here, login was successful
+      router.push('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
-      if (err.code === 'ERR_NETWORK') {
+      if (err.message.includes('Invalid email or password')) {
+        setError(
+          <span>
+            Wrong password or invalid account. 
+            <Link href="/auth/signup" className={styles.signupLink}>
+              Create account
+            </Link>
+          </span>
+        );
+      } else if (err.message.includes('Account is deactivated')) {
+        setError('This account has been deactivated. Please contact support.');
+      } else if (err.message.includes('Network') || err.code === 'ERR_NETWORK') {
         setError("Network error: Cannot connect to server. Please check if the backend is running.");
       } else {
-        setError("Failed to login. Please try again.");
+        setError(err.message || 'Login failed. Please try again.');
       }
     } finally {
       setIsLoading(false);

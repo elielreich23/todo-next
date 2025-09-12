@@ -8,44 +8,68 @@ export default function ProfilePage() {
   const { user } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    firstName: 'James',
-    lastName: 'Rodriguez',
-    email: 'jamesrodrick@gmail.com',
-    mobile: '+417854126548',
-    location: 'Warsaw',
-    zipCode: 'Warsaw',
-    gender: 'Male',
-    role: 'Frontend Developer',
-    country: 'PL'
+    firstName: 'User',
+    lastName: '',
+    username: '',
+    email: 'user@example.com',
+    mobile: '',
+    location: '',
+    zipCode: '',
+    gender: '',
+    role: 'User',
+    country: ''
   });
 
   const [tempData, setTempData] = useState({ ...profileData });
 
   useEffect(() => {
     if (user) {
-      // Update profile data with actual user data if available
+      // Update profile data with actual user data from Django backend
       setProfileData(prev => ({
         ...prev,
-        firstName: user.fullName?.split(' ')[0] || 'James',
-        lastName: user.fullName?.split(' ').slice(1).join(' ') || 'Rodriguez',
-        email: user.email || 'jamesrodrick@gmail.com'
+        firstName: user.full_name?.split(' ')[0] || user.username || 'User',
+        lastName: user.full_name?.split(' ').slice(1).join(' ') || '',
+        username: user.username || '',
+        email: user.email || 'user@example.com'
       }));
       setTempData(prev => ({
         ...prev,
-        firstName: user.fullName?.split(' ')[0] || 'James',
-        lastName: user.fullName?.split(' ').slice(1).join(' ') || 'Rodriguez',
-        email: user.email || 'jamesrodrick@gmail.com'
+        firstName: user.full_name?.split(' ')[0] || user.username || 'User',
+        lastName: user.full_name?.split(' ').slice(1).join(' ') || '',
+        username: user.username || '',
+        email: user.email || 'user@example.com'
       }));
     }
   }, [user]);
 
-  const handleEditProfile = () => {
+  const handleEditProfile = async () => {
     if (isEditing) {
       // Save changes
-      setProfileData({ ...tempData });
-      setIsEditing(false);
-      // Here you would typically make an API call to update the user profile
-      console.log('Profile updated:', tempData);
+      try {
+        const { remoteLogin } = useUser();
+        const response = await fetch('http://localhost:8000/api/auth/profile/update/', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          },
+          body: JSON.stringify({
+            full_name: `${tempData.firstName} ${tempData.lastName}`.trim(),
+            username: tempData.username,
+            email: tempData.email
+          })
+        });
+        
+        if (response.ok) {
+          setProfileData({ ...tempData });
+          setIsEditing(false);
+          console.log('Profile updated successfully');
+        } else {
+          console.error('Failed to update profile');
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+      }
     } else {
       // Enter edit mode
       setTempData({ ...profileData });
@@ -131,6 +155,16 @@ export default function ProfilePage() {
                   type="text"
                   value={isEditing ? tempData.firstName : profileData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  disabled={!isEditing}
+                  className={isEditing ? styles.editableInput : styles.readonlyInput}
+                />
+              </div>
+              <div className={styles.formField}>
+                <label>Username</label>
+                <input
+                  type="text"
+                  value={isEditing ? tempData.username : profileData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
                   disabled={!isEditing}
                   className={isEditing ? styles.editableInput : styles.readonlyInput}
                 />

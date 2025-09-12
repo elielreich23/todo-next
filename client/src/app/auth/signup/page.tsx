@@ -3,7 +3,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import styles from './styles.module.scss';
 import "../../../styles/global.scss";
 import Link from 'next/link';
@@ -24,7 +23,7 @@ export default function Signup() {
   const [passwordError, setPasswordError] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const router = useRouter();
-  const { login, isAuthenticated } = useUser();
+  const { remoteSignup, isAuthenticated } = useUser();
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
@@ -100,38 +99,20 @@ export default function Signup() {
     try {
       console.log("Attempting to signup with:", { fullName, username, email });
       
-      // Send signup request to our backend
-      const response = await axios.post('http://localhost:3001/auth/signup', {
-        full_name: fullName.trim(),
+      // Send signup request to our Django backend
+      await remoteSignup({
         username: username.trim(),
         email: email.trim(),
-        password: password
-      }, {
-        timeout: 10000 // 10 second timeout
+        full_name: fullName.trim(),
+        password: password,
+        password_confirm: confirmPassword
       });
-
-      console.log("Signup response:", response.data);
-
-      if (response.data.success) {
-        // Signup successful - store user data in context
-        const userData = {
-          username: username.trim(),
-          email: email.trim(),
-          fullName: fullName.trim(),
-          id: response.data.user.id
-        };
-        
-        // Login user through context (this will persist to localStorage)
-        login(userData);
-        
-        setError("");
-        console.log("Signup successful, redirecting to dashboard...");
-        
-        // Redirect to dashboard
-        router.push("/dashboard");
-      } else {
-        setError(response.data.message || "Failed to sign up");
-      }
+      
+      setError("");
+      console.log("Signup successful, redirecting to dashboard...");
+      
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (err: any) {
       console.error("Signup error:", err);
       
