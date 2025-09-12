@@ -1,38 +1,14 @@
 # Taskero Backend
 
-FastAPI backend for the Taskero task management application.
+A Django REST API backend with JWT authentication for the Taskero todo application.
 
 ## Features
 
-- **Authentication**: User signup/login with password hashing
-- **Projects**: CRUD operations for projects
-- **Tasks**: CRUD operations for tasks with status management
-- **Comments**: Add/edit/delete comments on tasks
-- **Database**: SQLite with SQLAlchemy ORM
-
-## API Endpoints
-
-### Authentication
-- `POST /auth/signup` - User registration
-- `POST /auth/login` - User login
-
-### Projects
-- `GET /api/projects` - Get all projects
-- `POST /api/projects` - Create new project
-- `PUT /api/projects` - Update project
-- `DELETE /api/projects` - Delete project
-
-### Tasks
-- `GET /api/tasks` - Get tasks (optional project_id filter)
-- `POST /api/tasks` - Create new task
-- `PUT /api/tasks` - Update task
-- `DELETE /api/tasks` - Delete task
-
-### Task Comments
-- `GET /api/tasks/{task_id}/comments` - Get task comments
-- `POST /api/tasks/{task_id}/comments` - Add comment
-- `PUT /api/tasks/{task_id}/comments` - Update comment
-- `DELETE /api/tasks/{task_id}/comments` - Delete comment
+- JWT Authentication (access + refresh tokens)
+- User registration and login
+- Custom user model with email as username
+- CORS enabled for frontend integration
+- Django REST Framework
 
 ## Setup
 
@@ -41,25 +17,63 @@ FastAPI backend for the Taskero task management application.
 pip install -r requirements.txt
 ```
 
-2. Run the server:
+2. Run migrations:
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+3. Create superuser (optional):
+```bash
+python manage.py createsuperuser
+```
+
+4. Start the development server:
 ```bash
 python run.py
 ```
 
-The server will start on `http://localhost:3001`
+The server will run on `http://localhost:8000`
 
-## Database
+## API Endpoints
 
-The app uses SQLite with automatic table creation. The database file is `users.db`.
+### Authentication
+- `POST /api/auth/signup/` - User registration
+- `POST /api/auth/signin/` - User login
+- `GET /api/auth/profile/` - Get user profile (requires authentication)
+- `POST /api/auth/logout/` - Logout (requires authentication)
 
-## Test Users
+### Example Requests
 
-You can create test users by calling:
+**Signup:**
+```json
+POST /api/auth/signup/
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "full_name": "John Doe",
+  "password": "securepassword123",
+  "password_confirm": "securepassword123"
+}
 ```
-POST /create-test-users
+
+**Signin:**
+```json
+POST /api/auth/signin/
+{
+  "email": "john@example.com",
+  "password": "securepassword123"
+}
 ```
 
-This creates:
-- admin@taskero.com / admin123
-- user1@taskero.com / user123  
-- user2@taskero.com / user123
+## Default Admin User
+
+- Email: admin@taskero.com
+- Password: admin123
+
+## Environment Variables
+
+You can set these environment variables:
+- `DJANGO_SETTINGS_MODULE` - Django settings module (default: taskero_backend.settings)
+- `DEBUG` - Debug mode (default: True)
+- `SECRET_KEY` - Django secret key (default: development key)
