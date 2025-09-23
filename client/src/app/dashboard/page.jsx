@@ -106,7 +106,9 @@ export default function DashboardPage() {
 
   const projectTasks = useMemo(() => {
     if (!selectedProjectId) return [];
-    return tasks.filter(t => t.projectId === selectedProjectId);
+    const filtered = tasks.filter(t => t.projectId === selectedProjectId);
+    console.log('Project tasks for', selectedProjectId, ':', filtered);
+    return filtered;
   }, [tasks, selectedProjectId]);
 
   const columns = [
@@ -126,7 +128,10 @@ export default function DashboardPage() {
             <p>Select a project to get started</p>
           </div>
           <div className={styles.headerRight}>
-            <button className={styles.addProjectBtn} onClick={() => createProject({ name: 'New Project' })}>
+            <button className={styles.addProjectBtn} onClick={() => {
+              console.log('Creating project, current projects:', projects);
+              createProject({ name: 'New Project' });
+            }}>
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
@@ -241,7 +246,11 @@ export default function DashboardPage() {
               aria-label={`${col.title} column - drop tasks here`}
               data-column={col.key}
             >
-              {projectTasks.filter(t=>t.status===col.key).map(t => (
+              {projectTasks.filter(t=>{
+                const matches = t.status === col.key;
+                console.log(`Task ${t.id} (${t.title}) status: ${t.status}, column: ${col.key}, matches: ${matches}`);
+                return matches;
+              }).map(t => (
                 <div 
                   key={t.id} 
                   className={styles.taskCard} 

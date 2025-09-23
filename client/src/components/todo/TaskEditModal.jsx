@@ -7,7 +7,7 @@ import { useUser } from '../../contexts/UserContext';
 import styles from '../WizardModal/wizardModal.module.css';
 
 export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
-  const { updateTask, createProject, projects } = useProjects();
+  const { updateTask, createProject, createProjectAndWait, projects } = useProjects();
   const { user } = useUser();
   const currentProject = projects.find(p => p.id === projectId);
   
@@ -334,13 +334,13 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
       steps={steps}
       stepDescriptions={stepDescriptions}
       ctas={{ submitLabel: 'UPDATE TASK' }}
-      onSubmit={(vals) => {
+      onSubmit={async (vals) => {
         let projectName = vals.project;
         
         // Handle "Create New Project" option
         if (vals.project === '+ Create New Project') {
-          // Create a new project with a default name
-          const newProject = createProject({ name: 'New Project' });
+          // Create a new project with a default name and wait for real id
+          const newProject = await createProjectAndWait({ name: 'New Project' });
           projectName = newProject.name;
           // Note: We don't change the task's projectId here since updateTask doesn't support that
           // The task will remain in its current project but show the new project name

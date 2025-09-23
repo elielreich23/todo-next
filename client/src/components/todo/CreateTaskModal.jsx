@@ -7,7 +7,7 @@ import { useUser } from '../../contexts/UserContext';
 import styles from '../WizardModal/wizardModal.module.css';
 
 export default function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus }) {
-  const { createTask, createProject, projects } = useProjects();
+  const { createTask, createProject, createProjectAndWait, projects } = useProjects();
   const { user } = useUser();
   const currentProject = projects.find(p => p.id === projectId);
   const [attachments, setAttachments] = useState([]);
@@ -252,14 +252,14 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       steps={steps}
       stepDescriptions={stepDescriptions}
       ctas={{ submitLabel: 'CREATE TASK' }}
-      onSubmit={(vals) => {
+      onSubmit={async (vals) => {
         let targetProjectId = projectId;
         let projectName = vals.project;
         
         // Handle "Create New Project" option
         if (vals.project === '+ Create New Project') {
           // Create a new project with a default name
-          const newProject = createProject({ name: 'New Project' });
+          const newProject = await createProjectAndWait({ name: 'New Project' });
           targetProjectId = newProject.id;
           projectName = newProject.name;
         } else {
@@ -269,6 +269,8 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
             targetProjectId = selectedProject.id;
           }
         }
+        
+        console.log('Creating task for project:', targetProjectId, 'with name:', projectName);
         
         createTask(targetProjectId, {
           title: vals.title,
