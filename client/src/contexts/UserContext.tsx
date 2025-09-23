@@ -39,6 +39,7 @@ interface UserContextType {
   isLoading: boolean;
   remoteLogin: (params: { email: string; password: string }) => Promise<void>;
   remoteSignup: (params: { username: string; email: string; full_name: string; password: string; password_confirm: string }) => Promise<void>;
+  validateSession: () => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -151,7 +152,39 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     // Clear tokens
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    
+    // Clear any cached user data
+    localStorage.removeItem('user_data');
+    sessionStorage.clear();
+    
+    // Reset user state
     setUser(null);
+    
+    // Dispatch custom event to notify other contexts
+    window.dispatchEvent(new CustomEvent('userLogout'));
+  };
+
+  const validateSession = async (): Promise<boolean> => {
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      const refreshTokenValue = localStorage.getItem('refresh_token');
+      
+      if (!accessToken || !refreshTokenValue) {
+        return false;
+      }
+      
+      // Try to get user profile to validate session
+      const response = await api<User>('/api/auth/profile/');
+      if (response) {
+        setUserState(response);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Session validation failed:', error);
+      logout();
+      return false;
+    }
   };
 
   const value: UserContextType = {
@@ -163,6 +196,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     isLoading,
     remoteLogin,
     remoteSignup,
+    validateSession,
   };
 
   return (

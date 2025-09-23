@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from '../contexts/UserContext';
+import { useSession } from '../hooks/useSession';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -13,23 +13,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   fallback = <div>Loading...</div> 
 }) => {
-  const { isAuthenticated, isLoading } = useUser();
+  const { isAuthenticated, isSessionValid, isLoading } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    // Only redirect if we're not loading and not authenticated
-    if (!isLoading && !isAuthenticated) {
+    // Only redirect if we're not loading and session is invalid
+    if (!isLoading && (isSessionValid === false || !isAuthenticated)) {
       router.replace('/auth/signin');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isSessionValid, isLoading, router]);
 
-  // Show loading while checking authentication
-  if (isLoading) {
+  // Show loading while checking authentication or session validation
+  if (isLoading || isSessionValid === null) {
     return <>{fallback}</>;
   }
 
   // Show loading while redirecting
-  if (!isAuthenticated) {
+  if (!isAuthenticated || isSessionValid === false) {
     return <div>Redirecting to signin...</div>;
   }
 

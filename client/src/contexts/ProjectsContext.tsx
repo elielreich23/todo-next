@@ -107,6 +107,18 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     null
   );
 
+  // Listen for logout events to clear data
+  useEffect(() => {
+    const handleLogout = () => {
+      setProjects([]);
+      setTasks([]);
+      setSelectedProjectId(null);
+    };
+
+    window.addEventListener('userLogout', handleLogout);
+    return () => window.removeEventListener('userLogout', handleLogout);
+  }, []);
+
   // Initial load of projects and tasks
   useEffect(() => {
     (async () => {

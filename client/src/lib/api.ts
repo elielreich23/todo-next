@@ -33,6 +33,38 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   });
   
   if (!res.ok) {
+    // Handle authentication errors
+    if (res.status === 401) {
+      // Try to refresh token first
+      const newToken = await refreshToken();
+      if (!newToken) {
+        // Refresh failed, trigger logout
+        window.dispatchEvent(new CustomEvent('userLogout'));
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/signin';
+        }
+        throw new Error('Authentication failed. Please log in again.');
+      }
+      
+      // Retry the request with new token
+      const retryRes = await fetch(`${API_BASE_URL}${path}`, {
+        ...init,
+        headers: {
+          ...getAuthHeaders(),
+          ...(init?.headers || {}),
+        },
+        cache: 'no-store',
+      });
+      
+      if (!retryRes.ok) {
+        const message = await retryRes.text().catch(() => retryRes.statusText);
+        throw new Error(message || `Request failed: ${retryRes.status}`);
+      }
+      
+      if (retryRes.status === 204) return undefined as unknown as T;
+      return retryRes.json() as Promise<T>;
+    }
+    
     const message = await res.text().catch(() => res.statusText);
     throw new Error(message || `Request failed: ${res.status}`);
   }
@@ -60,9 +92,15 @@ export const refreshToken = async (): Promise<string | null> => {
       localStorage.setItem('access_token', data.access);
       return data.access;
     } else {
-      // Refresh failed, clear tokens and redirect to login
+      // Refresh failed, clear tokens and trigger logout
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_data');
+      sessionStorage.clear();
+      
+      // Dispatch logout event
+      window.dispatchEvent(new CustomEvent('userLogout'));
+      
       if (typeof window !== 'undefined') {
         window.location.href = '/auth/signin';
       }
