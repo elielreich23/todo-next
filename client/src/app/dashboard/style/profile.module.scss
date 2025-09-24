@@ -167,6 +167,10 @@
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  /* keep content readable on wide screens */
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow: visible; /* avoid clipping children on small screens */
 }
 
 /* User Overview Styles */
@@ -219,9 +223,13 @@
 
 /* Profile Form Styles */
 .profileForm {
+  /* ensure inner grid columns align and inputs don't overflow */
+  width: 100%;
+  max-width: 100%;
   .formRow {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(min-content, max-content);
     gap: 2rem;
     margin-bottom: 2rem;
 
@@ -232,8 +240,17 @@
   }
 }
 
+.formColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0; /* prevent overflow in grid */
+}
+
 .formField {
   margin-bottom: 1.5rem;
+  min-width: 0; /* allow inputs to shrink within grid */
+  width: 100%;
 
   label {
     display: block;
@@ -246,6 +263,7 @@
 
 .readonlyInput {
   width: 100%;
+  box-sizing: border-box;
   padding: 0.75rem 1rem;
   border: 1px solid #e9ecef;
   border-radius: 8px;
@@ -264,6 +282,7 @@
 
 .editableInput {
   width: 100%;
+  box-sizing: border-box;
   padding: 0.75rem 1rem;
   border: 2px solid #007bff;
   border-radius: 8px;
@@ -292,8 +311,15 @@
   justify-content: center;
   gap: 1rem;
   margin-top: 2rem;
-  padding-top: 2rem;
+  padding: 1rem 0; /* reduce top padding when sticky */
   border-top: 1px solid #e9ecef;
+  /* Keep buttons visible while scrolling */
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 5;
+  /* subtle top fade to separate from content when sticky */
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .editButton {
@@ -384,10 +410,12 @@
 @media (max-width: 768px) {
   .profileContent {
     padding: 1.5rem;
+    max-width: 100%;
   }
 
   .formRow {
     grid-template-columns: 1fr;
+    grid-auto-rows: minmax(min-content, max-content);
   }
 
   .actionButtons {
@@ -399,6 +427,8 @@
       max-width: 300px;
     }
   }
+  /* Let the action bar scroll with content on very small screens */
+  .actionButtons { position: static; box-shadow: none; }
 }
 
 /* Dark mode overrides scoped to dashboard */

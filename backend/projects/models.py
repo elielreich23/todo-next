@@ -41,6 +41,8 @@ class Task(models.Model):
     
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='tasks')
+    # Users assigned to work on this task (can be multiple)
+    assignees = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='assigned_tasks', blank=True)
     
     class Meta:
         ordering = ['-created_at']

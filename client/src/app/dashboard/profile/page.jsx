@@ -6,6 +6,8 @@ import styles from '../style/profile.module.scss';
 
 export default function ProfilePage() {
   const { user } = useUser();
+  const [activeTab, setActiveTab] = useState('details');
+  const [assignedTasks, setAssignedTasks] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     firstName: 'User',
@@ -46,18 +48,20 @@ export default function ProfilePage() {
     if (isEditing) {
       // Save changes
       try {
-        const { remoteLogin } = useUser();
+        // Build partial payload only with valid, non-empty values
+        const fullName = `${(tempData.firstName || '').trim()} ${(tempData.lastName || '').trim()}`.trim();
+        const payload = {};
+        if (fullName) payload.full_name = fullName;
+        if (tempData.username && tempData.username.trim()) payload.username = tempData.username.trim();
+        if (tempData.email && tempData.email.trim()) payload.email = tempData.email.trim();
+
         const response = await fetch('http://localhost:8000/api/auth/profile/update/', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`
           },
-          body: JSON.stringify({
-            full_name: `${tempData.firstName} ${tempData.lastName}`.trim(),
-            username: tempData.username,
-            email: tempData.email
-          })
+          body: JSON.stringify(payload)
         });
         
         if (response.ok) {
@@ -88,6 +92,21 @@ export default function ProfilePage() {
     setTempData({ ...profileData });
     setIsEditing(false);
   };
+
+  useEffect(() => {
+    if (activeTab !== 'assigned') return;
+    (async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/tasks/?assignedToMe=1', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) setAssignedTasks(data.tasks || []);
+        }
+      } catch {}
+    })();
+  }, [activeTab]);
 
   return (
     <div className={styles.profilePage}>
@@ -120,8 +139,8 @@ export default function ProfilePage() {
       {/* Tabs */}
       <div className={styles.tabs}>
         <div className={styles.tabContainer}>
-          <button className={`${styles.tab} ${styles.active}`}>My Details</button>
-          <button className={styles.tab}>Assigned Tasks</button>
+          <button className={`${styles.tab} ${activeTab==='details' ? styles.active : ''}`} onClick={()=>setActiveTab('details')}>My Details</button>
+          <button className={`${styles.tab} ${activeTab==='assigned' ? styles.active : ''}`} onClick={()=>setActiveTab('assigned')}>Assigned Tasks</button>
         </div>
         <div className={styles.tabActions}>
           <span>Filter</span>
@@ -133,6 +152,24 @@ export default function ProfilePage() {
 
       {/* Profile Content */}
       <div className={styles.profileContent}>
+        {activeTab === 'assigned' ? (
+          <div>
+            {assignedTasks.length === 0 ? (
+              <p>No tasks assigned to you.</p>
+            ) : (
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:'12px'}}>
+                {assignedTasks.map(t => (
+                  <div key={t.id} style={{border:'1px solid #e5e7eb',borderRadius:8,padding:12}}>
+                    <div style={{fontWeight:600}}>{t.title}</div>
+                    <div style={{fontSize:12,color:'#6b7280'}}>Project: {t.project_name || t.project}</div>
+                    <div style={{fontSize:12,color:'#6b7280'}}>Status: {t.status}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+        <>
         {/* User Overview */}
         <div className={styles.userOverview}>
           <div className={styles.profileImage}>
@@ -264,6 +301,8 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

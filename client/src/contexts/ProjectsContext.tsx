@@ -103,7 +103,7 @@ export const useProjects = (): ProjectsContextType => {
 // -------------------- PROVIDER --------------------
 
 export function ProjectsProvider({ children }: { children: ReactNode }) {
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
@@ -167,8 +167,15 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
   // Load projects and tasks when user changes
   useEffect(() => {
+    // Wait for user context to finish loading
+    if (userLoading) {
+      console.log('User context still loading...');
+      return;
+    }
+
     if (!user) {
       // Clear data when no user
+      console.log('No user, clearing data');
       setProjects([]);
       setTasks([]);
       setSelectedProjectId(null);
@@ -178,9 +185,13 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         console.log('Loading projects for user:', user.username);
+        console.log('Access token:', localStorage.getItem('access_token'));
+        
         const response = await api<{ success: boolean; projects: Project[] }>(
           "/api/projects/"
         );
+        console.log('Projects API response:', response);
+        
         if (response.success) {
           console.log('Loaded projects:', response.projects);
           setProjects(response.projects);
@@ -191,17 +202,20 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
               success: boolean;
               tasks: Task[];
             }>(`/api/tasks/?projectId=${initialProjectId}`);
+            console.log('Tasks API response:', tasksResponse);
             if (tasksResponse.success) {
               console.log('Loaded tasks:', tasksResponse.tasks);
               setTasks(tasksResponse.tasks.map((t) => normalizeTask(t)));
             }
           }
+        } else {
+          console.error('Projects API returned success: false');
         }
       } catch (error) {
         console.error("Failed to load projects:", error);
       }
     })();
-  }, [user]);
+  }, [user, userLoading]);
 
   // When selected project changes, load its tasks
   useEffect(() => {

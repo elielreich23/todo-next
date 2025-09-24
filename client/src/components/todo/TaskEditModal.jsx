@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import WizardModal from '../WizardModal/WizardModal';
 import { useProjects } from '../../contexts/ProjectsContext';
+import { api } from '../../lib/api';
 import { useUser } from '../../contexts/UserContext';
 import styles from '../WizardModal/wizardModal.module.css';
 
@@ -16,13 +17,28 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
   const [newComment, setNewComment] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedAssignees, setSelectedAssignees] = useState([]);
 
   useEffect(() => {
     if (task) {
       setAttachments(task.attachments || []);
       setComments(task.comments || []);
+      // Prefill assignees if task already has them
+      const existing = (task.contributors || []).map(name => ({ id: name, username: name }));
+      setSelectedAssignees(existing);
     }
   }, [task]);
+
+  useEffect(() => {
+    // Load users to assign
+    (async () => {
+      try {
+        const res = await api('/api/auth/users/');
+        if (res?.success) setAllUsers(res.users);
+      } catch {}
+    })();
+  }, []);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);
@@ -127,12 +143,34 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
         defaultValue: task.category 
       },
       { 
-        name: 'contributors', 
+        name: 'assignees', 
         label: 'Contributors', 
-        placeholder: 'Add contributors (comma separated)', 
-        type: 'text', 
-        helpText: 'You can add up to 50 team members',
-        defaultValue: task.contributors ? task.contributors.join(', ') : ''
+        type: 'custom',
+        renderCustom: () => (
+          <div className={styles.assigneesPicker}>
+            <select
+              className={styles.multiSelect}
+              multiple
+              value={selectedAssignees.map(u => String(u.id))}
+              onChange={(e) => {
+                const opts = Array.from(e.target.selectedOptions).map(o => o.value);
+                const picked = allUsers.filter(u => opts.includes(String(u.id)));
+                setSelectedAssignees(picked);
+              }}
+            >
+              {allUsers.map(u => (
+                <option key={u.id} value={u.id}>{u.full_name || u.username || u.email}</option>
+              ))}
+            </select>
+            {selectedAssignees.length > 0 && (
+              <div className={styles.selectedPills}>
+                {selectedAssignees.map(u => (
+                  <span key={u.id} className={styles.pill}>{u.full_name || u.username || u.email}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )
       },
     ],
     [
@@ -350,7 +388,8 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
           title: vals.title,
           project: projectName,
           category: vals.category,
-          contributors: vals.contributors ? vals.contributors.split(',').map(s => s.trim()) : [],
+          // keep local display contributors; server uses assignee ids
+          contributors: selectedAssignees.map(u => u.full_name || u.username || u.email),
           description: vals.description,
           duration: vals.duration,
           progress: parseInt(vals.progress) || 0,
@@ -361,6 +400,16 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
           comments: comments,
           notes: vals.notes
         });
+        // Send assignees to server
+        try {
+          await fetch(`/api/tasks/${task.id}/`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ assignee_ids: selectedAssignees.map(u => u.id) })
+          });
+        } catch {}
         onClose?.();
         setNewComment('');
       }}

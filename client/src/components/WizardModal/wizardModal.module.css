@@ -162,6 +162,12 @@
   border: 1px solid #e9ecef;
 }
 
+/* Assignees picker */
+.assigneesPicker { display: flex; flex-direction: column; gap: 8px; }
+.multiSelect { width: 100%; min-height: 120px; padding: 8px; border: 1px solid #e9ecef; border-radius: 8px; }
+.selectedPills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { background:#eef2ff; color:#374151; padding:4px 8px; border-radius:9999px; font-size:12px; }
+
 .fileUploadSection h3, .commentsSection h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;

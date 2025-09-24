@@ -98,3 +98,15 @@ def logout(request):
         'success': True,
         'message': 'Logout successful'
     })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_users(request):
+    """List users for assignment (exclude the requester by default)."""
+    qs = type(request.user).objects.exclude(id=request.user.id)
+    data = UserSerializer(qs, many=True).data
+    return Response({
+        'success': True,
+        'users': data
+    })

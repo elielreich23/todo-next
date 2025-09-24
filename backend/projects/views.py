@@ -83,6 +83,7 @@ def project_detail(request, pk):
 def task_list_create(request):
     """List tasks for a specific project or create a new task"""
     project_id = request.query_params.get('projectId')
+    assigned_to_me = request.query_params.get('assignedToMe') in ['1', 'true', 'True']
     
     if request.method == 'GET':
         if project_id:
@@ -96,6 +97,9 @@ def task_list_create(request):
                 }, status=status.HTTP_404_NOT_FOUND)
         else:
             tasks = Task.objects.filter(owner=request.user)
+        # filter tasks assigned to current user if requested
+        if assigned_to_me:
+            tasks = tasks.filter(assignees=request.user)
         
         serializer = TaskSerializer(tasks, many=True)
         return Response({
