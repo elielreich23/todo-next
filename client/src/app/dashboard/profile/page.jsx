@@ -2,24 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../../../contexts/UserContext';
-import styles from '../style/profile.module.scss';
+import styles from './profile.module.scss';
 
 export default function ProfilePage() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState('details');
+  const [activeSubTab, setActiveSubTab] = useState('overview');
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    firstName: 'User',
-    lastName: '',
-    username: '',
-    email: 'user@example.com',
-    mobile: '',
-    location: '',
-    zipCode: '',
-    gender: '',
-    role: 'User',
-    country: ''
+    firstName: 'James',
+    lastName: 'Rodriguez',
+    username: 'james.rodriguez',
+    email: 'pauladoe@gmail.com',
+    phone: '8145762103',
+    phoneCode: '+321',
+    city: 'Tallin',
+    country: 'Sweden',
+    role: 'Frontend Developer',
+    location: 'Warsaw, PL'
   });
 
   const [tempData, setTempData] = useState({ ...profileData });
@@ -136,7 +137,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Main Tabs */}
       <div className={styles.tabs}>
         <div className={styles.tabContainer}>
           <button className={`${styles.tab} ${activeTab==='details' ? styles.active : ''}`} onClick={()=>setActiveTab('details')}>My Details</button>
@@ -170,137 +171,195 @@ export default function ProfilePage() {
           </div>
         ) : (
         <>
-        {/* User Overview */}
-        <div className={styles.userOverview}>
-          <div className={styles.profileImage}>
-            <img src="/api/placeholder/120/120" alt="Profile" />
+        {/* Profile Header with Banner */}
+        <div className={styles.profileHeader}>
+          <div className={styles.bannerImage}>
+            <div className={styles.bannerOverlay}></div>
           </div>
-          <div className={styles.userInfo}>
-            <h2 className={styles.userName}>{profileData.firstName} {profileData.lastName}</h2>
-            <p className={styles.userRole}>({profileData.role})</p>
-            <p className={styles.userLocation}>{profileData.location}, {profileData.country}</p>
+          <div className={styles.profileInfo}>
+            <div className={styles.profileImage}>
+              <img src="/api/placeholder/120/120" alt="Profile" />
+            </div>
+            <div className={styles.userDetails}>
+              <h2 className={styles.userName}>{profileData.firstName} {profileData.lastName}</h2>
+              <p className={styles.userLocation}>{profileData.location}</p>
+              <p className={styles.userRole}>({profileData.role})</p>
+            </div>
+            <button className={styles.moreOptions}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/>
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Profile Form */}
-        <div className={styles.profileForm}>
-          <div className={styles.formRow}>
-            <div className={styles.formColumn}>
-              <div className={styles.formField}>
-                <label>First Name</label>
-                <input
-                  type="text"
-                  value={isEditing ? tempData.firstName : profileData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label>Username</label>
-                <input
-                  type="text"
-                  value={isEditing ? tempData.username : profileData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label>Email Address</label>
-                <input
-                  type="email"
-                  value={isEditing ? tempData.email : profileData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label>Location</label>
-                <input
-                  type="text"
-                  value={isEditing ? tempData.location : profileData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label>Gender</label>
-                <select
-                  value={isEditing ? tempData.gender : profileData.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div className={styles.formColumn}>
-              <div className={styles.formField}>
-                <label>Last Name</label>
-                <input
-                  type="text"
-                  value={isEditing ? tempData.lastName : profileData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label>Mobile Number</label>
-                <input
-                  type="tel"
-                  value={isEditing ? tempData.mobile : profileData.mobile}
-                  onChange={(e) => handleInputChange('mobile', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label>Zip Code</label>
-                <input
-                  type="text"
-                  value={isEditing ? tempData.zipCode : profileData.zipCode}
-                  onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                  disabled={!isEditing}
-                  className={isEditing ? styles.editableInput : styles.readonlyInput}
-                />
-              </div>
-            </div>
-          </div>
+        {/* Profile Sub-tabs */}
+        <div className={styles.subTabs}>
+          <button className={`${styles.subTab} ${activeSubTab==='overview' ? styles.active : ''}`} onClick={()=>setActiveSubTab('overview')}>Profile Overview</button>
+          <button className={`${styles.subTab} ${activeSubTab==='summary' ? styles.active : ''}`} onClick={()=>setActiveSubTab('summary')}>Your Summary</button>
+          <button className={`${styles.subTab} ${activeSubTab==='settings' ? styles.active : ''}`} onClick={()=>setActiveSubTab('settings')}>Account Settings</button>
+        </div>
 
-          {/* Action Buttons */}
-          <div className={styles.actionButtons}>
-            {isEditing ? (
-              <>
+        {/* Profile Content based on active sub-tab */}
+        {activeSubTab === 'overview' && (
+          <div className={styles.profileForm}>
+            <div className={styles.formRow}>
+              <div className={styles.formColumn}>
+                <div className={styles.formField}>
+                  <label>First Name</label>
+                  <input
+                    type="text"
+                    value={isEditing ? tempData.firstName : profileData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    disabled={!isEditing}
+                    className={isEditing ? styles.editableInput : styles.readonlyInput}
+                  />
+                </div>
+                <div className={styles.formField}>
+                  <label>Last Name</label>
+                  <input
+                    type="text"
+                    value={isEditing ? tempData.lastName : profileData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    disabled={!isEditing}
+                    className={isEditing ? styles.editableInput : styles.readonlyInput}
+                  />
+                </div>
+                <div className={styles.formField}>
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    value={isEditing ? tempData.email : profileData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    disabled={!isEditing}
+                    className={isEditing ? styles.editableInput : styles.readonlyInput}
+                  />
+                </div>
+                <div className={styles.formField}>
+                  <label>Phone Number</label>
+                  <div className={styles.phoneInput}>
+                    <select 
+                      value={isEditing ? tempData.phoneCode : profileData.phoneCode}
+                      onChange={(e) => handleInputChange('phoneCode', e.target.value)}
+                      disabled={!isEditing}
+                      className={styles.countrySelect}
+                    >
+                      <option value="+321">🇸🇪 +321</option>
+                      <option value="+1">🇺🇸 +1</option>
+                      <option value="+44">🇬🇧 +44</option>
+                      <option value="+49">🇩🇪 +49</option>
+                    </select>
+                    <input
+                      type="tel"
+                      value={isEditing ? tempData.phone : profileData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      disabled={!isEditing}
+                      className={isEditing ? styles.editableInput : styles.readonlyInput}
+                    />
+                  </div>
+                </div>
+                <div className={styles.formField}>
+                  <label>City</label>
+                  <input
+                    type="text"
+                    value={isEditing ? tempData.city : profileData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    disabled={!isEditing}
+                    className={isEditing ? styles.editableInput : styles.readonlyInput}
+                  />
+                </div>
+              </div>
+              <div className={styles.formColumn}>
+                <div className={styles.formField}>
+                  <label>Country</label>
+                  <div className={styles.countryInput}>
+                    <select 
+                      value={isEditing ? tempData.country : profileData.country}
+                      onChange={(e) => handleInputChange('country', e.target.value)}
+                      disabled={!isEditing}
+                      className={isEditing ? styles.editableInput : styles.readonlyInput}
+                    >
+                      <option value="Sweden">🇸🇪 Sweden</option>
+                      <option value="United States">🇺🇸 United States</option>
+                      <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                      <option value="Germany">🇩🇪 Germany</option>
+                      <option value="Poland">🇵🇱 Poland</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className={styles.actionButtons}>
+              {isEditing ? (
+                <>
+                  <button 
+                    className={styles.cancelButton}
+                    onClick={handleCancel}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className={styles.saveButton}
+                    onClick={handleEditProfile}
+                  >
+                    Save Changes
+                  </button>
+                </>
+              ) : (
                 <button 
-                  className={styles.saveButton}
+                  className={styles.editButton}
                   onClick={handleEditProfile}
                 >
-                  Save Changes
+                  Edit Profile
                 </button>
-                <button 
-                  className={styles.cancelButton}
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <button 
-                className={styles.editButton}
-                onClick={handleEditProfile}
-              >
-                Edit Profile
-              </button>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {activeSubTab === 'summary' && (
+          <div className={styles.profileForm}>
+            <h3>Your Summary</h3>
+            <p>This section will contain your activity summary, statistics, and achievements.</p>
+            <div className={styles.summaryContent}>
+              <div className={styles.summaryCard}>
+                <h4>Tasks Completed</h4>
+                <p className={styles.summaryNumber}>24</p>
+              </div>
+              <div className={styles.summaryCard}>
+                <h4>Projects Active</h4>
+                <p className={styles.summaryNumber}>3</p>
+              </div>
+              <div className={styles.summaryCard}>
+                <h4>This Month</h4>
+                <p className={styles.summaryNumber}>8</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeSubTab === 'settings' && (
+          <div className={styles.profileForm}>
+            <h3>Account Settings</h3>
+            <p>Manage your account preferences and security settings.</p>
+            <div className={styles.settingsContent}>
+              <div className={styles.settingItem}>
+                <label>Email Notifications</label>
+                <input type="checkbox" defaultChecked />
+              </div>
+              <div className={styles.settingItem}>
+                <label>Two-Factor Authentication</label>
+                <input type="checkbox" />
+              </div>
+              <div className={styles.settingItem}>
+                <label>Dark Mode</label>
+                <input type="checkbox" />
+              </div>
+            </div>
+          </div>
+        )}
         </>
         )}
       </div>
