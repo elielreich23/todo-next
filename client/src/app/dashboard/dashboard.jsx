@@ -5,14 +5,15 @@ import { useRouter, usePathname } from 'next/navigation';
 import './style/styles.scss';
 import { useUser } from '../../contexts/UserContext';
 import { useProjects } from '../../contexts/ProjectsContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import ProjectWizard from '../../components/ProjectWizard/ProjectWizard';
 
 export default function Dashboard({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useUser();
+  const { theme, setTheme } = useTheme();
   const [isWhiteSidebarOpen, setIsWhiteSidebarOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isProjectWizardOpen, setIsProjectWizardOpen] = useState(false);
   const { projects, tasks, selectedProjectId, selectProject, createProject } = useProjects();
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
@@ -20,14 +21,9 @@ export default function Dashboard({ children }) {
   const [doubleClickFeedback, setDoubleClickFeedback] = useState(null);
   const [notification, setNotification] = useState(null);
   const whiteSidebarRef = useRef(null);
-
-  // Load theme from localStorage on component mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('dashboard-theme');
-    if (savedTheme) {
-      setIsDarkMode(savedTheme === 'dark');
-    }
-  }, []);
+  
+  // Get isDarkMode from theme
+  const isDarkMode = theme === 'dark';
 
   // Close white sidebar when clicking outside of it
   useEffect(() => {
@@ -87,10 +83,8 @@ export default function Dashboard({ children }) {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const toggleTheme = (theme) => {
-    const newTheme = theme === 'dark';
-    setIsDarkMode(newTheme);
-    localStorage.setItem('dashboard-theme', newTheme ? 'dark' : 'light');
+  const toggleTheme = (newTheme) => {
+    setTheme(newTheme); // Uses global ThemeContext
   };
 
   const handleLogout = () => {
