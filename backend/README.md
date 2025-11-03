@@ -1,6 +1,6 @@
 # Taskero Backend
 
-FastAPI backend for the Taskero task management application.
+Django REST Framework backend for the Taskero task management application.
 
 ## Features
 
@@ -41,7 +41,23 @@ FastAPI backend for the Taskero task management application.
 pip install -r requirements.txt
 ```
 
-2. Run the server:
+2. Run migrations to create database tables:
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+3. Create a superuser for Django admin (optional):
+```bash
+python manage.py createsuperuser
+```
+
+4. Run the server:
+```bash
+python manage.py runserver 0.0.0.0:3001
+```
+
+Or use the run script:
 ```bash
 python run.py
 ```
@@ -50,7 +66,13 @@ The server will start on `http://localhost:3001`
 
 ## Database
 
-The app uses SQLite with automatic table creation. The database file is `users.db`.
+The app uses SQLite with Django's ORM. The database file is `db.sqlite3`.
+
+## Django Admin Panel
+
+Access the admin panel at `http://localhost:3001/admin/`
+
+You can manage Users, Projects, and Tasks directly from the admin interface.
 
 ## Test Users
 

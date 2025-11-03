@@ -1,10 +1,13 @@
-import uvicorn
+"""
+Run Django development server
+"""
+import os
+import sys
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=3001,
-        reload=True,
-        log_level="info"
-    )
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'taskero_backend.settings')
+    
+    from django.core.management import execute_from_command_line
+    
+    # Run the development server
+    execute_from_command_line(['manage.py', 'runserver', '0.0.0.0:3001'])
