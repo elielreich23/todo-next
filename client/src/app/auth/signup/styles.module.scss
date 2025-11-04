@@ -4,7 +4,9 @@
   width: 100%;
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   position: relative;
-  overflow: hidden;
+  /* Allow vertical scroll on small screens so content isn't clipped */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Background decorative elements */
@@ -352,19 +354,27 @@
 @media (max-width: 992px) {
   .container {
     flex-direction: column;
+    /* Ensure full width and allow natural height */
+    width: 100%;
   }
   .left, .right {
     flex: none;
     height: auto;
-    padding: 1.5rem;
+    padding: 1.25rem;
+  }
+  .right {
+    /* Remove outer gutter so form can touch screen edges */
+    padding: 0;
   }
   .welcomeMessage {
-    font-size: 3rem;
+    font-size: 2.5rem;
   }
   .formContainer {
-    margin: 1rem;
-    padding: 2rem;
-    max-width: 500px;
+    margin: 0;
+    padding: 1.75rem;
+    max-width: 520px;
+    width: 100%;
+    border-radius: 0;
   }
   .circle1, .circle2, .circle3, .circle4 {
     display: none;
@@ -380,7 +390,7 @@
     bottom: auto;
     left: auto;
     transform: none;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
   }
 }
 
@@ -389,21 +399,28 @@
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
+    /* Respect safe-area on iOS notch devices */
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
   
   .left, .right {
     flex: none;
     height: auto;
-    padding: 1rem;
+    padding: 0.75rem;
+  }
+  .right {
+    padding: 0;
   }
   
   .welcomeMessage {
-    font-size: 2.25rem;
+    font-size: 2rem;
   }
   
   .formContainer {
-    padding: 1.5rem;
-    margin: 1rem;
+    padding: 1rem;
+    margin: 0;
+    width: 100%;
+    border-radius: 0;
   }
   
   .logo {
@@ -418,6 +435,6 @@
     bottom: auto;
     left: auto;
     transform: none;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
   }
 }

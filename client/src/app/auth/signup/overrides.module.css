@@ -1,0 +1,25 @@
+.verticalGutter {
+  /* Add vertical space while keeping edges flush horizontally */
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+/* Hide the decorative left panel on signup to center the form card */
+.hideLeft {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .verticalGutter {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .verticalGutter {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
+

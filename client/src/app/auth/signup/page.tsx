@@ -4,7 +4,9 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import styles from './styles.module.scss';
+// Reuse the exact same visual styles as the sign-in form
+import styles from '../signin/styles.module.css';
+import signupOverrides from './overrides.module.css';
 import "../../../styles/global.scss";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -152,7 +154,7 @@ export default function Signup() {
   return (
     <div className={styles.container}>
       {/* Left Section - Welcome Message */}
-      <div className={styles.left}>
+      <div className={`${styles.left} ${signupOverrides.hideLeft}`}>
         <div className={styles.logo}>taskero</div>
         
         <h1 className={styles.welcomeMessage}>Sign Up</h1>
@@ -178,7 +180,7 @@ export default function Signup() {
       </div>
 
       {/* Right Section - Signup Form */}
-      <div className={styles.right}>
+      <div className={`${styles.right} ${signupOverrides.verticalGutter}`}>
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>Create Your Account</h2>
           <p className={styles.formSubtitle}>All in one platform to get tasks done</p>
@@ -286,15 +288,12 @@ export default function Signup() {
             {/* Submit Button */}
             <button 
               type="submit" 
-              className={styles.signupButton}
+              className={styles.loginButton}
               disabled={isLoading}
             >
               {isLoading ? 'Creating Account...' : (
                 <>
                   Sign Up
-                  <svg className={styles.arrowIcon} width="20" height="20" viewBox="0 0 24 24">
-                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" fill="currentColor"/>
-                  </svg>
                 </>
               )}
             </button>

@@ -8,6 +8,12 @@
     background: #1a1a1a;
     color: #e0e0e0;
   }
+
+  /* Give a little more space to the right; pull content slightly left on large screens */
+  @media (min-width: 992px) {
+    padding-left: 1.25rem;
+    padding-right: 2rem;
+  }
 }
 
 .header {
@@ -38,8 +44,10 @@
 .container {
   display: flex;
   gap: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 1400px;
+  /* Align container a bit closer to the left edge while keeping overall centering feel */
+  margin-left: 2.25rem;
+  margin-right: auto;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -47,7 +55,7 @@
 }
 
 .sidebar {
-  width: 250px;
+  width: 220px;
   background: white;
   border-radius: 12px;
   padding: 1rem;
@@ -128,7 +136,7 @@
 }
 
 .content {
-  flex: 1;
+  flex: 1.4;
   background: white;
   border-radius: 12px;
   padding: 2rem;
@@ -164,7 +172,7 @@
 }
 
 .form {
-  max-width: 600px;
+  max-width: 800px;
 }
 
 .formGroup {
