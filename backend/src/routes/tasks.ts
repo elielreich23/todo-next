@@ -5,17 +5,33 @@ const router = Router();
 
 router.get('/', async (req, res) => {
   const db = await readDb();
+  const userId = (req as any).userId as number | undefined;
+  if (!userId) return res.status(401).send('Missing user session');
   const projectId = req.query.projectId as string | undefined;
-  const tasks = projectId ? db.tasks.filter(t => t.projectId === Number(projectId)) : db.tasks;
-  res.json(tasks);
+  // tasks owned by user
+  let tasks = db.tasks.filter(t => t.ownerId === userId);
+  if (projectId) {
+    const pid = Number(projectId);
+    tasks = tasks.filter(t => t.projectId === pid);
+  }
+  // include tasks from projects where user collaborates
+  const collabProjectIds = db.projects
+    .filter(p => (p.contributors || []).includes(userId))
+    .map(p => p.id);
+  const collabTasks = db.tasks.filter(t => collabProjectIds.includes(t.projectId));
+  const merged = [...tasks, ...collabTasks.filter(t => !tasks.find(x => x.id === t.id))];
+  res.json(merged);
 });
 
 router.post('/', async (req, res) => {
   const db = await readDb();
+  const userId = (req as any).userId as number | undefined;
+  if (!userId) return res.status(401).send('Missing user session');
   const body = req.body as Partial<DbTask> & { projectId: number };
   const task: DbTask = {
     id: nextId(db.tasks),
     projectId: Number(body.projectId),
+    ownerId: userId,
     title: body.title || 'Untitled task',
     dueDate: body.dueDate,
     status: body.status || 'todo',
@@ -40,7 +56,13 @@ router.put('/', async (req, res) => {
   const { id, ...updates } = req.body as Partial<DbTask> & { id: number };
   const idx = db.tasks.findIndex(t => t.id === id);
   if (idx === -1) return res.status(404).send('Not found');
-  db.tasks[idx] = { ...db.tasks[idx], ...updates };
+  const userId = (req as any).userId as number | undefined;
+  if (!userId) return res.status(401).send('Missing user session');
+  const task = db.tasks[idx];
+  const project = db.projects.find(p => p.id === task.projectId);
+  const canEdit = task.ownerId === userId || project?.ownerId === userId || (project?.contributors || []).includes(userId);
+  if (!canEdit) return res.status(403).send('Forbidden');
+  db.tasks[idx] = { ...task, ...updates };
   await writeDb(db);
   res.json(db.tasks[idx]);
 });
@@ -48,7 +70,14 @@ router.put('/', async (req, res) => {
 router.delete('/', async (req, res) => {
   const id = Number(req.query.id);
   const db = await readDb();
+  const userId = (req as any).userId as number | undefined;
+  if (!userId) return res.status(401).send('Missing user session');
   const before = db.tasks.length;
+  const task = db.tasks.find(t => t.id === id);
+  if (!task) return res.status(404).send('Not found');
+  const project = db.projects.find(p => p.id === task.projectId);
+  const canDelete = task.ownerId === userId || project?.ownerId === userId;
+  if (!canDelete) return res.status(403).send('Forbidden');
   db.tasks = db.tasks.filter(t => t.id !== id);
   if (db.tasks.length === before) return res.status(404).send('Not found');
   await writeDb(db);

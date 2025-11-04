@@ -31,9 +31,9 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'category', 'created_at']
-    list_filter = ['category', 'created_at']
-    search_fields = ['name', 'description']
+    list_display = ['id', 'name', 'owner', 'category', 'created_at']
+    list_filter = ['category', 'created_at', 'owner']
+    search_fields = ['name', 'description', 'owner__username', 'owner__email']
     readonly_fields = ['created_at', 'updated_at']
     
     def changelist_view(self, request, extra_context=None):
@@ -44,7 +44,7 @@ class ProjectAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Project Information', {
-            'fields': ('name', 'category', 'description', 'duration', 'contributors')
+            'fields': ('owner', 'name', 'category', 'description', 'duration', 'collaborators')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -55,9 +55,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'project', 'status', 'progress', 'created_at']
-    list_filter = ['status', 'category', 'created_at', 'project']
-    search_fields = ['title', 'description', 'notes']
+    list_display = ['id', 'title', 'project', 'owner', 'status', 'progress', 'created_at']
+    list_filter = ['status', 'category', 'created_at', 'project', 'owner']
+    search_fields = ['title', 'description', 'notes', 'owner__username', 'owner__email']
     readonly_fields = ['created_at', 'updated_at']
     
     def changelist_view(self, request, extra_context=None):
@@ -68,7 +68,7 @@ class TaskAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Task Information', {
-            'fields': ('project', 'title', 'description', 'status', 'category')
+            'fields': ('project', 'owner', 'title', 'description', 'status', 'category')
         }),
         ('Progress', {
             'fields': ('progress', 'total_steps', 'due_date', 'duration')

@@ -107,7 +107,16 @@ def project_list(request):
     elif request.method == 'POST':
         serializer = ProjectCreateSerializer(data=request.data)
         if serializer.is_valid():
-            project = Project.objects.create(**serializer.validated_data)
+            owner_id = serializer.validated_data.pop('owner_id')
+            collaborator_ids = serializer.validated_data.pop('collaborator_ids', [])
+            try:
+                owner = User.objects.get(id=owner_id)
+            except User.DoesNotExist:
+                return Response({"detail": "Owner user not found"}, status=status.HTTP_404_NOT_FOUND)
+            project = Project.objects.create(owner=owner, **serializer.validated_data)
+            if collaborator_ids:
+                users = User.objects.filter(id__in=collaborator_ids)
+                project.collaborators.set(users)
             return Response(
                 ProjectSerializer(project).data,
                 status=status.HTTP_201_CREATED
@@ -137,7 +146,19 @@ def project_detail(request):
     if request.method == 'PUT':
         serializer = ProjectCreateSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            owner_id = serializer.validated_data.pop('owner_id', None)
+            collaborator_ids = serializer.validated_data.pop('collaborator_ids', None)
+            for key, value in serializer.validated_data.items():
+                setattr(project, key, value)
+            if owner_id:
+                try:
+                    project.owner = User.objects.get(id=owner_id)
+                except User.DoesNotExist:
+                    return Response({"detail": "Owner user not found"}, status=status.HTTP_404_NOT_FOUND)
+            project.save()
+            if collaborator_ids is not None:
+                users = User.objects.filter(id__in=collaborator_ids)
+                project.collaborators.set(users)
             return Response(ProjectSerializer(project).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -162,6 +183,8 @@ def task_list(request):
         serializer = TaskCreateSerializer(data=request.data)
         if serializer.is_valid():
             project_id = serializer.validated_data.pop('project_id')
+            owner_id = serializer.validated_data.pop('owner_id')
+            contributor_ids = serializer.validated_data.pop('contributor_ids', [])
             try:
                 project = Project.objects.get(id=project_id)
             except Project.DoesNotExist:
@@ -169,7 +192,14 @@ def task_list(request):
                     {"detail": "Project not found"},
                     status=status.HTTP_404_NOT_FOUND
                 )
-            task = Task.objects.create(project=project, **serializer.validated_data)
+            try:
+                owner = User.objects.get(id=owner_id)
+            except User.DoesNotExist:
+                return Response({"detail": "Owner user not found"}, status=status.HTTP_404_NOT_FOUND)
+            task = Task.objects.create(project=project, owner=owner, **serializer.validated_data)
+            if contributor_ids:
+                users = User.objects.filter(id__in=contributor_ids)
+                task.contributors.set(users)
             return Response(
                 TaskSerializer(task).data,
                 status=status.HTTP_201_CREATED
@@ -210,10 +240,20 @@ def task_detail(request):
                         {"detail": "Project not found"},
                         status=status.HTTP_404_NOT_FOUND
                     )
+            if 'owner_id' in serializer.validated_data:
+                owner_id = serializer.validated_data.pop('owner_id')
+                try:
+                    task.owner = User.objects.get(id=owner_id)
+                except User.DoesNotExist:
+                    return Response({"detail": "Owner user not found"}, status=status.HTTP_404_NOT_FOUND)
             
             for key, value in serializer.validated_data.items():
                 setattr(task, key, value)
             task.save()
+            if 'contributor_ids' in request.data:
+                ids = request.data.get('contributor_ids') or []
+                users = User.objects.filter(id__in=ids)
+                task.contributors.set(users)
             return Response(TaskSerializer(task).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

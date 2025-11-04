@@ -1,5 +1,5 @@
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export type DbUser = {
   id: number;
@@ -12,8 +12,9 @@ export type DbUser = {
 export type DbProject = {
   id: number;
   name: string;
+  ownerId: number; // user who owns the project
   category?: string;
-  contributors?: string[];
+  contributors?: number[]; // user ids who can collaborate
   duration?: string;
   description?: string;
 };
@@ -39,6 +40,7 @@ export type DbFileAttachment = {
 export type DbTask = {
   id: number;
   projectId: number;
+  ownerId: number; // creator/owner of the task
   title: string;
   dueDate?: string;
   status?: 'todo' | 'in-progress' | 'done';

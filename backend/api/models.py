@@ -28,11 +28,12 @@ class User(models.Model):
 
 
 class Project(models.Model):
+    owner = models.ForeignKey('User', on_delete=models.CASCADE, related_name='owned_projects')
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=100, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     duration = models.CharField(max_length=100, null=True, blank=True)
-    contributors = models.JSONField(default=list, null=True, blank=True)
+    collaborators = models.ManyToManyField('User', blank=True, related_name='collab_projects')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -51,6 +52,7 @@ class Task(models.Model):
         ('done', 'Done'),
     ]
 
+    owner = models.ForeignKey('User', on_delete=models.CASCADE, related_name='owned_tasks')
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
@@ -59,7 +61,7 @@ class Task(models.Model):
     progress = models.IntegerField(default=0)
     total_steps = models.IntegerField(default=0)
     category = models.CharField(max_length=100, null=True, blank=True)
-    contributors = models.JSONField(default=list, null=True, blank=True)
+    contributors = models.ManyToManyField('User', blank=True, related_name='collab_tasks')
     duration = models.CharField(max_length=100, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     attachments = models.JSONField(default=list, null=True, blank=True)

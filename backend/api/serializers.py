@@ -46,32 +46,41 @@ class LoginResponseSerializer(serializers.Serializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    owner_id = serializers.IntegerField(source='owner.id', read_only=True)
+    collaborator_ids = serializers.PrimaryKeyRelatedField(source='collaborators', many=True, read_only=True)
     class Meta:
         model = Project
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = ['id', 'owner_id', 'name', 'category', 'description', 'duration', 'collaborator_ids', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'owner_id', 'collaborator_ids']
 
 
 class ProjectCreateSerializer(serializers.ModelSerializer):
+    owner_id = serializers.IntegerField(write_only=True)
+    collaborator_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
     class Meta:
         model = Project
-        fields = ['name', 'category', 'description', 'duration', 'contributors']
+        fields = ['owner_id', 'name', 'category', 'description', 'duration', 'collaborator_ids']
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    project_id = serializers.IntegerField(write_only=True)
+    project_id = serializers.IntegerField(source='project.id', read_only=True)
+    owner_id = serializers.IntegerField(source='owner.id', read_only=True)
+    contributor_ids = serializers.PrimaryKeyRelatedField(source='contributors', many=True, read_only=True)
     
     class Meta:
         model = Task
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = ['id', 'project_id', 'owner_id', 'title', 'description', 'status', 'due_date', 'progress', 'total_steps', 'category', 'contributor_ids', 'duration', 'notes', 'attachments', 'comments', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'owner_id', 'project_id', 'contributor_ids']
 
 
 class TaskCreateSerializer(serializers.ModelSerializer):
+    project_id = serializers.IntegerField()
+    owner_id = serializers.IntegerField()
+    contributor_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
     class Meta:
         model = Task
-        fields = ['project_id', 'title', 'description', 'status', 'due_date', 'progress', 
-                 'total_steps', 'category', 'contributors', 'duration', 'notes', 
+        fields = ['project_id', 'owner_id', 'title', 'description', 'status', 'due_date', 'progress', 
+                 'total_steps', 'category', 'contributor_ids', 'duration', 'notes', 
                  'attachments', 'comments']
 
 
