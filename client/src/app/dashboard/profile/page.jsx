@@ -56,7 +56,7 @@ export default function ProfilePage() {
         if (tempData.username && tempData.username.trim()) payload.username = tempData.username.trim();
         if (tempData.email && tempData.email.trim()) payload.email = tempData.email.trim();
 
-        const response = await fetch('http://localhost:8000/api/auth/profile/update/', {
+        const response = await fetch('/api/auth/profile/update/', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ export default function ProfilePage() {
     if (activeTab !== 'assigned') return;
     (async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/tasks/?assignedToMe=1', {
+        const res = await fetch('/api/tasks/?assignedToMe=1', {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
         });
         if (res.ok) {
