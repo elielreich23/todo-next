@@ -4,7 +4,10 @@ import React, { useState, useRef } from 'react';
 import WizardModal from '../WizardModal/WizardModal';
 import { useProjects } from '../../contexts/ProjectsContext';
 import { useUser } from '../../contexts/UserContext';
+import UserAutocomplete from '../UserAutocomplete/UserAutocomplete';
 import styles from '../WizardModal/wizardModal.module.css';
+import { TASK_CATEGORIES, TASK_DURATION_OPTIONS, TASK_STATUS, DEFAULTS, FILE_UPLOAD, VALIDATION } from '../../constants';
+import { formatFileSize } from '../../utils/formatters';
 
 export default function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus }) {
   const { createTask, createProject, createProjectAndWait, projects } = useProjects();
@@ -14,6 +17,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [selectedContributors, setSelectedContributors] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleFileUpload = (event) => {
@@ -24,11 +28,9 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
   };
 
   const addFiles = (files) => {
-    const maxSize = 200 * 1024 * 1024; // 200MB
-    
     files.forEach(file => {
-      if (file.size > maxSize) {
-        alert(`File ${file.name} is too large. Maximum size is 200MB.`);
+      if (file.size > FILE_UPLOAD.MAX_SIZE_BYTES) {
+        alert(`File ${file.name} is too large. Maximum size is ${FILE_UPLOAD.MAX_SIZE_MB}MB.`);
         return;
       }
       
@@ -39,7 +41,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         type: file.type,
         file: file,
         uploadedAt: new Date(),
-        uploadedBy: user?.fullName || 'Unknown User'
+        uploadedBy: user?.fullName || DEFAULTS.UNKNOWN_USER
       };
       
       setAttachments(prev => [...prev, attachment]);
@@ -72,7 +74,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       const comment = {
         id: Date.now() + Math.random(),
         text: newComment.trim(),
-        author: user?.fullName || 'Unknown User',
+        author: user?.fullName || DEFAULTS.UNKNOWN_USER,
         createdAt: new Date()
       };
       setComments(prev => [...prev, comment]);
@@ -84,30 +86,37 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
     setComments(prev => prev.filter(c => c.id !== commentId));
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
 
   const steps = [
     [
       { name: 'title', label: 'Task Title', placeholder: 'Task Title', type: 'text' },
       { name: 'project', label: 'Project', placeholder: 'Select Project', type: 'select', options: [...projects.map(p => p.name), '+ Create New Project'], defaultValue: currentProject?.name },
-      { name: 'category', label: 'Category', placeholder: 'Select Category', type: 'select', options: ['Design', 'Development', 'Marketing', 'Research', 'UX', 'Content'] },
-      { name: 'contributors', label: 'Contributors', placeholder: 'Add contributors (comma separated)', type: 'text', helpText: 'You can add up to 50 team members' },
+      { name: 'category', label: 'Category', placeholder: 'Select Category', type: 'select', options: TASK_CATEGORIES },
+      { 
+        name: 'contributors', 
+        label: 'Contributors', 
+        placeholder: 'Search and add contributors...', 
+        type: 'custom',
+        helpText: `You can add up to ${VALIDATION.MAX_CONTRIBUTORS} team members`,
+        renderCustom: (field, values, handleChange) => (
+          <UserAutocomplete
+            selectedUsers={selectedContributors}
+            onUsersChange={setSelectedContributors}
+            placeholder={field.placeholder}
+            maxUsers={VALIDATION.MAX_CONTRIBUTORS}
+          />
+        )
+      },
     ],
     [
       { name: 'description', label: 'Description', placeholder: 'Describe the task', type: 'textarea' },
-      { name: 'duration', label: 'Task Duration', placeholder: 'Select a duration', type: 'select', options: ['1 day', '3 days', '1 week', '2 weeks', '1 month'] },
+      { name: 'duration', label: 'Task Duration', placeholder: 'Select a duration', type: 'select', options: TASK_DURATION_OPTIONS },
     ],
     [
       { name: 'progress', label: 'Progress Steps', placeholder: 'Number of completed steps', type: 'number', helpText: 'e.g., 7' },
       { name: 'totalSteps', label: 'Total Steps', placeholder: 'Total number of steps', type: 'number', helpText: 'e.g., 10' },
       { name: 'dueDate', label: 'Due Date', placeholder: '', type: 'date' },
-      { name: 'status', label: 'Status', placeholder: 'Select status', type: 'select', options: ['todo', 'in-progress', 'done'], defaultValue: defaultStatus },
+      { name: 'status', label: 'Status', placeholder: 'Select status', type: 'select', options: Object.values(TASK_STATUS), defaultValue: defaultStatus },
     ],
     [
       { name: 'notes', label: 'Additional Notes', placeholder: 'Optional notes', type: 'textarea' },
@@ -259,7 +268,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         // Handle "Create New Project" option
         if (vals.project === '+ Create New Project') {
           // Create a new project with a default name
-          const newProject = await createProjectAndWait({ name: 'New Project' });
+          const newProject = await createProjectAndWait({ name: DEFAULTS.PROJECT_NAME });
           targetProjectId = newProject.id;
           projectName = newProject.name;
         } else {
@@ -276,13 +285,13 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
           title: vals.title,
           project: projectName,
           category: vals.category,
-          contributors: vals.contributors ? vals.contributors.split(',').map(s => s.trim()) : [],
+          contributors: selectedContributors, // Send user objects with IDs for notification system
           description: vals.description,
           duration: vals.duration,
           progress: parseInt(vals.progress) || 0,
           totalSteps: parseInt(vals.totalSteps) || 0,
           dueDate: vals.dueDate,
-          status: vals.status || defaultStatus || 'todo',
+          status: vals.status || defaultStatus || TASK_STATUS.TODO,
           attachments: attachments,
           comments: comments,
           notes: vals.notes
@@ -292,6 +301,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         setAttachments([]);
         setComments([]);
         setNewComment('');
+        setSelectedContributors([]);
       }}
     />
   );

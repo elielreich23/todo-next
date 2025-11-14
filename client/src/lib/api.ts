@@ -1,16 +1,10 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
-
-// Helper function to get auth token from localStorage
-const getAuthToken = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('access_token');
-  }
-  return null;
-};
+import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../constants';
+import { getAccessToken, setAccessToken, clearAuthTokens, getRefreshToken } from '../utils/storage';
+import { CUSTOM_EVENTS } from '../constants';
 
 // Helper function to get auth headers
 const getAuthHeaders = (): HeadersInit => {
-  const token = getAuthToken();
+  const token = getAccessToken();
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
@@ -39,7 +33,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       const newToken = await refreshToken();
       if (!newToken) {
         // Refresh failed, trigger logout
-        window.dispatchEvent(new CustomEvent('userLogout'));
+        window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
         if (typeof window !== 'undefined') {
           window.location.href = '/auth/signin';
         }
@@ -76,10 +70,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 // Helper function to refresh token
 export const refreshToken = async (): Promise<string | null> => {
   try {
-    const refreshTokenValue = localStorage.getItem('refresh_token');
+    const refreshTokenValue = getRefreshToken();
     if (!refreshTokenValue) return null;
     
-    const response = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.TOKEN_REFRESH}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,17 +83,15 @@ export const refreshToken = async (): Promise<string | null> => {
     
     if (response.ok) {
       const data = await response.json();
-      localStorage.setItem('access_token', data.access);
+      setAccessToken(data.access);
       return data.access;
     } else {
       // Refresh failed, clear tokens and trigger logout
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user_data');
+      clearAuthTokens();
       sessionStorage.clear();
       
       // Dispatch logout event
-      window.dispatchEvent(new CustomEvent('userLogout'));
+      window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
       
       if (typeof window !== 'undefined') {
         window.location.href = '/auth/signin';

@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api, refreshToken } from '../lib/api';
+import { getCachedUserData, setCachedUserData, clearCachedUserData, getStorageItem } from '../utils/storage';
+import { CACHE_DURATION, CUSTOM_EVENTS, STORAGE_KEYS, API_ENDPOINTS } from '../constants';
+import { setAccessToken, setRefreshToken, clearAuthTokens, getAccessToken, getRefreshToken } from '../utils/storage';
 
 interface User {
   id: number;
@@ -56,48 +59,36 @@ interface UserProviderProps {
   children: ReactNode;
 }
 
-// Cache key for user data (persists even after logout)
-const USER_CACHE_KEY = 'cached_user_data';
-const USER_CACHE_TIMESTAMP_KEY = 'cached_user_timestamp';
-const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-
-// Helper functions for cache management
+// Helper function to get user from cache with expiration check
 const getUserFromCache = (): User | null => {
   try {
-    const cachedData = localStorage.getItem(USER_CACHE_KEY);
-    const cachedTimestamp = localStorage.getItem(USER_CACHE_TIMESTAMP_KEY);
+    const cachedUser = getCachedUserData<User>();
+    if (!cachedUser) return null;
     
-    if (cachedData && cachedTimestamp) {
+    // Check cache expiration
+    const cachedTimestamp = getStorageItem(STORAGE_KEYS.CACHED_USER_TIMESTAMP);
+    
+    if (cachedTimestamp) {
       const timestamp = parseInt(cachedTimestamp, 10);
       const now = Date.now();
       
-      // Check if cache is still valid (within 7 days)
-      if (now - timestamp < CACHE_DURATION) {
-        return JSON.parse(cachedData);
+      if (now - timestamp < CACHE_DURATION.USER_DATA) {
+        return cachedUser;
       } else {
         // Cache expired, remove it
-        localStorage.removeItem(USER_CACHE_KEY);
-        localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
+        clearCachedUserData();
       }
     }
   } catch (error) {
     console.error('Error reading user cache:', error);
-    localStorage.removeItem(USER_CACHE_KEY);
-    localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
+    clearCachedUserData();
   }
   return null;
 };
 
 const saveUserToCache = (userData: User | null) => {
-  try {
-    if (userData) {
-      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
-      localStorage.setItem(USER_CACHE_TIMESTAMP_KEY, Date.now().toString());
-      // Dispatch event to notify other components that user data was updated
-      window.dispatchEvent(new CustomEvent('userDataUpdated'));
-    }
-  } catch (error) {
-    console.error('Error saving user cache:', error);
+  if (userData) {
+    setCachedUserData(userData);
   }
 };
 
@@ -110,13 +101,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     // Load user from tokens and validate
     const loadUserFromTokens = async () => {
       try {
-        const accessToken = localStorage.getItem('access_token');
-        const refreshTokenValue = localStorage.getItem('refresh_token');
+        const accessToken = getAccessToken();
+        const refreshTokenValue = getRefreshToken();
         
         if (accessToken && refreshTokenValue) {
           // Try to get user profile
           try {
-            const response = await api<User>('/api/auth/profile/');
+            const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
             if (response) {
               setUserState(response);
               saveUserToCache(response); // Update cache with fresh data
@@ -127,26 +118,39 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             const newAccessToken = await refreshToken();
             if (newAccessToken) {
               // Try again with new token
-              const response = await api<User>('/api/auth/profile/');
+              const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
               if (response) {
                 setUserState(response);
                 saveUserToCache(response); // Update cache with fresh data
               }
             } else {
               // Refresh failed, clear tokens but keep cached user data
-              localStorage.removeItem('access_token');
-              localStorage.removeItem('refresh_token');
+              clearAuthTokens();
+              // Keep the cached user in state for display purposes
+              const cachedUser = getUserFromCache();
+              if (cachedUser) {
+                setUserState(cachedUser);
+              }
             }
           }
         } else {
-          // No tokens, but we might have cached user data (already loaded)
-          // Keep the cached data for display purposes
+          // No tokens, but we might have cached user data (already loaded in initial state)
+          // Keep the cached data for display purposes - don't clear it
+          const cachedUser = getUserFromCache();
+          if (cachedUser && !user) {
+            // If we have cache but no user in state, set it
+            setUserState(cachedUser);
+          }
         }
       } catch (error) {
         console.error('Error loading user from tokens:', error);
         // Clear corrupted tokens but keep cached user data
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        clearAuthTokens();
+        // Keep cached user if available
+        const cachedUser = getUserFromCache();
+        if (cachedUser && !user) {
+          setUserState(cachedUser);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -165,15 +169,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   const remoteLogin = async (params: { email: string; password: string }) => {
-    const response = await api<LoginResponse>('/api/auth/signin/', { 
+    const response = await api<LoginResponse>(API_ENDPOINTS.AUTH.SIGNIN, { 
       method: 'POST', 
       body: JSON.stringify(params) 
     });
     
     if (response.success) {
-      // Store tokens in localStorage
-      localStorage.setItem('access_token', response.tokens.access);
-      localStorage.setItem('refresh_token', response.tokens.refresh);
+      // Store tokens
+      setAccessToken(response.tokens.access);
+      setRefreshToken(response.tokens.refresh);
       
       // Set user in context and cache
       setUser(response.user); // This will also save to cache
@@ -183,15 +187,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   const remoteSignup = async (params: { username: string; email: string; full_name: string; password: string; password_confirm: string }) => {
-    const response = await api<SignupResponse>('/api/auth/signup/', { 
+    const response = await api<SignupResponse>(API_ENDPOINTS.AUTH.SIGNUP, { 
       method: 'POST', 
       body: JSON.stringify(params) 
     });
     
     if (response.success) {
-      // Store tokens in localStorage
-      localStorage.setItem('access_token', response.tokens.access);
-      localStorage.setItem('refresh_token', response.tokens.refresh);
+      // Store tokens
+      setAccessToken(response.tokens.access);
+      setRefreshToken(response.tokens.refresh);
       
       // Set user in context and cache
       setUser(response.user); // This will also save to cache
@@ -202,8 +206,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const logout = () => {
     // Clear tokens
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    clearAuthTokens();
     
     // Clear session storage but KEEP cached user data (as requested)
     // This allows user data to persist even after logout
@@ -213,20 +216,20 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setUserState(null);
     
     // Dispatch custom event to notify other contexts
-    window.dispatchEvent(new CustomEvent('userLogout'));
+    window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
   };
 
   const validateSession = async (): Promise<boolean> => {
     try {
-      const accessToken = localStorage.getItem('access_token');
-      const refreshTokenValue = localStorage.getItem('refresh_token');
+      const accessToken = getAccessToken();
+      const refreshTokenValue = getRefreshToken();
       
       if (!accessToken || !refreshTokenValue) {
         return false;
       }
       
       // Try to get user profile to validate session
-      const response = await api<User>('/api/auth/profile/');
+      const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
       if (response) {
         setUserState(response);
         saveUserToCache(response); // Update cache with fresh data

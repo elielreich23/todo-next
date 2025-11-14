@@ -1,8 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../../../contexts/UserContext';
 import styles from './profile.module.scss';
+import {
+  getInitialProfileData,
+  loadProfileFromCache,
+  hasProfileData,
+  createProfileDataFromUser,
+} from '../../../utils/profileCache';
+import { getUserDisplayName } from '../../../utils/formatters';
+import { API_ENDPOINTS, API_BASE_URL, DEFAULTS, CUSTOM_EVENTS, STORAGE_KEYS } from '../../../constants';
+import { getAccessToken } from '../../../utils/storage';
+import NotificationBell from '../../../components/NotificationBell/NotificationBell';
 
 export default function ProfilePage() {
   const { user, isLoading: userLoading } = useUser();
@@ -11,105 +21,58 @@ export default function ProfilePage() {
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   
-  // Initialize with empty/default values instead of hardcoded ones
-  const getInitialProfileData = () => ({
-    firstName: '',
-    lastName: '',
-    username: '',
-    email: '',
-    phone: '',
-    phoneCode: '+1',
-    city: '',
-    country: '',
-    role: '',
-    location: ''
-  });
-
-  // Load from cache immediately for instant display
-  const loadProfileFromCache = () => {
-    try {
-      const cachedUser = localStorage.getItem('cached_user_data');
-      if (cachedUser) {
-        const userData = JSON.parse(cachedUser);
-        const firstName = userData.full_name?.split(' ')[0] || userData.username || '';
-        const lastName = userData.full_name?.split(' ').slice(1).join(' ') || '';
-        return {
-          firstName,
-          lastName,
-          username: userData.username || '',
-          email: userData.email || '',
-          phone: '',
-          phoneCode: '+1',
-          city: '',
-          country: '',
-          role: '',
-          location: ''
-        };
-      }
-    } catch (error) {
-      console.error('Error loading profile from cache:', error);
-    }
-    return getInitialProfileData();
-  };
-
   const [profileData, setProfileData] = useState(() => loadProfileFromCache());
   const [tempData, setTempData] = useState(() => loadProfileFromCache());
 
   // Function to update profile data from user
-  const updateProfileFromUser = React.useCallback((userData) => {
+  const updateProfileFromUser = useCallback((userData) => {
     if (!userData) return;
     
-    const firstName = userData.full_name?.split(' ')[0] || userData.username || '';
-    const lastName = userData.full_name?.split(' ').slice(1).join(' ') || '';
-    const username = userData.username || '';
-    const email = userData.email || '';
+    setProfileData(prev => {
+      const newProfileData = createProfileDataFromUser(userData, prev);
+      return newProfileData;
+    });
     
-    setProfileData(prev => ({
-      firstName,
-      lastName,
-      username,
-      email,
-      phone: prev.phone || '',
-      phoneCode: prev.phoneCode || '+1',
-      city: prev.city || '',
-      country: prev.country || '',
-      role: prev.role || '',
-      location: prev.location || ''
-    }));
-    
-    setTempData(prev => ({
-      firstName,
-      lastName,
-      username,
-      email,
-      phone: prev.phone || '',
-      phoneCode: prev.phoneCode || '+1',
-      city: prev.city || '',
-      country: prev.country || '',
-      role: prev.role || '',
-      location: prev.location || ''
-    }));
+    setTempData(prev => {
+      const newProfileData = createProfileDataFromUser(userData, prev);
+      return newProfileData;
+    });
   }, []);
 
+  // Update profile data when user context changes
   useEffect(() => {
-    // Wait for user context to finish loading
+    const cachedData = loadProfileFromCache();
+    const hasCachedData = hasProfileData(cachedData);
+    
     if (userLoading) {
+      // While loading, use cache if available and current data is empty
+      if (hasCachedData) {
+        setProfileData(prev => {
+          // Only update if current data is empty
+          if (!hasProfileData(prev)) {
+            return cachedData;
+          }
+          return prev;
+        });
+        setTempData(prev => {
+          if (!hasProfileData(prev)) {
+            return cachedData;
+          }
+          return prev;
+        });
+      }
       return;
     }
 
     if (user) {
       // User is available - update profile data immediately
-      // This ensures signup data populates the profile immediately
       updateProfileFromUser(user);
     } else {
-      // No user - try to load from cache
-      const cachedData = loadProfileFromCache();
-      if (cachedData.firstName || cachedData.email) {
-        // We have cached data, use it
+      // No user - use cache if available, otherwise reset to empty
+      if (hasCachedData) {
         setProfileData(cachedData);
         setTempData(cachedData);
       } else {
-        // No cached data and no user, reset to empty
         setProfileData(getInitialProfileData());
         setTempData(getInitialProfileData());
       }
@@ -119,52 +82,43 @@ export default function ProfilePage() {
   // Listen for storage changes and custom events (when user data is cached from signup/login)
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'cached_user_data') {
-        // User data was cached, reload it
+      if (e.key === STORAGE_KEYS.CACHED_USER_DATA) {
         const cachedData = loadProfileFromCache();
-        if (cachedData.firstName || cachedData.email) {
+        if (hasProfileData(cachedData)) {
           setProfileData(cachedData);
           setTempData(cachedData);
         }
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also listen for custom event when user data is updated in same window
     const handleUserUpdate = () => {
-      // Reload from cache when user data is updated
       const cachedData = loadProfileFromCache();
-      if (cachedData.firstName || cachedData.email) {
+      if (hasProfileData(cachedData)) {
         setProfileData(cachedData);
         setTempData(cachedData);
       }
-      // Also check if user context has updated
       if (user) {
         updateProfileFromUser(user);
       }
     };
 
-    window.addEventListener('userDataUpdated', handleUserUpdate);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener(CUSTOM_EVENTS.USER_DATA_UPDATED, handleUserUpdate);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('userDataUpdated', handleUserUpdate);
+      window.removeEventListener(CUSTOM_EVENTS.USER_DATA_UPDATED, handleUserUpdate);
     };
   }, [user, updateProfileFromUser]);
 
-  // Check cache on mount to ensure we have the latest data (especially after signup)
+  // Check cache on mount to ensure we have the latest data (especially after refresh)
   useEffect(() => {
-    // On mount, check if we have cached data that's newer than current state
     const cachedData = loadProfileFromCache();
-    if (cachedData.firstName || cachedData.email) {
-      // If we have cached data and current state is empty, use cache
-      if (!profileData.firstName && !profileData.email) {
-        setProfileData(cachedData);
-        setTempData(cachedData);
-      }
+    if (hasProfileData(cachedData)) {
+      setProfileData(cachedData);
+      setTempData(cachedData);
     }
-  }, []); // Only run on mount
+  }, []);
 
   const handleEditProfile = async () => {
     if (isEditing) {
@@ -177,11 +131,11 @@ export default function ProfilePage() {
         if (tempData.username && tempData.username.trim()) payload.username = tempData.username.trim();
         if (tempData.email && tempData.email.trim()) payload.email = tempData.email.trim();
 
-        const response = await fetch('http://localhost:8000/api/auth/profile/update/', {
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.PROFILE_UPDATE}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            'Authorization': `Bearer ${getAccessToken()}`
           },
           body: JSON.stringify(payload)
         });
@@ -217,18 +171,26 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (activeTab !== 'assigned') return;
-    (async () => {
+    if (!user || userLoading) return;
+    
+    const fetchAssignedTasks = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/tasks/?assignedToMe=1', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+        // Fetch tasks assigned to the current user (or the user whose profile is being viewed)
+        const userId = user?.id;
+        const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.TASKS.LIST}?userId=${userId}`, {
+          headers: { 'Authorization': `Bearer ${getAccessToken()}` }
         });
         if (res.ok) {
           const data = await res.json();
           if (data.success) setAssignedTasks(data.tasks || []);
         }
-      } catch {}
-    })();
-  }, [activeTab]);
+      } catch (error) {
+        console.error('Error fetching assigned tasks:', error);
+      }
+    };
+    
+    fetchAssignedTasks();
+  }, [activeTab, user, userLoading]);
 
   return (
     <div className={styles.profilePage}>
@@ -241,11 +203,7 @@ export default function ProfilePage() {
               <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/>
             </svg>
           </button>
-          <button className={styles.headerButton}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5,1.5v.68C7.63,5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="currentColor"/>
-            </svg>
-          </button>
+          <NotificationBell />
           <div className={styles.dateInfo}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" fill="currentColor"/>
@@ -277,14 +235,45 @@ export default function ProfilePage() {
         {activeTab === 'assigned' ? (
           <div>
             {assignedTasks.length === 0 ? (
-              <p>No tasks assigned to you.</p>
+              <div className={styles.emptyTasks}>
+                <p>No tasks assigned to this user.</p>
+              </div>
             ) : (
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:'12px'}}>
+              <div className={styles.tasksGrid}>
                 {assignedTasks.map(t => (
-                  <div key={t.id} style={{border:'1px solid #e5e7eb',borderRadius:8,padding:12}}>
-                    <div style={{fontWeight:600}}>{t.title}</div>
-                    <div style={{fontSize:12,color:'#6b7280'}}>Project: {t.project_name || t.project}</div>
-                    <div style={{fontSize:12,color:'#6b7280'}}>Status: {t.status}</div>
+                  <div key={t.id} className={styles.taskCard}>
+                    <div className={styles.taskTitle}>{t.title}</div>
+                    {t.description && (
+                      <div className={styles.taskDescription}>{t.description}</div>
+                    )}
+                    <div className={styles.taskMeta}>
+                      <div className={styles.taskMetaItem}>
+                        <span className={styles.taskLabel}>Project:</span>
+                        <span className={styles.taskValue}>{t.project_name || t.project || 'N/A'}</span>
+                      </div>
+                      <div className={styles.taskMetaItem}>
+                        <span className={styles.taskLabel}>Status:</span>
+                        <span className={`${styles.taskStatus} ${styles[`status${t.status === 'todo' ? 'Todo' : t.status === 'in_progress' ? 'InProgress' : t.status === 'completed' ? 'Completed' : ''}`]}`}>
+                          {t.status?.replace('_', ' ') || 'N/A'}
+                        </span>
+                      </div>
+                      {t.priority && (
+                        <div className={styles.taskMetaItem}>
+                          <span className={styles.taskLabel}>Priority:</span>
+                          <span className={`${styles.taskPriority} ${styles[`priority${t.priority?.charAt(0).toUpperCase() + t.priority?.slice(1)}`]}`}>
+                            {t.priority || 'N/A'}
+                          </span>
+                        </div>
+                      )}
+                      {t.due_date && (
+                        <div className={styles.taskMetaItem}>
+                          <span className={styles.taskLabel}>Due:</span>
+                          <span className={styles.taskValue}>
+                            {new Date(t.due_date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -303,13 +292,15 @@ export default function ProfilePage() {
             </div>
             <div className={styles.userDetails}>
               <h2 className={styles.userName}>
-                {userLoading ? 'Loading...' : (
-                  profileData.firstName || profileData.lastName 
-                    ? `${profileData.firstName} ${profileData.lastName}`.trim() 
-                    : profileData.username || profileData.email || user?.username || user?.email || 'User'
+                {userLoading ? 'Loading...' : getUserDisplayName(
+                  profileData.firstName,
+                  profileData.lastName,
+                  profileData.username || user?.username,
+                  profileData.email || user?.email,
+                  DEFAULTS.USER_DISPLAY_NAME
                 )}
               </h2>
-              <p className={styles.userLocation}>{profileData.location || 'Not set'}</p>
+              <p className={styles.userLocation}>{profileData.location || DEFAULTS.NOT_SET}</p>
               <p className={styles.userRole}>{profileData.role ? `(${profileData.role})` : ''}</p>
             </div>
             <button className={styles.moreOptions}>

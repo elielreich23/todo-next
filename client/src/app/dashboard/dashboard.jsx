@@ -55,6 +55,7 @@ export default function Dashboard({ children }) {
     if (pathname.includes('/statistics')) return 'statistics';
     if (pathname.includes('/calendar')) return 'calendar';
     if (pathname.includes('/uploads')) return 'uploads';
+    if (pathname.includes('/notifications')) return 'notifications';
     return 'dashboard';
   };
 
@@ -117,6 +118,9 @@ export default function Dashboard({ children }) {
         break;
       case 'uploads':
         router.push('/dashboard/uploads');
+        break;
+      case 'notifications':
+        router.push('/dashboard/notifications');
         break;
       default:
         router.push('/dashboard');
@@ -222,7 +226,11 @@ export default function Dashboard({ children }) {
               </svg>
             </button>
 
-            <button className="nav-item" title="Notifications">
+            <button 
+              className={`nav-item ${activePage === 'notifications' ? 'active' : ''}`}
+              onClick={() => navigateTo('notifications')}
+              title="Notifications"
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5,1.5v.68C7.63,5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="currentColor"/>
               </svg>

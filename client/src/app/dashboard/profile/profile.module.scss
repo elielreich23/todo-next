@@ -771,3 +771,128 @@
     min-width: auto;
   }
 }
+
+// Assigned Tasks Styles
+.emptyTasks {
+  padding: 60px 20px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+
+  p {
+    margin: 0;
+    font-size: 16px;
+  }
+}
+
+.tasksGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 8px 0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.taskCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  background: white;
+  transition: all 0.2s;
+  cursor: pointer;
+
+  &:hover {
+    border-color: #7c3aed;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+.taskTitle {
+  font-weight: 600;
+  font-size: 16px;
+  color: #111827;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.taskDescription {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.taskMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.taskMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.taskLabel {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.taskValue {
+  color: #374151;
+}
+
+.taskStatus,
+.taskPriority {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.taskStatus {
+  &.statusTodo {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &.statusInProgress {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  &.statusCompleted {
+    background: #d1fae5;
+    color: #065f46;
+  }
+}
+
+.taskPriority {
+  &.priorityLow {
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  &.priorityMedium {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  &.priorityHigh {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+}

@@ -341,12 +341,22 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       return temp;
     }
 
+    // Extract assignee IDs from contributors if provided
+    let assignee_ids = [];
+    if (data.contributors && Array.isArray(data.contributors)) {
+      // If contributors are user objects with IDs, extract IDs
+      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0].id) {
+        assignee_ids = data.contributors.map(c => c.id);
+      }
+    }
+
     const payload = {
       project: projectId,
       title: data.title || "New Task",
       description: data.description,
       status: mapClientToServerStatus(data.status) || "todo",
       due_date: normalizeDueDateForServer(data.dueDate),
+      assignee_ids: assignee_ids,
     };
     console.log('Creating task with payload:', payload);
     console.log('Current projects:', projects.map(p => ({ id: p.id, name: p.name })));
