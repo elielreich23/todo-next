@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db import models
 from .serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer
 
 
@@ -105,6 +106,33 @@ def logout(request):
 def list_users(request):
     """List users for assignment (exclude the requester by default)."""
     qs = type(request.user).objects.exclude(id=request.user.id)
+    data = UserSerializer(qs, many=True).data
+    return Response({
+        'success': True,
+        'users': data
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_users(request):
+    """Search users by name, username, or email (minimum 3 characters)."""
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 3:
+        return Response({
+            'success': True,
+            'users': [],
+            'message': 'Please enter at least 3 characters to search'
+        })
+    
+    # Search in full_name, username, and email
+    qs = type(request.user).objects.exclude(id=request.user.id).filter(
+        models.Q(full_name__icontains=query) |
+        models.Q(username__icontains=query) |
+        models.Q(email__icontains=query)
+    )[:20]  # Limit to 20 results
+    
     data = UserSerializer(qs, many=True).data
     return Response({
         'success': True,

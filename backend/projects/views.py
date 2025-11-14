@@ -84,22 +84,42 @@ def task_list_create(request):
     """List tasks for a specific project or create a new task"""
     project_id = request.query_params.get('projectId')
     assigned_to_me = request.query_params.get('assignedToMe') in ['1', 'true', 'True']
+    user_id = request.query_params.get('userId')  # Get userId parameter
     
     if request.method == 'GET':
+        # Determine which user's tasks to fetch
+        target_user = request.user
+        if user_id:
+            try:
+                from accounts.models import User
+                target_user = User.objects.get(pk=user_id)
+            except User.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'message': 'User not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+        elif assigned_to_me:
+            target_user = request.user
+        
         if project_id:
             try:
-                project = Project.objects.get(pk=project_id, owner=request.user)
-                tasks = Task.objects.filter(project=project, owner=request.user)
+                project = Project.objects.get(pk=project_id)
+                # If fetching assigned tasks, don't filter by owner
+                if assigned_to_me or user_id:
+                    tasks = Task.objects.filter(project=project, assignees=target_user)
+                else:
+                    tasks = Task.objects.filter(project=project, owner=request.user)
             except Project.DoesNotExist:
                 return Response({
                     'success': False,
                     'message': 'Project not found'
                 }, status=status.HTTP_404_NOT_FOUND)
         else:
-            tasks = Task.objects.filter(owner=request.user)
-        # filter tasks assigned to current user if requested
-        if assigned_to_me:
-            tasks = tasks.filter(assignees=request.user)
+            # If fetching assigned tasks, get all tasks assigned to the target user
+            if assigned_to_me or user_id:
+                tasks = Task.objects.filter(assignees=target_user).distinct()
+            else:
+                tasks = Task.objects.filter(owner=request.user)
         
         serializer = TaskSerializer(tasks, many=True)
         return Response({
@@ -115,6 +135,13 @@ def task_list_create(request):
             try:
                 project = Project.objects.get(pk=project_id, owner=request.user)
                 task = serializer.save(owner=request.user)
+                
+                # Send notifications to assigned users
+                assignee_ids = request.data.get('assignee_ids', [])
+                if assignee_ids:
+                    from .notifications import notify_task_assignees
+                    notify_task_assignees(task, assignee_ids)
+                
                 return Response({
                     'success': True,
                     'message': 'Task created successfully',
@@ -154,7 +181,23 @@ def task_detail(request, pk):
     elif request.method == 'PUT':
         serializer = TaskCreateUpdateSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
+            # Get assignee IDs before update
+            old_assignee_ids = set(task.assignees.values_list('id', flat=True))
+            
             serializer.save()
+            
+            # Get assignee IDs after update
+            task.refresh_from_db()
+            new_assignee_ids = set(task.assignees.values_list('id', flat=True))
+            
+            # Find newly assigned users
+            newly_assigned_ids = new_assignee_ids - old_assignee_ids
+            
+            # Send notifications to newly assigned users
+            if newly_assigned_ids:
+                from .notifications import notify_task_assignees
+                notify_task_assignees(task, list(newly_assigned_ids))
+            
             return Response({
                 'success': True,
                 'message': 'Task updated successfully',

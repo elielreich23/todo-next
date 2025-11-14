@@ -58,3 +58,27 @@ class Task(models.Model):
         elif self.status != 'completed':
             self.completed_at = None
         super().save(*args, **kwargs)
+
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('task_assigned', 'Task Assigned'),
+        ('task_updated', 'Task Updated'),
+        ('task_completed', 'Task Completed'),
+        ('project_shared', 'Project Shared'),
+    ]
+    
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.notification_type} - {self.recipient.email}"
