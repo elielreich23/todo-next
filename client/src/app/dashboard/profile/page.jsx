@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUser } from '../../../contexts/UserContext';
 import styles from './profile.module.scss';
 import {
@@ -16,6 +17,7 @@ import NotificationBell from '../../../components/NotificationBell/NotificationB
 
 export default function ProfilePage() {
   const { user, isLoading: userLoading } = useUser();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('details');
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [assignedTasks, setAssignedTasks] = useState([]);
@@ -23,6 +25,16 @@ export default function ProfilePage() {
   
   const [profileData, setProfileData] = useState(() => loadProfileFromCache());
   const [tempData, setTempData] = useState(() => loadProfileFromCache());
+
+  // Check authentication on mount
+  useEffect(() => {
+    if (!userLoading && !user) {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      if (!token) {
+        router.push('/auth/signin');
+      }
+    }
+  }, [user, userLoading, router]);
 
   // Function to update profile data from user
   const updateProfileFromUser = useCallback((userData) => {

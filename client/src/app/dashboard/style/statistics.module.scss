@@ -22,33 +22,276 @@
   }
 }
 
-.content {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
-.section {
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.statCardHeader {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+
   h2 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: #2c3e50;
-    margin: 0 0 1rem 0;
+    margin: 0;
   }
-  
-  p {
-    color: #6c757d;
-    line-height: 1.6;
-  }
+}
+
+.statCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.statLabel {
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.statSuccess {
+  color: #27ae60;
+}
+
+.statWarning {
+  color: #f39c12;
+}
+
+.statDanger {
+  color: #e74c3c;
+}
+
+.statInfo {
+  color: #3498db;
+}
+
+.progressSection {
+  width: 100%;
+}
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.progressPercent {
+  font-weight: 700;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.progressBar {
+  width: 100%;
+  height: 12px;
+  background: #e9ecef;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #3498db, #2980b9);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.projectList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.projectItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.projectName {
+  min-width: 150px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.projectBar {
+  flex: 1;
+  height: 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.projectBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.projectCount {
+  min-width: 80px;
+  text-align: right;
+  font-weight: 600;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.trendChart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 0.5rem;
+  height: 200px;
+  padding: 1rem 0;
+}
+
+.trendBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  max-width: 80px;
+}
+
+.trendBarFill {
+  width: 100%;
+  background: linear-gradient(180deg, #3498db, #2980b9);
+  border-radius: 4px 4px 0 0;
+  min-height: 10px;
+  transition: height 0.3s ease;
+}
+
+.trendBarLabel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.5rem;
+  gap: 0.25rem;
+}
+
+.trendDayName {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.trendCount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2c3e50;
 }
 
 /* Dark mode */
 :global(.dashboard.dark-mode) {
-  .statisticsPage { background: #1a1f27; color: #e5e7eb; }
-  .header h1 { color: #e5e7eb; }
-  .header p { color: #9aa4b2; }
-  .content { background: #141922; box-shadow: none; }
-  .section h2 { color: #e5e7eb; }
-  .section p { color: #9aa4b2; }
+  .statisticsPage { 
+    background: #1a1f27; 
+    color: #e5e7eb; 
+  }
+  
+  .header h1 { 
+    color: #e5e7eb; 
+  }
+  
+  .header p { 
+    color: #9aa4b2; 
+  }
+  
+  .statCard { 
+    background: #141922; 
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .statCardHeader {
+    border-bottom-color: #2d3748;
+    
+    h2 {
+      color: #e5e7eb;
+    }
+  }
+  
+  .statLabel {
+    color: #9aa4b2;
+  }
+  
+  .statValue {
+    color: #e5e7eb;
+  }
+  
+  .progressLabel {
+    color: #9aa4b2;
+  }
+  
+  .progressPercent {
+    color: #e5e7eb;
+  }
+  
+  .progressBar {
+    background: #2d3748;
+  }
+  
+  .projectItem {
+    background: #1f2937;
+  }
+  
+  .projectName {
+    color: #e5e7eb;
+  }
+  
+  .projectBar {
+    background: #2d3748;
+  }
+  
+  .projectCount {
+    color: #9aa4b2;
+  }
+  
+  .trendBarFill {
+    background: linear-gradient(180deg, #60a5fa, #3b82f6);
+  }
+  
+  .trendDayName {
+    color: #9aa4b2;
+  }
+  
+  .trendCount {
+    color: #e5e7eb;
+  }
 }

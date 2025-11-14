@@ -182,14 +182,27 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Check if we have an access token before making API calls
+    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (!accessToken) {
+      console.log('No access token, skipping API call');
+      return;
+    }
+
+    let isCancelled = false;
+
     (async () => {
       try {
         console.log('Loading projects for user:', user.username);
-        console.log('Access token:', localStorage.getItem('access_token'));
+        console.log('Access token exists:', !!accessToken);
         
         const response = await api<{ success: boolean; projects: Project[] }>(
           "/api/projects/"
         );
+        
+        // Check if component unmounted or user changed
+        if (isCancelled) return;
+        
         console.log('Projects API response:', response);
         
         if (response.success) {
@@ -202,20 +215,84 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
               success: boolean;
               tasks: Task[];
             }>(`/api/tasks/?projectId=${initialProjectId}`);
+            
+            // Check again if cancelled
+            if (isCancelled) return;
+            
             console.log('Tasks API response:', tasksResponse);
             if (tasksResponse.success) {
               console.log('Loaded tasks:', tasksResponse.tasks);
-              setTasks(tasksResponse.tasks.map((t) => normalizeTask(t)));
+              const normalizedTasks = await Promise.all(
+                tasksResponse.tasks.map(async (t) => {
+                  const normalized = normalizeTask(t);
+                  const details = await loadTaskDetails(t.id);
+                  return {
+                    ...normalized,
+                    comments: details.comments,
+                    attachments: details.attachments,
+                  };
+                })
+              );
+              if (!isCancelled) {
+                setTasks(normalizedTasks);
+              }
             }
           }
         } else {
           console.error('Projects API returned success: false');
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Don't log errors if we're being redirected to login
+        if (error?.message?.includes('Not authenticated') || error?.message?.includes('Please log in')) {
+          console.log('Authentication required, redirecting...');
+          return;
+        }
         console.error("Failed to load projects:", error);
       }
     })();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isCancelled = true;
+    };
   }, [user, userLoading]);
+
+  // Load comments and attachments for tasks
+  const loadTaskDetails = async (taskId: number) => {
+    try {
+      // Load comments
+      const commentsResponse = await api<{ success: boolean; comments: any[] }>(
+        `/api/tasks/${taskId}/comments/`
+      );
+      
+      // Load attachments
+      const attachmentsResponse = await api<{ success: boolean; attachments: any[] }>(
+        `/api/tasks/${taskId}/attachments/`
+      );
+      
+      return {
+        comments: commentsResponse.success ? commentsResponse.comments.map((c: any) => ({
+          id: c.id.toString(),
+          text: c.text,
+          author: c.author?.full_name || c.author?.username || 'Unknown',
+          createdAt: new Date(c.created_at),
+          updatedAt: c.updated_at ? new Date(c.updated_at) : undefined,
+        })) : [],
+        attachments: attachmentsResponse.success ? attachmentsResponse.attachments.map((a: any) => ({
+          id: a.id.toString(),
+          name: a.name,
+          size: a.file_size,
+          type: a.file_type,
+          url: a.file_url,
+          uploadedAt: new Date(a.created_at),
+          uploadedBy: a.uploaded_by?.full_name || a.uploaded_by?.username || 'Unknown',
+        })) : [],
+      };
+    } catch (error) {
+      console.error(`Failed to load details for task ${taskId}:`, error);
+      return { comments: [], attachments: [] };
+    }
+  };
 
   // When selected project changes, load its tasks
   useEffect(() => {
@@ -229,7 +306,18 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           `/api/tasks/?projectId=${selectedProjectId}`
         );
         if (response.success) {
-          setTasks(response.tasks.map((t) => normalizeTask(t)));
+          const normalizedTasks = await Promise.all(
+            response.tasks.map(async (t) => {
+              const normalized = normalizeTask(t);
+              const details = await loadTaskDetails(t.id);
+              return {
+                ...normalized,
+                comments: details.comments,
+                attachments: details.attachments,
+              };
+            })
+          );
+          setTasks(normalizedTasks);
         }
       } catch (error) {
         console.error("Failed to load tasks:", error);
@@ -455,41 +543,78 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const getProjectTasks = (projectId: number): Task[] =>
     tasks.filter((t) => t.projectId === projectId);
 
-  const addTaskAttachment = (taskId: number, file: File, uploadedBy: string) => {
-    const attachment: FileAttachment = {
-      id: Date.now().toString(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      uploadedAt: new Date(),
-      uploadedBy,
-    };
+  const addTaskAttachment = async (taskId: number, file: File, uploadedBy: string) => {
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('name', file.name);
 
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? { ...t, attachments: [...(t.attachments || []), attachment] }
-          : t
-      )
-    );
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tasks/${taskId}/attachments/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.attachment) {
+        const attachment: FileAttachment = {
+          id: data.attachment.id.toString(),
+          name: data.attachment.name,
+          size: data.attachment.file_size,
+          type: data.attachment.file_type,
+          url: data.attachment.file_url,
+          uploadedAt: new Date(data.attachment.created_at),
+          uploadedBy: data.attachment.uploaded_by?.full_name || data.attachment.uploaded_by?.username || uploadedBy,
+        };
+
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? { ...t, attachments: [...(t.attachments || []), attachment] }
+              : t
+          )
+        );
+      } else {
+        throw new Error(data.message || 'Failed to upload attachment');
+      }
+    } catch (error) {
+      console.error('Failed to upload attachment:', error);
+      throw error;
+    }
   };
 
-  const removeTaskAttachment = (taskId: number, attachmentId: string) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              attachments: (t.attachments || []).filter(
-                (a) => a.id !== attachmentId
-              ),
-            }
-          : t
-      )
-    );
+  const removeTaskAttachment = async (taskId: number, attachmentId: string) => {
+    try {
+      const response = await api<{ success: boolean }>(
+        `/api/tasks/${taskId}/attachments/${attachmentId}/`,
+        { method: 'DELETE' }
+      );
+
+      if (response.success) {
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  attachments: (t.attachments || []).filter(
+                    (a) => a.id !== attachmentId
+                  ),
+                }
+              : t
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to delete attachment:', error);
+    }
   };
 
-  const addTaskComment = (taskId: number, text: string, author: string) => {
+  const addTaskComment = async (taskId: number, text: string, author: string) => {
     const tempComment: TaskComment = {
       id: Date.now().toString(),
       text,
@@ -497,6 +622,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       createdAt: new Date(),
     };
 
+    // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
@@ -505,11 +631,24 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       )
     );
 
-    api<TaskComment>(`/api/tasks/${taskId}/comments`, {
-      method: "POST",
-      body: JSON.stringify({ text, author }),
-    })
-      .then((serverComment) => {
+    try {
+      const response = await api<{ success: boolean; comment: any }>(
+        `/api/tasks/${taskId}/comments/`,
+        {
+          method: "POST",
+          body: JSON.stringify({ text }),
+        }
+      );
+
+      if (response.success && response.comment) {
+        const serverComment: TaskComment = {
+          id: response.comment.id.toString(),
+          text: response.comment.text,
+          author: response.comment.author?.full_name || response.comment.author?.username || author,
+          createdAt: new Date(response.comment.created_at),
+          updatedAt: response.comment.updated_at ? new Date(response.comment.updated_at) : undefined,
+        };
+
         setTasks((prev) =>
           prev.map((t) =>
             t.id === taskId
@@ -519,17 +658,29 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
                     ...(t.comments || []).filter(
                       (c) => c.id !== tempComment.id
                     ),
-                    {
-                      ...serverComment,
-                      createdAt: new Date(serverComment.createdAt),
-                    },
+                    serverComment,
                   ],
                 }
               : t
           )
         );
-      })
-      .catch(() => {});
+      }
+    } catch (error) {
+      console.error('Failed to add comment:', error);
+      // Revert optimistic update on error
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                comments: (t.comments || []).filter(
+                  (c) => c.id !== tempComment.id
+                ),
+              }
+            : t
+        )
+      );
+    }
   };
 
   const updateTaskComment = (
@@ -555,7 +706,8 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     }).catch(() => {});
   };
 
-  const deleteTaskComment = (taskId: number, commentId: string) => {
+  const deleteTaskComment = async (taskId: number, commentId: string) => {
+    // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
@@ -563,9 +715,22 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           : t
       )
     );
-    api<void>(`/api/tasks/${taskId}/comments?commentId=${commentId}`, {
-      method: "DELETE",
-    }).catch(() => {});
+
+    try {
+      await api<{ success: boolean }>(
+        `/api/tasks/${taskId}/comments/${commentId}/`,
+        { method: "DELETE" }
+      );
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      // Reload comments on error to revert
+      const details = await loadTaskDetails(taskId);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, comments: details.comments } : t
+        )
+      );
+    }
   };
 
   // -------------------- PROVIDER VALUE --------------------
