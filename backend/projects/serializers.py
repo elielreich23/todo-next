@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Task
+from .models import Project, Task, TaskComment, TaskAttachment
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -59,3 +59,36 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             users = User.objects.filter(id__in=assignees)
             task.assignees.set(users)
         return task
+
+
+class TaskCommentSerializer(serializers.ModelSerializer):
+    author = UserLiteSerializer(read_only=True)
+    author_id = serializers.IntegerField(write_only=True, required=False)
+    
+    class Meta:
+        model = TaskComment
+        fields = ['id', 'task', 'author', 'author_id', 'text', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        validated_data.pop('author_id', None)  # Remove author_id if present
+        return super().create(validated_data)
+
+
+class TaskAttachmentSerializer(serializers.ModelSerializer):
+    uploaded_by = UserLiteSerializer(read_only=True)
+    file_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = TaskAttachment
+        fields = ['id', 'task', 'file', 'file_url', 'name', 'file_size', 'file_type', 
+                 'uploaded_by', 'created_at']
+        read_only_fields = ['id', 'created_at', 'file_size', 'file_type']
+    
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None

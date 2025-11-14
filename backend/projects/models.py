@@ -82,3 +82,35 @@ class Notification(models.Model):
     
     def __str__(self):
         return f"{self.notification_type} - {self.recipient.email}"
+
+
+class TaskComment(models.Model):
+    """Comments on tasks"""
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_comments')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"Comment by {self.author.email} on task {self.task.id}"
+
+
+class TaskAttachment(models.Model):
+    """File attachments on tasks"""
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_attachments')
+    file = models.FileField(upload_to='task_attachments/%Y/%m/%d/')
+    name = models.CharField(max_length=255)  # Original filename
+    file_size = models.BigIntegerField()  # Size in bytes
+    file_type = models.CharField(max_length=100, blank=True)  # MIME type
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='uploaded_attachments')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} - Task {self.task.id}"

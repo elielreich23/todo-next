@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, Task
+from .models import Project, Task, TaskComment, TaskAttachment
 
 
 @admin.register(Project)
@@ -44,3 +44,23 @@ class TaskAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(TaskComment)
+class TaskCommentAdmin(admin.ModelAdmin):
+    list_display = ('text', 'task', 'author', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('text', 'task__title', 'author__username', 'author__email')
+    readonly_fields = ('created_at', 'updated_at')
+    list_per_page = 25
+    date_hierarchy = 'created_at'
+
+
+@admin.register(TaskAttachment)
+class TaskAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'task', 'uploaded_by', 'file_size', 'created_at')
+    list_filter = ('created_at', 'file_type')
+    search_fields = ('name', 'task__title', 'uploaded_by__username', 'uploaded_by__email')
+    readonly_fields = ('created_at', 'file_size', 'file_type')
+    list_per_page = 25
+    date_hierarchy = 'created_at'
