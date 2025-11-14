@@ -3,6 +3,14 @@
   background: #f8f9fa;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 }
 
 /* Header Styles */
@@ -13,12 +21,21 @@
   margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid #e9ecef;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 1rem;
 
   h1 {
     font-size: 2rem;
     font-weight: 700;
     color: #2c3e50;
     margin: 0;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
   }
 }
 
@@ -82,6 +99,11 @@
   align-items: center;
   margin-bottom: 2rem;
   padding: 0 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .tabContainer {
@@ -168,12 +190,17 @@
   padding: 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow: visible;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Profile Header with Banner */
 .profileHeader {
   position: relative;
   margin-bottom: 0;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
 }
 
 .bannerImage {
@@ -181,6 +208,11 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   position: relative;
   overflow: hidden;
+  width: 100%;
+
+  @media (max-width: 768px) {
+    height: 150px;
+  }
 
   &::before {
     content: '';
@@ -212,7 +244,17 @@
   gap: 2rem;
   background: white;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+  flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem;
+    gap: 1rem;
+  }
 }
 
 .profileImage {
@@ -225,6 +267,13 @@
   margin-top: -60px;
   position: relative;
   z-index: 2;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 100px;
+    height: 100px;
+    margin-top: -50px;
+  }
 
   img {
     width: 100%;
@@ -236,18 +285,35 @@
 .userDetails {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
   
   h2 {
     font-size: 2.5rem;
     font-weight: 700;
     color: #2c3e50;
     margin: 0 0 0.5rem 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    
+    @media (max-width: 1024px) {
+      font-size: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+      font-size: 1.75rem;
+    }
   }
 
   p {
     margin: 0.25rem 0;
     color: #6c757d;
     font-size: 1.1rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
   }
 }
 
@@ -266,6 +332,12 @@
   transition: all 0.2s ease;
   align-self: flex-start;
   margin-top: 1rem;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    align-self: center;
+    margin-top: 0.5rem;
+  }
 
   &:hover {
     background: #f8f9fa;
@@ -279,6 +351,29 @@
   border-bottom: 1px solid #e9ecef;
   padding: 0 2rem;
   background: white;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  
+  @media (max-width: 768px) {
+    padding: 0 1rem;
+  }
+  
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+  }
 }
 
 .subTab {
@@ -291,6 +386,13 @@
   border-bottom: 3px solid transparent;
   transition: all 0.2s ease;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
 
   &:hover {
     color: #495057;
@@ -308,26 +410,44 @@
   padding: 2rem;
   background: white;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
+
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
 
   .formRow {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 2rem;
     margin-bottom: 2rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    align-items: start;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
       gap: 1rem;
+      margin-bottom: 1rem;
     }
   }
 }
 
 .formField {
   margin-bottom: 1.5rem;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 
   label {
     display: block;
@@ -335,6 +455,23 @@
     font-weight: 600;
     color: #2c3e50;
     font-size: 0.9rem;
+  }
+
+  input, select {
+    box-sizing: border-box;
+    width: 100%;
+  }
+}
+
+.formColumn {
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  
+  @media (max-width: 768px) {
+    width: 100%;
   }
 }
 
@@ -348,6 +485,8 @@
   background: #f8f9fa;
   cursor: not-allowed;
   transition: all 0.2s ease;
+  box-sizing: border-box;
+  min-width: 0;
 
   &:focus {
     outline: none;
@@ -365,6 +504,8 @@
   color: #2c3e50;
   background: white;
   transition: all 0.2s ease;
+  box-sizing: border-box;
+  min-width: 0;
 
   &:focus {
     outline: none;
@@ -384,7 +525,18 @@
 .phoneInput {
   display: flex;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .countrySelect {
@@ -396,6 +548,9 @@
   color: #495057;
   cursor: not-allowed;
   min-width: 120px;
+  max-width: 140px;
+  flex-shrink: 0;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
@@ -405,6 +560,8 @@
 }
 
 .countryInput {
+  width: 100%;
+  
   select {
     width: 100%;
     padding: 0.75rem 1rem;
@@ -414,6 +571,7 @@
     color: #495057;
     background: #f8f9fa;
     cursor: not-allowed;
+    box-sizing: border-box;
 
     &:focus {
       outline: none;

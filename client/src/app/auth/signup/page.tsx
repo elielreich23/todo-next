@@ -109,7 +109,10 @@ export default function Signup() {
       });
       
       setError("");
-      console.log("Signup successful, redirecting to dashboard...");
+      console.log("Signup successful, user data cached, redirecting to dashboard...");
+      
+      // Small delay to ensure user context and cache are updated
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Redirect to dashboard
       router.push("/dashboard");

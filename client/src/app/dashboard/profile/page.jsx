@@ -5,45 +5,166 @@ import { useUser } from '../../../contexts/UserContext';
 import styles from './profile.module.scss';
 
 export default function ProfilePage() {
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
   const [activeTab, setActiveTab] = useState('details');
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    firstName: 'James',
-    lastName: 'Rodriguez',
-    username: 'james.rodriguez',
-    email: 'pauladoe@gmail.com',
-    phone: '8145762103',
-    phoneCode: '+321',
-    city: 'Tallin',
-    country: 'Sweden',
-    role: 'Frontend Developer',
-    location: 'Warsaw, PL'
+  
+  // Initialize with empty/default values instead of hardcoded ones
+  const getInitialProfileData = () => ({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    phone: '',
+    phoneCode: '+1',
+    city: '',
+    country: '',
+    role: '',
+    location: ''
   });
 
-  const [tempData, setTempData] = useState({ ...profileData });
+  // Load from cache immediately for instant display
+  const loadProfileFromCache = () => {
+    try {
+      const cachedUser = localStorage.getItem('cached_user_data');
+      if (cachedUser) {
+        const userData = JSON.parse(cachedUser);
+        const firstName = userData.full_name?.split(' ')[0] || userData.username || '';
+        const lastName = userData.full_name?.split(' ').slice(1).join(' ') || '';
+        return {
+          firstName,
+          lastName,
+          username: userData.username || '',
+          email: userData.email || '',
+          phone: '',
+          phoneCode: '+1',
+          city: '',
+          country: '',
+          role: '',
+          location: ''
+        };
+      }
+    } catch (error) {
+      console.error('Error loading profile from cache:', error);
+    }
+    return getInitialProfileData();
+  };
+
+  const [profileData, setProfileData] = useState(() => loadProfileFromCache());
+  const [tempData, setTempData] = useState(() => loadProfileFromCache());
+
+  // Function to update profile data from user
+  const updateProfileFromUser = React.useCallback((userData) => {
+    if (!userData) return;
+    
+    const firstName = userData.full_name?.split(' ')[0] || userData.username || '';
+    const lastName = userData.full_name?.split(' ').slice(1).join(' ') || '';
+    const username = userData.username || '';
+    const email = userData.email || '';
+    
+    setProfileData(prev => ({
+      firstName,
+      lastName,
+      username,
+      email,
+      phone: prev.phone || '',
+      phoneCode: prev.phoneCode || '+1',
+      city: prev.city || '',
+      country: prev.country || '',
+      role: prev.role || '',
+      location: prev.location || ''
+    }));
+    
+    setTempData(prev => ({
+      firstName,
+      lastName,
+      username,
+      email,
+      phone: prev.phone || '',
+      phoneCode: prev.phoneCode || '+1',
+      city: prev.city || '',
+      country: prev.country || '',
+      role: prev.role || '',
+      location: prev.location || ''
+    }));
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      // Update profile data with actual user data from Django backend
-      setProfileData(prev => ({
-        ...prev,
-        firstName: user.full_name?.split(' ')[0] || user.username || 'User',
-        lastName: user.full_name?.split(' ').slice(1).join(' ') || '',
-        username: user.username || '',
-        email: user.email || 'user@example.com'
-      }));
-      setTempData(prev => ({
-        ...prev,
-        firstName: user.full_name?.split(' ')[0] || user.username || 'User',
-        lastName: user.full_name?.split(' ').slice(1).join(' ') || '',
-        username: user.username || '',
-        email: user.email || 'user@example.com'
-      }));
+    // Wait for user context to finish loading
+    if (userLoading) {
+      return;
     }
-  }, [user]);
+
+    if (user) {
+      // User is available - update profile data immediately
+      // This ensures signup data populates the profile immediately
+      updateProfileFromUser(user);
+    } else {
+      // No user - try to load from cache
+      const cachedData = loadProfileFromCache();
+      if (cachedData.firstName || cachedData.email) {
+        // We have cached data, use it
+        setProfileData(cachedData);
+        setTempData(cachedData);
+      } else {
+        // No cached data and no user, reset to empty
+        setProfileData(getInitialProfileData());
+        setTempData(getInitialProfileData());
+      }
+    }
+  }, [user, userLoading, updateProfileFromUser]);
+
+  // Listen for storage changes and custom events (when user data is cached from signup/login)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'cached_user_data') {
+        // User data was cached, reload it
+        const cachedData = loadProfileFromCache();
+        if (cachedData.firstName || cachedData.email) {
+          setProfileData(cachedData);
+          setTempData(cachedData);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom event when user data is updated in same window
+    const handleUserUpdate = () => {
+      // Reload from cache when user data is updated
+      const cachedData = loadProfileFromCache();
+      if (cachedData.firstName || cachedData.email) {
+        setProfileData(cachedData);
+        setTempData(cachedData);
+      }
+      // Also check if user context has updated
+      if (user) {
+        updateProfileFromUser(user);
+      }
+    };
+
+    window.addEventListener('userDataUpdated', handleUserUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userDataUpdated', handleUserUpdate);
+    };
+  }, [user, updateProfileFromUser]);
+
+  // Check cache on mount to ensure we have the latest data (especially after signup)
+  useEffect(() => {
+    // On mount, check if we have cached data that's newer than current state
+    const cachedData = loadProfileFromCache();
+    if (cachedData.firstName || cachedData.email) {
+      // If we have cached data and current state is empty, use cache
+      if (!profileData.firstName && !profileData.email) {
+        setProfileData(cachedData);
+        setTempData(cachedData);
+      }
+    }
+  }, []); // Only run on mount
 
   const handleEditProfile = async () => {
     if (isEditing) {
@@ -181,9 +302,15 @@ export default function ProfilePage() {
               <img src="/api/placeholder/120/120" alt="Profile" />
             </div>
             <div className={styles.userDetails}>
-              <h2 className={styles.userName}>{profileData.firstName} {profileData.lastName}</h2>
-              <p className={styles.userLocation}>{profileData.location}</p>
-              <p className={styles.userRole}>({profileData.role})</p>
+              <h2 className={styles.userName}>
+                {userLoading ? 'Loading...' : (
+                  profileData.firstName || profileData.lastName 
+                    ? `${profileData.firstName} ${profileData.lastName}`.trim() 
+                    : profileData.username || profileData.email || user?.username || user?.email || 'User'
+                )}
+              </h2>
+              <p className={styles.userLocation}>{profileData.location || 'Not set'}</p>
+              <p className={styles.userRole}>{profileData.role ? `(${profileData.role})` : ''}</p>
             </div>
             <button className={styles.moreOptions}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -211,16 +338,6 @@ export default function ProfilePage() {
                     type="text"
                     value={isEditing ? tempData.firstName : profileData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    disabled={!isEditing}
-                    className={isEditing ? styles.editableInput : styles.readonlyInput}
-                  />
-                </div>
-                <div className={styles.formField}>
-                  <label>Last Name</label>
-                  <input
-                    type="text"
-                    value={isEditing ? tempData.lastName : profileData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
                     disabled={!isEditing}
                     className={isEditing ? styles.editableInput : styles.readonlyInput}
                   />
@@ -258,18 +375,18 @@ export default function ProfilePage() {
                     />
                   </div>
                 </div>
+              </div>
+              <div className={styles.formColumn}>
                 <div className={styles.formField}>
-                  <label>City</label>
+                  <label>Last Name</label>
                   <input
                     type="text"
-                    value={isEditing ? tempData.city : profileData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    value={isEditing ? tempData.lastName : profileData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
                     disabled={!isEditing}
                     className={isEditing ? styles.editableInput : styles.readonlyInput}
                   />
                 </div>
-              </div>
-              <div className={styles.formColumn}>
                 <div className={styles.formField}>
                   <label>Country</label>
                   <div className={styles.countryInput}>
@@ -286,6 +403,16 @@ export default function ProfilePage() {
                       <option value="Poland">🇵🇱 Poland</option>
                     </select>
                   </div>
+                </div>
+                <div className={styles.formField}>
+                  <label>City</label>
+                  <input
+                    type="text"
+                    value={isEditing ? tempData.city : profileData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                    disabled={!isEditing}
+                    className={isEditing ? styles.editableInput : styles.readonlyInput}
+                  />
                 </div>
               </div>
             </div>

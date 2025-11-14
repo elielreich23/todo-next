@@ -56,8 +56,54 @@ interface UserProviderProps {
   children: ReactNode;
 }
 
+// Cache key for user data (persists even after logout)
+const USER_CACHE_KEY = 'cached_user_data';
+const USER_CACHE_TIMESTAMP_KEY = 'cached_user_timestamp';
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+// Helper functions for cache management
+const getUserFromCache = (): User | null => {
+  try {
+    const cachedData = localStorage.getItem(USER_CACHE_KEY);
+    const cachedTimestamp = localStorage.getItem(USER_CACHE_TIMESTAMP_KEY);
+    
+    if (cachedData && cachedTimestamp) {
+      const timestamp = parseInt(cachedTimestamp, 10);
+      const now = Date.now();
+      
+      // Check if cache is still valid (within 7 days)
+      if (now - timestamp < CACHE_DURATION) {
+        return JSON.parse(cachedData);
+      } else {
+        // Cache expired, remove it
+        localStorage.removeItem(USER_CACHE_KEY);
+        localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
+      }
+    }
+  } catch (error) {
+    console.error('Error reading user cache:', error);
+    localStorage.removeItem(USER_CACHE_KEY);
+    localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
+  }
+  return null;
+};
+
+const saveUserToCache = (userData: User | null) => {
+  try {
+    if (userData) {
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
+      localStorage.setItem(USER_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      // Dispatch event to notify other components that user data was updated
+      window.dispatchEvent(new CustomEvent('userDataUpdated'));
+    }
+  } catch (error) {
+    console.error('Error saving user cache:', error);
+  }
+};
+
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const [user, setUserState] = useState<User | null>(null);
+  // Load from cache immediately for instant display
+  const [user, setUserState] = useState<User | null>(() => getUserFromCache());
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -73,6 +119,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             const response = await api<User>('/api/auth/profile/');
             if (response) {
               setUserState(response);
+              saveUserToCache(response); // Update cache with fresh data
             }
           } catch (error) {
             // Token might be expired, try to refresh
@@ -83,17 +130,21 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
               const response = await api<User>('/api/auth/profile/');
               if (response) {
                 setUserState(response);
+                saveUserToCache(response); // Update cache with fresh data
               }
             } else {
-              // Refresh failed, clear tokens
+              // Refresh failed, clear tokens but keep cached user data
               localStorage.removeItem('access_token');
               localStorage.removeItem('refresh_token');
             }
           }
+        } else {
+          // No tokens, but we might have cached user data (already loaded)
+          // Keep the cached data for display purposes
         }
       } catch (error) {
         console.error('Error loading user from tokens:', error);
-        // Clear corrupted data
+        // Clear corrupted tokens but keep cached user data
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
       } finally {
@@ -106,10 +157,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const setUser = (userData: User | null) => {
     setUserState(userData);
+    saveUserToCache(userData); // Update cache whenever user is set
   };
 
   const login = (userData: User) => {
-    setUser(userData);
+    setUser(userData); // This will also save to cache
   };
 
   const remoteLogin = async (params: { email: string; password: string }) => {
@@ -123,8 +175,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       localStorage.setItem('access_token', response.tokens.access);
       localStorage.setItem('refresh_token', response.tokens.refresh);
       
-      // Set user in context
-      setUser(response.user);
+      // Set user in context and cache
+      setUser(response.user); // This will also save to cache
     } else {
       throw new Error(response.message || 'Login failed');
     }
@@ -141,8 +193,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       localStorage.setItem('access_token', response.tokens.access);
       localStorage.setItem('refresh_token', response.tokens.refresh);
       
-      // Set user in context
-      setUser(response.user);
+      // Set user in context and cache
+      setUser(response.user); // This will also save to cache
     } else {
       throw new Error(response.message || 'Signup failed');
     }
@@ -153,12 +205,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     
-    // Clear any cached user data
-    localStorage.removeItem('user_data');
+    // Clear session storage but KEEP cached user data (as requested)
+    // This allows user data to persist even after logout
     sessionStorage.clear();
     
-    // Reset user state
-    setUser(null);
+    // Reset user state (but cache remains for next login)
+    setUserState(null);
     
     // Dispatch custom event to notify other contexts
     window.dispatchEvent(new CustomEvent('userLogout'));
@@ -177,6 +229,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const response = await api<User>('/api/auth/profile/');
       if (response) {
         setUserState(response);
+        saveUserToCache(response); // Update cache with fresh data
         return true;
       }
       return false;
