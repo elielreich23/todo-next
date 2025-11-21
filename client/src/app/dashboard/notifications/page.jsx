@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { API_ENDPOINTS } from '../../../constants';
 import { formatDate } from '../../../utils/formatters';
 import styles from './notifications.module.scss';
 
-export default function NotificationsPage() {
+function NotificationsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get('id');
@@ -257,6 +257,23 @@ export default function NotificationsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function NotificationsPage() {
+  return (
+    <Suspense fallback={
+      <div className={styles.notificationsPage}>
+        <div className={styles.header}>
+          <h1>Notifications</h1>
+        </div>
+        <div className={styles.content}>
+          <div className={styles.loading}>Loading notifications...</div>
+        </div>
+      </div>
+    }>
+      <NotificationsContent />
+    </Suspense>
   );
 }
 

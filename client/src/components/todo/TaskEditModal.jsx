@@ -21,16 +21,6 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
   const [selectedAssignees, setSelectedAssignees] = useState([]);
 
   useEffect(() => {
-    if (task) {
-      setAttachments(task.attachments || []);
-      setComments(task.comments || []);
-      // Prefill assignees if task already has them
-      const existing = (task.contributors || []).map(name => ({ id: name, username: name }));
-      setSelectedAssignees(existing);
-    }
-  }, [task]);
-
-  useEffect(() => {
     // Load users to assign
     (async () => {
       try {
@@ -39,6 +29,34 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
       } catch {}
     })();
   }, []);
+
+  useEffect(() => {
+    if (task) {
+      setAttachments(task.attachments || []);
+      setComments(task.comments || []);
+      
+      // Prefill assignees by matching contributor names to actual user objects
+      if (task.contributors && task.contributors.length > 0 && allUsers.length > 0) {
+        const matchedUsers = task.contributors
+          .map(contributorName => {
+            // Try to find a user that matches by full_name, username, or email
+            const matchedUser = allUsers.find(user => 
+              user.full_name === contributorName ||
+              user.username === contributorName ||
+              user.email === contributorName
+            );
+            return matchedUser || null;
+          })
+          .filter(user => user !== null); // Remove any null matches
+        setSelectedAssignees(matchedUsers);
+      } else if (task.contributors && task.contributors.length > 0) {
+        // If users haven't loaded yet, set empty array (will be updated when users load)
+        setSelectedAssignees([]);
+      } else {
+        setSelectedAssignees([]);
+      }
+    }
+  }, [task, allUsers]);
 
   const handleFileUpload = (event) => {
     const files = Array.from(event.target.files);

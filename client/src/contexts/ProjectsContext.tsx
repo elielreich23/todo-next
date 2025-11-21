@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import React, {
   createContext,
@@ -110,6 +110,30 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     null
   );
 
+  // Normalize server project to client Project shape
+  const normalizeProject = (serverProject: any): Project => {
+    // Map assignees (user objects) to contributors (string array)
+    let contributors: string[] = [];
+    if (serverProject.assignees && Array.isArray(serverProject.assignees)) {
+      contributors = serverProject.assignees.map((assignee: any) => 
+        assignee.full_name || assignee.username || assignee.email || String(assignee.id)
+      );
+    } else if (serverProject.contributors && Array.isArray(serverProject.contributors)) {
+      // Fallback to contributors if assignees not present
+      contributors = serverProject.contributors;
+    }
+    
+    return {
+      id: serverProject.id,
+      name: serverProject.name,
+      description: serverProject.description,
+      color: serverProject.color || "#6366f1",
+      category: serverProject.category,
+      contributors: contributors,
+      duration: serverProject.duration,
+    } as Project;
+  };
+
   // Normalize server task to client Task shape
   const normalizeTask = (serverTask: any): Task => {
     const mapServerToClientStatus = (s?: string): Task["status"] => {
@@ -117,6 +141,18 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       if (s === "completed") return "done";
       return (s as Task["status"]) || "todo";
     };
+    
+    // Map assignees (user objects) to contributors (string array)
+    let contributors: string[] = [];
+    if (serverTask.assignees && Array.isArray(serverTask.assignees)) {
+      contributors = serverTask.assignees.map((assignee: any) => 
+        assignee.full_name || assignee.username || assignee.email || String(assignee.id)
+      );
+    } else if (serverTask.contributors && Array.isArray(serverTask.contributors)) {
+      // Fallback to contributors if assignees not present
+      contributors = serverTask.contributors;
+    }
+    
     const normalized = {
       id: serverTask.id,
       projectId: Number(serverTask.project ?? serverTask.projectId),
@@ -130,7 +166,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       attachments: serverTask.attachments ?? [],
       comments: serverTask.comments ?? [],
       category: serverTask.category,
-      contributors: serverTask.contributors,
+      contributors: contributors,
       duration: serverTask.duration,
       notes: serverTask.notes,
     } as Task;
@@ -196,7 +232,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         console.log('Loading projects for user:', user.username);
         console.log('Access token exists:', !!accessToken);
         
-        const response = await api<{ success: boolean; projects: Project[] }>(
+        const response = await api<{ success: boolean; projects: any[] }>(
           "/api/projects/"
         );
         
@@ -207,8 +243,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         
         if (response.success) {
           console.log('Loaded projects:', response.projects);
-          setProjects(response.projects);
-          const initialProjectId = response.projects[0]?.id ?? null;
+          const normalizedProjects = response.projects.map(normalizeProject);
+          setProjects(normalizedProjects);
+          const initialProjectId = normalizedProjects[0]?.id ?? null;
           setSelectedProjectId(initialProjectId);
           if (initialProjectId) {
             const tasksResponse = await api<{
@@ -330,33 +367,52 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const selectProject = (id: number | null) => setSelectedProjectId(id);
 
   const createProject = (data: Partial<Project>): Project => {
+    // Extract assignee IDs from contributors if provided
+    let assignee_ids: number[] = [];
+    if (data.contributors && Array.isArray(data.contributors)) {
+      // If contributors are user objects with IDs, extract IDs
+      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0] !== null && 'id' in data.contributors[0]) {
+        assignee_ids = (data.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
+      }
+    }
+
     const payload = {
       name: data.name,
       description: data.description,
       color: data.color || "#6366f1",
+      assignee_ids: assignee_ids,
     };
+
+    // Map contributors to strings for optimistic update
+    const contributorsStrings = data.contributors && Array.isArray(data.contributors)
+      ? data.contributors.map((c: any) => 
+          typeof c === 'string' ? c : (c.full_name || c.username || c.email || String(c.id))
+        )
+      : [];
 
     const temp: Project = {
       id: Date.now(),
       name: payload.name || "Untitled project",
       description: payload.description,
       color: payload.color,
+      contributors: contributorsStrings,
     };
     setProjects((prev) => [temp, ...prev]);
     // Immediately select the newly created project for better UX
     setSelectedProjectId(temp.id);
 
-    api<{ success: boolean; project: Project }>("/api/projects/", {
+    api<{ success: boolean; project: any }>("/api/projects/", {
       method: "POST",
       body: JSON.stringify(payload),
     })
       .then((response) => {
         if (response.success) {
+          const normalizedProject = normalizeProject(response.project);
           setProjects((prev) => [
-            response.project,
+            normalizedProject,
             ...prev.filter((p) => p.id !== temp.id),
           ]);
-          setSelectedProjectId(response.project.id);
+          setSelectedProjectId(normalizedProject.id);
         }
       })
       .catch(() => {
@@ -368,20 +424,30 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   };
 
   const createProjectAndWait = async (data: Partial<Project>): Promise<Project> => {
+    // Extract assignee IDs from contributors if provided
+    let assignee_ids: number[] = [];
+    if (data.contributors && Array.isArray(data.contributors)) {
+      // If contributors are user objects with IDs, extract IDs
+      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0] !== null && 'id' in data.contributors[0]) {
+        assignee_ids = (data.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
+      }
+    }
+
     try {
-      const response = await api<{ success: boolean; project: Project }>("/api/projects/", {
+      const response = await api<{ success: boolean; project: any }>("/api/projects/", {
         method: "POST",
         body: JSON.stringify({
           name: data.name,
           description: data.description,
           color: data.color || "#6366f1",
+          assignee_ids: assignee_ids,
         }),
       });
       if (response.success) {
-        const serverProject = response.project;
-        setProjects((prev) => [serverProject, ...prev]);
-        setSelectedProjectId(serverProject.id);
-        return serverProject;
+        const normalizedProject = normalizeProject(response.project);
+        setProjects((prev) => [normalizedProject, ...prev]);
+        setSelectedProjectId(normalizedProject.id);
+        return normalizedProject;
       }
       // Fallback to optimistic create if server did not return success
       return createProject(data);
@@ -395,10 +461,43 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     setProjects((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
-    api<{ success: boolean; project: Project }>(`/api/projects/${id}/`, {
+    
+    // Extract assignee IDs from contributors if provided
+    let assignee_ids: number[] | undefined = undefined;
+    if (updates.contributors !== undefined) {
+      if (Array.isArray(updates.contributors)) {
+        // If contributors are user objects with IDs, extract IDs
+        if (updates.contributors.length > 0 && typeof updates.contributors[0] === 'object' && updates.contributors[0] !== null && 'id' in updates.contributors[0]) {
+          assignee_ids = (updates.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
+        } else {
+          // If contributors are strings, we can't extract IDs - need to match by name
+          // For now, set to empty array to clear assignees
+          assignee_ids = [];
+        }
+      } else {
+        assignee_ids = [];
+      }
+    }
+    
+    const payload: any = { ...updates };
+    if (assignee_ids !== undefined) {
+      payload.assignee_ids = assignee_ids;
+      delete payload.contributors; // Remove contributors from payload, server uses assignee_ids
+    }
+    
+    api<{ success: boolean; project: any }>(`/api/projects/${id}/`, {
       method: "PUT",
-      body: JSON.stringify(updates),
-    }).catch(() => {});
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (response.success) {
+          const normalizedProject = normalizeProject(response.project);
+          setProjects((prev) =>
+            prev.map((p) => (p.id === id ? normalizedProject : p))
+          );
+        }
+      })
+      .catch(() => {});
   };
 
   const createTask = (projectId: number, data: Partial<Task>): Task => {
@@ -430,11 +529,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     }
 
     // Extract assignee IDs from contributors if provided
-    let assignee_ids = [];
+    let assignee_ids: number[] = [];
     if (data.contributors && Array.isArray(data.contributors)) {
       // If contributors are user objects with IDs, extract IDs
-      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0].id) {
-        assignee_ids = data.contributors.map(c => c.id);
+      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0] !== null && 'id' in data.contributors[0]) {
+        assignee_ids = (data.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
       }
     }
 
@@ -700,10 +799,19 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           : t
       )
     );
-    api(`/api/tasks/${taskId}/comments`, {
+    api(`/api/tasks/${taskId}/comments/${commentId}/`, {
       method: "PUT",
-      body: JSON.stringify({ commentId, text }),
-    }).catch(() => {});
+      body: JSON.stringify({ text }),
+    }).catch(() => {
+      // Reload comments on failure to stay consistent
+      loadTaskDetails(taskId).then((details) => {
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskId ? { ...t, comments: details.comments } : t
+          )
+        );
+      });
+    });
   };
 
   const deleteTaskComment = async (taskId: number, commentId: string) => {
