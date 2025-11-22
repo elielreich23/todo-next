@@ -17,7 +17,6 @@ The project uses GitHub Actions for continuous integration and deployment. The p
 ### 1. CI Pipeline (`.github/workflows/ci.yml`)
 
 Runs on every push and pull request to main/master/develop branches.
-
 **Jobs:**
 - **Frontend CI**: Linting, type checking, and building the Next.js application
 - **Backend CI**: Code formatting, linting, Django checks, and tests
