@@ -1,4 +1,4 @@
-import { API_BASE_URL, API_ENDPOINTS, STORAGE_KEYS } from '../constants';
+import { API_BASE_URL, API_ENDPOINTS } from '../constants';
 import { getAccessToken, setAccessToken, clearAuthTokens, getRefreshToken } from '../utils/storage';
 import { CUSTOM_EVENTS } from '../constants';
 
@@ -21,8 +21,6 @@ let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  // Check if user has a token before making request
-  const token = getAccessToken();
   // Don't redirect on initial check - let the error handling and retry logic handle it
   // This prevents premature redirects during token refresh
 

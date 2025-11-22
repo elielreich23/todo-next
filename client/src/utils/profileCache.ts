@@ -3,7 +3,7 @@
  * Handles profile data caching and retrieval
  */
 
-import { getCachedUserData, setCachedUserData } from './storage';
+import { getCachedUserData } from './storage';
 import { parseFullName } from './formatters';
 import { DEFAULTS } from '../constants';
 
