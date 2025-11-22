@@ -105,6 +105,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         const refreshTokenValue = getRefreshToken();
         
         if (accessToken && refreshTokenValue) {
+          // Get current cached user to preserve it if API calls fail
+          const cachedUser = getUserFromCache();
+          
           // Try to get user profile
           try {
             const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
@@ -118,16 +121,22 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             const newAccessToken = await refreshToken();
             if (newAccessToken) {
               // Try again with new token
-              const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
-              if (response) {
-                setUserState(response);
-                saveUserToCache(response); // Update cache with fresh data
+              try {
+                const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
+                if (response) {
+                  setUserState(response);
+                  saveUserToCache(response); // Update cache with fresh data
+                }
+              } catch (refreshError) {
+                // Even after refresh, profile fetch failed
+                // Keep cached user if available - don't clear user data
+                if (cachedUser) {
+                  setUserState(cachedUser);
+                }
               }
             } else {
-              // Refresh failed, clear tokens but keep cached user data
-              clearAuthTokens();
-              // Keep the cached user in state for display purposes
-              const cachedUser = getUserFromCache();
+              // Refresh failed, but keep user data if we have it
+              // Don't clear tokens or user data - keep what we have
               if (cachedUser) {
                 setUserState(cachedUser);
               }
@@ -137,19 +146,24 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           // No tokens, but we might have cached user data (already loaded in initial state)
           // Keep the cached data for display purposes - don't clear it
           const cachedUser = getUserFromCache();
-          if (cachedUser && !user) {
-            // If we have cache but no user in state, set it
-            setUserState(cachedUser);
+          if (cachedUser) {
+            // If we have cache, ensure it's in state
+            setUserState(prev => prev || cachedUser);
           }
         }
       } catch (error) {
         console.error('Error loading user from tokens:', error);
-        // Clear corrupted tokens but keep cached user data
-        clearAuthTokens();
-        // Keep cached user if available
+        // Don't clear user data on error - keep what we have
         const cachedUser = getUserFromCache();
-        if (cachedUser && !user) {
+        if (cachedUser) {
           setUserState(cachedUser);
+        }
+        // Only clear tokens if we really have no user data at all
+        if (!cachedUser) {
+          const accessToken = getAccessToken();
+          if (!accessToken) {
+            clearAuthTokens();
+          }
         }
       } finally {
         setIsLoading(false);

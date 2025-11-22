@@ -23,17 +23,30 @@ export default function Signup() {
   const [passwordError, setPasswordError] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const router = useRouter();
-  const { remoteSignup, isAuthenticated } = useUser();
+  const { remoteSignup, isAuthenticated, isLoading: userLoading, user } = useUser();
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
-  // Redirect to dashboard if already authenticated
+  // Apply auth page body styles while this page is mounted
   useEffect(() => {
-    if (isAuthenticated) {
+    if (typeof document !== 'undefined') {
+      document.body.classList.add('auth-page');
+      return () => {
+        document.body.classList.remove('auth-page');
+      };
+    }
+  }, []);
+
+  // Redirect to dashboard if already authenticated and user is loaded
+  useEffect(() => {
+    if (!userLoading && isAuthenticated && user) {
+      // Clear signing up state and redirect
+      setIsSigningUp(false);
       router.push('../../dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, userLoading, router]);
 
-  // Show loading if checking authentication
-  if (isAuthenticated) {
+  // Show loading if checking authentication, user is loading, or we just signed up
+  if (userLoading || (isAuthenticated && user) || isSigningUp) {
     return (
       <div style={{ 
         textAlign: 'center', 
@@ -41,7 +54,7 @@ export default function Signup() {
         fontSize: '1.5rem',
         color: '#666'
       }}>
-        Redirecting to dashboard...
+        {isSigningUp ? 'Creating your account...' : 'Redirecting to dashboard...'}
       </div>
     );
   }
@@ -97,6 +110,7 @@ export default function Signup() {
     }
 
     try {
+      setIsSigningUp(true);
       console.log("Attempting to signup with:", { fullName, username, email });
       
       // Send signup request to our Django backend
@@ -109,15 +123,15 @@ export default function Signup() {
       });
       
       setError("");
-      console.log("Signup successful, user data cached, redirecting to dashboard...");
+      console.log("Signup successful, user data cached, waiting for context to update...");
       
-      // Small delay to ensure user context and cache are updated
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Redirect to dashboard
-      router.push("/dashboard");
+      // Wait for user context to finish loading and user to be available
+      // The useEffect will handle the redirect once user is ready
+      // We keep isSigningUp true so the loading screen shows
+      // The useEffect will redirect when user and isAuthenticated are ready
     } catch (err: any) {
       console.error("Signup error:", err);
+      setIsSigningUp(false);
       
       if (err.response?.data?.detail) {
         setError(err.response.data.detail);

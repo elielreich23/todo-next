@@ -9,6 +9,8 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='projects')
+    # Users assigned to work on this project (can be multiple)
+    assignees = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='assigned_projects', blank=True)
     
     class Meta:
         ordering = ['-created_at']

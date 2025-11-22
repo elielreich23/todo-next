@@ -364,7 +364,7 @@ The Django backend uses environment variables for configuration. Key settings in
 - **📚 API Documentation**: Interactive API documentation with Swagger
 - **🚀 Performance Optimization**: Database optimization and caching
 - **🔒 Security Enhancements**: Rate limiting, input validation, and security headers
-- **📦 CI/CD Pipeline**: Automated testing and deployment
+- **📦 CI/CD Pipeline**: ✅ Automated testing and deployment (See [CI_CD_SETUP.md](CI_CD_SETUP.md))
 
 ---
 

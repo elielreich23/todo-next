@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django.db import models
 from .serializers import UserSerializer, UserRegistrationSerializer, UserLoginSerializer
 
@@ -94,7 +95,23 @@ def update_profile(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout(request):
-    """Logout endpoint (token blacklisting can be added here)"""
+    """Logout endpoint that blacklists the refresh token"""
+    refresh_token = request.data.get('refresh')
+    if not refresh_token:
+        return Response({
+            'success': False,
+            'message': 'Refresh token is required to logout'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+    except TokenError:
+        return Response({
+            'success': False,
+            'message': 'Invalid refresh token'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
     return Response({
         'success': True,
         'message': 'Logout successful'

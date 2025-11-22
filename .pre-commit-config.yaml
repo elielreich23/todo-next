@@ -1,0 +1,74 @@
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+
+  # Frontend - ESLint
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.57.0
+    hooks:
+      - id: eslint
+        files: ^client/.*\.(js|jsx|ts|tsx)$
+        types: [file]
+        additional_dependencies:
+          - eslint@8.57.0
+          - '@typescript-eslint/eslint-plugin@5.62.0'
+          - '@typescript-eslint/parser@5.62.0'
+          - eslint-config-next@14.2.5
+
+  # Backend - Black (code formatter)
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        language_version: python3.10
+        files: ^backend/.*\.py$
+
+  # Backend - isort (import sorter)
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+        files: ^backend/.*\.py$
+
+  # Backend - Flake8 (linter)
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=127', '--extend-ignore=E203,W503']
+        files: ^backend/.*\.py$
+        exclude: ^backend/(migrations|venv|env)/
+
+  # Backend - Django checks
+  - repo: local
+    hooks:
+      - id: django-check
+        name: Django Check
+        entry: bash -c 'cd backend && python manage.py check --deploy'
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+        always_run: false
+
+  # Security checks
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        args: ['-r', 'backend/', '-f', 'json', '-o', 'bandit-report.json']
+        files: ^backend/.*\.py$
+        exclude: ^backend/(migrations|venv|env)/
+

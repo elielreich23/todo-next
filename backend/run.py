@@ -12,29 +12,7 @@ if __name__ == "__main__":
     django.setup()
     
     # Apply Python 3.14 compatibility patch
-    from taskero_backend import compat_patch
+    from taskero_backend import compat_patch  # noqa: F401
     
-    # Run migrations first
-    print("Running migrations...")
-    execute_from_command_line(['manage.py', 'makemigrations'])
-    execute_from_command_line(['manage.py', 'migrate'])
-    
-    # Create superuser if it doesn't exist
-    print("Creating superuser...")
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-    
-    if not User.objects.filter(email='admin@taskero.com').exists():
-        User.objects.create_superuser(
-            username='admin',
-            email='admin@taskero.com',
-            password='admin123',
-            full_name='Admin User'
-        )
-        print("Superuser created: admin@taskero.com / admin123")
-    else:
-        print("Superuser already exists")
-    
-    # Start the development server
-    print("Starting Django development server...")
-    execute_from_command_line(['manage.py', 'runserver', '127.0.0.1:8000'])
+    args = sys.argv[1:] or ['runserver', '127.0.0.1:8000']
+    execute_from_command_line(['manage.py', *args])

@@ -2,15 +2,44 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.http import FileResponse, Http404
+from django.http import FileResponse
 from django.db.models import Count, Q, Avg
 from django.utils import timezone
 from datetime import timedelta
 from .models import Project, Task, TaskComment, TaskAttachment
 from .serializers import (
-    ProjectSerializer, TaskSerializer, TaskCreateUpdateSerializer,
+    ProjectSerializer, ProjectCreateUpdateSerializer, TaskSerializer, TaskCreateUpdateSerializer,
     TaskCommentSerializer, TaskAttachmentSerializer
 )
+from .notifications import (
+    notify_task_assignees,
+    notify_project_assignees,
+    create_task_update_notifications,
+    create_task_completed_notifications,
+)
+
+
+def _project_queryset_for_user(user):
+    return Project.objects.filter(
+        Q(owner=user) | Q(assignees=user)
+    ).distinct()
+
+
+def _task_queryset_for_user(user):
+    return Task.objects.filter(
+        Q(owner=user) |
+        Q(assignees=user) |
+        Q(project__owner=user) |
+        Q(project__assignees=user)
+    ).distinct()
+
+
+def _get_project_or_404_for_user(pk, user):
+    return _project_queryset_for_user(user).get(pk=pk)
+
+
+def _get_task_or_404_for_user(pk, user):
+    return _task_queryset_for_user(user).get(pk=pk)
 
 
 # Project Views
@@ -19,7 +48,7 @@ from .serializers import (
 def project_list_create(request):
     """List all projects for the authenticated user or create a new project"""
     if request.method == 'GET':
-        projects = Project.objects.filter(owner=request.user)
+        projects = _project_queryset_for_user(request.user)
         serializer = ProjectSerializer(projects, many=True)
         return Response({
             'success': True,
@@ -27,9 +56,14 @@ def project_list_create(request):
         })
     
     elif request.method == 'POST':
-        serializer = ProjectSerializer(data=request.data)
+        serializer = ProjectCreateUpdateSerializer(data=request.data)
         if serializer.is_valid():
             project = serializer.save(owner=request.user)
+            
+            # Notify newly assigned collaborators
+            if project.assignees.exists():
+                notify_project_assignees(project, list(project.assignees.values_list('id', flat=True)), request.user)
+            
             return Response({
                 'success': True,
                 'message': 'Project created successfully',
@@ -47,7 +81,7 @@ def project_list_create(request):
 def project_detail(request, pk):
     """Get, update, or delete a specific project"""
     try:
-        project = Project.objects.get(pk=pk, owner=request.user)
+        project = _get_project_or_404_for_user(pk, request.user)
     except Project.DoesNotExist:
         return Response({
             'success': False,
@@ -62,13 +96,19 @@ def project_detail(request, pk):
         })
     
     elif request.method == 'PUT':
-        serializer = ProjectSerializer(project, data=request.data, partial=True)
+        serializer = ProjectCreateUpdateSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
+            old_assignees = set(project.assignees.values_list('id', flat=True))
             serializer.save()
+            project.refresh_from_db()
+            new_assignees = set(project.assignees.values_list('id', flat=True))
+            added = list(new_assignees - old_assignees)
+            if added:
+                notify_project_assignees(project, added, request.user)
             return Response({
                 'success': True,
                 'message': 'Project updated successfully',
-                'project': serializer.data
+                'project': ProjectSerializer(project).data
             })
         
         return Response({
@@ -77,6 +117,12 @@ def project_detail(request, pk):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
+        # Only owners can delete
+        if project.owner_id != request.user.id:
+            return Response({
+                'success': False,
+                'message': 'Only project owners can delete projects'
+            }, status=status.HTTP_403_FORBIDDEN)
         project.delete()
         return Response({
             'success': True,
@@ -94,41 +140,28 @@ def task_list_create(request):
     user_id = request.query_params.get('userId')  # Get userId parameter
     
     if request.method == 'GET':
-        # Determine which user's tasks to fetch
-        target_user = request.user
-        if user_id:
-            try:
-                from accounts.models import User
-                target_user = User.objects.get(pk=user_id)
-            except User.DoesNotExist:
-                return Response({
-                    'success': False,
-                    'message': 'User not found'
-                }, status=status.HTTP_404_NOT_FOUND)
-        elif assigned_to_me:
-            target_user = request.user
+        if user_id and str(request.user.id) != user_id:
+            return Response({
+                'success': False,
+                'message': 'You are not allowed to view another user\'s tasks'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        tasks = _task_queryset_for_user(request.user)
         
         if project_id:
             try:
-                project = Project.objects.get(pk=project_id)
-                # If fetching assigned tasks, don't filter by owner
-                if assigned_to_me or user_id:
-                    tasks = Task.objects.filter(project=project, assignees=target_user)
-                else:
-                    tasks = Task.objects.filter(project=project, owner=request.user)
+                project = _get_project_or_404_for_user(project_id, request.user)
+                tasks = tasks.filter(project=project)
             except Project.DoesNotExist:
                 return Response({
                     'success': False,
                     'message': 'Project not found'
                 }, status=status.HTTP_404_NOT_FOUND)
-        else:
-            # If fetching assigned tasks, get all tasks assigned to the target user
-            if assigned_to_me or user_id:
-                tasks = Task.objects.filter(assignees=target_user).distinct()
-            else:
-                tasks = Task.objects.filter(owner=request.user)
         
-        serializer = TaskSerializer(tasks, many=True)
+        if assigned_to_me or user_id:
+            tasks = tasks.filter(assignees=request.user)
+        
+        serializer = TaskSerializer(tasks.distinct(), many=True)
         return Response({
             'success': True,
             'tasks': serializer.data
@@ -138,16 +171,15 @@ def task_list_create(request):
         serializer = TaskCreateUpdateSerializer(data=request.data)
         if serializer.is_valid():
             # Verify the project belongs to the user
-            project_id = serializer.validated_data.get('project').id
+            project = serializer.validated_data.get('project')
             try:
-                project = Project.objects.get(pk=project_id, owner=request.user)
+                Project.objects.get(pk=project.id, owner=request.user)
                 task = serializer.save(owner=request.user)
                 
                 # Send notifications to assigned users
                 assignee_ids = request.data.get('assignee_ids', [])
                 if assignee_ids:
-                    from .notifications import notify_task_assignees
-                    notify_task_assignees(task, assignee_ids)
+                    notify_task_assignees(task, assignee_ids, request.user)
                 
                 return Response({
                     'success': True,
@@ -171,7 +203,7 @@ def task_list_create(request):
 def task_detail(request, pk):
     """Get, update, or delete a specific task"""
     try:
-        task = Task.objects.get(pk=pk, owner=request.user)
+        task = _get_task_or_404_for_user(pk, request.user)
     except Task.DoesNotExist:
         return Response({
             'success': False,
@@ -186,24 +218,32 @@ def task_detail(request, pk):
         })
     
     elif request.method == 'PUT':
+        if task.owner_id != request.user.id:
+            return Response({
+                'success': False,
+                'message': 'Only the task owner can update this task'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = TaskCreateUpdateSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
-            # Get assignee IDs before update
             old_assignee_ids = set(task.assignees.values_list('id', flat=True))
+            old_status = task.status
+            old_priority = task.priority
+            old_due_date = task.due_date
             
             serializer.save()
-            
-            # Get assignee IDs after update
             task.refresh_from_db()
+            
             new_assignee_ids = set(task.assignees.values_list('id', flat=True))
-            
-            # Find newly assigned users
             newly_assigned_ids = new_assignee_ids - old_assignee_ids
-            
-            # Send notifications to newly assigned users
             if newly_assigned_ids:
-                from .notifications import notify_task_assignees
-                notify_task_assignees(task, list(newly_assigned_ids))
+                notify_task_assignees(task, list(newly_assigned_ids), request.user)
+            
+            if old_status != task.status or old_priority != task.priority or old_due_date != task.due_date:
+                if old_status != 'completed' and task.status == 'completed':
+                    create_task_completed_notifications(task, request.user)
+                else:
+                    create_task_update_notifications(task, request.user)
             
             return Response({
                 'success': True,
@@ -217,6 +257,11 @@ def task_detail(request, pk):
         }, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
+        if task.owner_id != request.user.id:
+            return Response({
+                'success': False,
+                'message': 'Only the task owner can delete this task'
+            }, status=status.HTTP_403_FORBIDDEN)
         task.delete()
         return Response({
             'success': True,
@@ -230,7 +275,7 @@ def task_detail(request, pk):
 def task_comments_list_create(request, task_id):
     """Get all comments for a task or create a new comment"""
     try:
-        task = Task.objects.get(pk=task_id, owner=request.user)
+        task = _get_task_or_404_for_user(task_id, request.user)
     except Task.DoesNotExist:
         return Response({
             'success': False,
@@ -261,17 +306,50 @@ def task_comments_list_create(request, task_id):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['DELETE'])
+@api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def task_comment_detail(request, task_id, comment_id):
-    """Delete a specific comment"""
+    """Retrieve, update, or delete a specific comment"""
     try:
-        comment = TaskComment.objects.get(pk=comment_id, task_id=task_id, author=request.user)
-    except TaskComment.DoesNotExist:
+        task = _get_task_or_404_for_user(task_id, request.user)
+        comment = TaskComment.objects.get(pk=comment_id, task=task)
+    except (Task.DoesNotExist, TaskComment.DoesNotExist):
         return Response({
             'success': False,
             'message': 'Comment not found'
         }, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'GET':
+        serializer = TaskCommentSerializer(comment)
+        return Response({
+            'success': True,
+            'comment': serializer.data
+        })
+    
+    if request.method == 'PUT':
+        if comment.author_id != request.user.id:
+            return Response({
+                'success': False,
+                'message': 'Only the comment author can update this comment'
+            }, status=status.HTTP_403_FORBIDDEN)
+        serializer = TaskCommentSerializer(comment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Comment updated successfully',
+                'comment': serializer.data
+            })
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if comment.author_id != request.user.id and task.owner_id != request.user.id:
+        return Response({
+            'success': False,
+            'message': 'Only the author or task owner can delete this comment'
+        }, status=status.HTTP_403_FORBIDDEN)
     
     comment.delete()
     return Response({
@@ -286,7 +364,7 @@ def task_comment_detail(request, task_id, comment_id):
 def task_attachments_list_create(request, task_id):
     """Get all attachments for a task or upload a new attachment"""
     try:
-        task = Task.objects.get(pk=task_id, owner=request.user)
+        task = _get_task_or_404_for_user(task_id, request.user)
     except Task.DoesNotExist:
         return Response({
             'success': False,
@@ -340,8 +418,9 @@ def task_attachments_list_create(request, task_id):
 def task_attachment_detail(request, task_id, attachment_id):
     """Download or delete a specific attachment"""
     try:
-        attachment = TaskAttachment.objects.get(pk=attachment_id, task_id=task_id, task__owner=request.user)
-    except TaskAttachment.DoesNotExist:
+        task = _get_task_or_404_for_user(task_id, request.user)
+        attachment = TaskAttachment.objects.get(pk=attachment_id, task=task)
+    except (Task.DoesNotExist, TaskAttachment.DoesNotExist):
         return Response({
             'success': False,
             'message': 'Attachment not found'
@@ -358,6 +437,11 @@ def task_attachment_detail(request, task_id, attachment_id):
             }, status=status.HTTP_404_NOT_FOUND)
     
     elif request.method == 'DELETE':
+        if attachment.uploaded_by_id != request.user.id and task.owner_id != request.user.id:
+            return Response({
+                'success': False,
+                'message': 'Only the uploader or task owner can delete this attachment'
+            }, status=status.HTTP_403_FORBIDDEN)
         # Delete the file from storage
         attachment.file.delete()
         attachment.delete()

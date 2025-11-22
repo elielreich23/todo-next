@@ -2,23 +2,53 @@ from rest_framework import serializers
 from .models import Project, Task, TaskComment, TaskAttachment
 
 
+class UserLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        from accounts.models import User
+        model = User
+        fields = ['id', 'username', 'email', 'full_name']
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     tasks_count = serializers.SerializerMethodField()
+    assignees = UserLiteSerializer(many=True, read_only=True)
     
     class Meta:
         model = Project
-        fields = ['id', 'name', 'description', 'color', 'created_at', 'updated_at', 'tasks_count']
+        fields = ['id', 'name', 'description', 'color', 'created_at', 'updated_at', 'tasks_count', 'assignees']
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_tasks_count(self, obj):
         return obj.tasks.count()
 
 
-class UserLiteSerializer(serializers.ModelSerializer):
+class ProjectCreateUpdateSerializer(serializers.ModelSerializer):
+    # Accept a list of user IDs to assign; resolved in create/update
+    assignee_ids = serializers.ListField(
+        child=serializers.IntegerField(), required=False, write_only=True
+    )
+    
     class Meta:
-        from accounts.models import User
-        model = User
-        fields = ['id', 'username', 'email', 'full_name']
+        model = Project
+        fields = ['name', 'description', 'color', 'assignee_ids']
+    
+    def create(self, validated_data):
+        assignees = validated_data.pop('assignee_ids', [])
+        project = super().create(validated_data)
+        if assignees:
+            from accounts.models import User
+            users = User.objects.filter(id__in=assignees)
+            project.assignees.set(users)
+        return project
+    
+    def update(self, instance, validated_data):
+        assignees = validated_data.pop('assignee_ids', None)
+        project = super().update(instance, validated_data)
+        if assignees is not None:
+            from accounts.models import User
+            users = User.objects.filter(id__in=assignees)
+            project.assignees.set(users)
+        return project
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -63,16 +93,12 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
 
 class TaskCommentSerializer(serializers.ModelSerializer):
     author = UserLiteSerializer(read_only=True)
-    author_id = serializers.IntegerField(write_only=True, required=False)
+    task = serializers.PrimaryKeyRelatedField(read_only=True)
     
     class Meta:
         model = TaskComment
-        fields = ['id', 'task', 'author', 'author_id', 'text', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
-    
-    def create(self, validated_data):
-        validated_data.pop('author_id', None)  # Remove author_id if present
-        return super().create(validated_data)
+        fields = ['id', 'task', 'author', 'text', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'task', 'author', 'created_at', 'updated_at']
 
 
 class TaskAttachmentSerializer(serializers.ModelSerializer):
