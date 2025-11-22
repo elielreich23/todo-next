@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useUser } from '../../../contexts/UserContext';
 import styles from './profile.module.scss';
 import {
@@ -223,7 +224,7 @@ export default function ProfilePage() {
             <span>19 May 2022</span>
           </div>
           <div className={styles.profilePicture}>
-            <img src="/api/placeholder/40/40" alt="Profile" />
+            <Image src="/api/placeholder/40/40" alt="Profile" width={40} height={40} />
           </div>
         </div>
       </div>
@@ -300,7 +301,7 @@ export default function ProfilePage() {
           </div>
           <div className={styles.profileInfo}>
             <div className={styles.profileImage}>
-              <img src="/api/placeholder/120/120" alt="Profile" />
+              <Image src="/api/placeholder/120/120" alt="Profile" width={120} height={120} />
             </div>
             <div className={styles.userDetails}>
               <h2 className={styles.userName}>

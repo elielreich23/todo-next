@@ -865,6 +865,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       updateTaskComment,
       deleteTaskComment,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [projects, tasks, selectedProjectId]
   );
 

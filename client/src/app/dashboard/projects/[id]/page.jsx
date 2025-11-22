@@ -25,6 +25,8 @@ export default function ProjectDetailPage() {
     duration: project?.duration || '',
   });
 
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+
   if (!project) {
     return (
       <div style={{ padding: '2rem' }}>
@@ -44,8 +46,6 @@ export default function ProjectDetailPage() {
   const handleSave = () => {
     updateProject(projectId, form);
   };
-
-  const [newTaskTitle, setNewTaskTitle] = useState('');
   const handleCreateTask = () => {
     if (!newTaskTitle.trim()) return;
     createTask(projectId, { title: newTaskTitle });

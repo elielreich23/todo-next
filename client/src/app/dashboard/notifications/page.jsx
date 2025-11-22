@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { api } from '../../../lib/api';
 import { API_ENDPOINTS } from '../../../constants';
 import { formatDate } from '../../../utils/formatters';
@@ -93,7 +94,7 @@ function NotificationsContent() {
 
   useEffect(() => {
     fetchNotifications();
-  }, [selectedId]);
+  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Get user display name from notification
   const getUserDisplayName = (notification) => {
@@ -179,9 +180,11 @@ function NotificationsContent() {
                 onClick={() => handleNotificationClick(notification)}
               >
                 <div className={styles.avatar}>
-                  <img 
+                  <Image 
                     src={`/api/placeholder/40/40?seed=${notification.id}`} 
                     alt={getUserDisplayName(notification)}
+                    width={40}
+                    height={40}
                   />
                 </div>
                 <div className={styles.notificationContent}>
@@ -220,9 +223,11 @@ function NotificationsContent() {
             
             <div className={styles.detailContent}>
               <div className={styles.detailAvatar}>
-                <img 
+                <Image 
                   src={`/api/placeholder/80/80?seed=${selectedNotification.id}`} 
                   alt={getUserDisplayName(selectedNotification)}
+                  width={80}
+                  height={80}
                 />
               </div>
               

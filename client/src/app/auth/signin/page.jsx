@@ -70,7 +70,7 @@ export default function SignInPage() {
         <h1 className={styles.welcomeMessage}>Welcome back!</h1>
         
         <p className={styles.paragraph}>
-          Don't have an account? 
+          Don&apos;t have an account? 
           <Link href="/auth/signup" className={styles.createAccountLink}>
             Create Account
           </Link>

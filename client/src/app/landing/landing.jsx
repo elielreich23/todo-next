@@ -2,6 +2,7 @@
 //this should stay intact if merged
 import React from "react";
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import './style/landing.scss';
 import { useUser } from '../../contexts/UserContext';
 
@@ -148,7 +149,7 @@ export default function Home() {
         <div className="testimonials-grid">
           <div className="testimonial-card">
             <div className="testimonial-avatar">
-              <img src="/api/placeholder/60/60" alt="Alina Delvi" />
+              <Image src="/api/placeholder/60/60" alt="Alina Delvi" width={60} height={60} />
             </div>
             <h4>Alina Delvi</h4>
             <p className="testimonial-role">CEO, Delvi HR</p>
@@ -159,7 +160,7 @@ export default function Home() {
           </div>
           <div className="testimonial-card">
             <div className="testimonial-avatar">
-              <img src="/api/placeholder/60/60" alt="John Smith" />
+              <Image src="/api/placeholder/60/60" alt="John Smith" width={60} height={60} />
             </div>
             <h4>John Smith</h4>
             <p className="testimonial-role">Product Manager, TechCorp</p>
@@ -170,7 +171,7 @@ export default function Home() {
           </div>
           <div className="testimonial-card">
             <div className="testimonial-avatar">
-              <img src="/api/placeholder/60/60" alt="Sarah Johnson" />
+              <Image src="/api/placeholder/60/60" alt="Sarah Johnson" width={60} height={60} />
             </div>
             <h4>Sarah Johnson</h4>
             <p className="testimonial-role">Developer, StartupXYZ</p>

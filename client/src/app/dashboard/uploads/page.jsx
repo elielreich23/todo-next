@@ -26,7 +26,7 @@ export default function UploadsPage() {
     }, 300);
   };
 
-  const onFiles = (incoming) => {
+  const onFiles = useCallback((incoming) => {
     const fileList = Array.from(incoming);
     setFiles((prev) => [...prev, ...fileList]);
     fileList.forEach((file) => {
@@ -42,13 +42,13 @@ export default function UploadsPage() {
       };
       reader.readAsText(file);
     });
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files?.length) onFiles(e.dataTransfer.files);
-  }, []);
+  }, [onFiles]);
 
   const onDragOver = useCallback((e) => {
     e.preventDefault();

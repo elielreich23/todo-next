@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { api } from '../../lib/api';
 import { API_ENDPOINTS } from '../../constants';
 import { formatDate } from '../../utils/formatters';
@@ -178,9 +179,11 @@ export default function NotificationBell() {
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className={styles.avatar}>
-                    <img 
+                    <Image 
                       src={`/api/placeholder/40/40?seed=${notification.id}`} 
                       alt={getUserDisplayName(notification)}
+                      width={40}
+                      height={40}
                     />
                   </div>
                   <div className={styles.notificationContent}>
