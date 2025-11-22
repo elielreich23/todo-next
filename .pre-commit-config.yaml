@@ -32,7 +32,6 @@ repos:
     rev: 25.11.0
     hooks:
       - id: black
-        language_version: python3.10
         files: ^backend/.*\.py$
 
   # Backend - isort (import sorter)
@@ -71,4 +70,3 @@ repos:
         args: ['-r', 'backend/', '-f', 'json', '-o', 'bandit-report.json']
         files: ^backend/.*\.py$
         exclude: ^backend/(migrations|venv|env)/
-
