@@ -78,3 +78,23 @@ You can set these environment variables:
 - `DJANGO_SETTINGS_MODULE` - Django settings module (default: taskero_backend.settings)
 - `DEBUG` - Debug mode (default: True)
 - `SECRET_KEY` - Django secret key (default: development key)
+
+## Production Deployment
+
+This backend is ready for deployment on Render. See `DEPLOYMENT.md` for detailed instructions.
+
+### Quick Deploy to Render
+
+1. Push your code to GitHub
+2. Connect your repository to Render
+3. The `render.yaml` file will automatically configure your deployment
+4. Set the required environment variables in Render dashboard
+
+### Required Environment Variables for Production
+
+- `SECRET_KEY` - Generate a strong secret key
+- `DATABASE_URL` - PostgreSQL connection string from Render
+- `ALLOWED_HOSTS` - Your Render app domain
+- `CORS_ALLOWED_ORIGINS` - Your frontend domain(s)
+
+See `env.example` for a complete list of environment variables.

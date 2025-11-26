@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: taskero-backend
+    runtime: python3
+    buildCommand: |
+      cd backend &&
+      pip install -r requirements.txt &&
+      python manage.py collectstatic --noinput
+    startCommand: |
+      cd backend &&
+      python manage.py migrate &&
+      gunicorn taskero_backend.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: taskero_backend.settings_production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: false
+      - key: SECURE_SSL_REDIRECT
+        value: true
+      - key: SESSION_COOKIE_SECURE
+        value: true
+      - key: CSRF_COOKIE_SECURE
+        value: true
+    plan: free
+
+databases:
+  - name: taskero-db
+    databaseName: taskero
+    user: taskero
+    plan: free
