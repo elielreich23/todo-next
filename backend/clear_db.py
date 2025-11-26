@@ -11,8 +11,8 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskero_backend.settings")
 django.setup()
 
-from accounts.models import User
-from projects.models import Project, Task
+from accounts.models import User  # noqa: E402
+from projects.models import Project, Task  # noqa: E402
 
 
 def clear_database():

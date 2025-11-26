@@ -26,7 +26,9 @@ def notify_task_assignees(task, assignee_ids, actor):
             recipient=assignee,
             notification_type="task_assigned",
             title="Task Assigned",
-            message=f'{_actor_name(actor) if actor else "A teammate"} assigned you to "{task.title}" in "{task.project.name}".',
+            message=(
+                f'{_actor_name(actor) if actor else "A teammate"} ' f'assigned you to "{task.title}" in "{task.project.name}".'
+            ),
             task=task,
             project=task.project,
         )

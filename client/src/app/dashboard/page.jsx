@@ -24,16 +24,16 @@ export default function DashboardPage() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    
+
     // Debug drag and drop events
     const handleDragStart = (e) => console.log('Global drag start:', e.target);
     const handleDragEnd = (e) => console.log('Global drag end:', e.target);
     const handleDrop = (e) => console.log('Global drop:', e.target);
-    
+
     document.addEventListener('dragstart', handleDragStart);
     document.addEventListener('dragend', handleDragEnd);
     document.addEventListener('drop', handleDrop);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('dragstart', handleDragStart);
@@ -82,7 +82,7 @@ export default function DashboardPage() {
         author: user?.name || 'Unknown User',
         createdAt: new Date()
       };
-      
+
       const updatedComments = [...(task.comments || []), newComment];
       updateTask(taskId, { comments: updatedComments });
     }
@@ -162,8 +162,8 @@ export default function DashboardPage() {
 
       <div className={styles.boardWrapper}>
         {columns.map(col => (
-          <div 
-            key={col.key} 
+          <div
+            key={col.key}
             className={styles.boardColumn}
             onDragOver={(e) => {
               e.preventDefault();
@@ -173,13 +173,13 @@ export default function DashboardPage() {
               e.preventDefault();
               e.stopPropagation();
               console.log('Drop on column container:', col.title);
-              
+
               // Try multiple data formats
               let taskId = parseInt(e.dataTransfer.getData('taskId'));
               if (!taskId) {
                 taskId = parseInt(e.dataTransfer.getData('text/plain'));
               }
-              
+
               if (taskId) {
                 console.log('Moving task:', taskId, 'to status:', col.key);
                 moveTaskStatus(taskId, col.key);
@@ -192,7 +192,7 @@ export default function DashboardPage() {
             <div className={styles.columnHeader}>
               <div className={styles.title}>{col.title}</div>
               {col.key === 'todo' && (
-                <button 
+                <button
                   className={styles.addTaskBtn}
                   onClick={() => setIsCreateOpen(true)}
                 >
@@ -200,7 +200,7 @@ export default function DashboardPage() {
                 </button>
               )}
             </div>
-            <div 
+            <div
               className={styles.cards}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -215,21 +215,21 @@ export default function DashboardPage() {
                 e.preventDefault();
                 e.stopPropagation();
                 e.currentTarget.classList.remove(styles.dragOver);
-                
+
                 // Try multiple data formats
                 let taskId = parseInt(e.dataTransfer.getData('taskId'));
                 if (!taskId) {
                   taskId = parseInt(e.dataTransfer.getData('text/plain'));
                 }
-                
-                console.log('Drop event triggered:', { 
-                  taskId, 
-                  targetStatus: col.key, 
+
+                console.log('Drop event triggered:', {
+                  taskId,
+                  targetStatus: col.key,
                   targetColumn: col.title,
                   dataTransfer: e.dataTransfer,
                   types: e.dataTransfer.types
                 });
-                
+
                 if (taskId) {
                   console.log('Moving task:', taskId, 'to status:', col.key);
                   moveTaskStatus(taskId, col.key);
@@ -251,18 +251,18 @@ export default function DashboardPage() {
                 console.log(`Task ${t.id} (${t.title}) status: ${t.status}, column: ${col.key}, matches: ${matches}`);
                 return matches;
               }).map(t => (
-                <div 
-                  key={t.id} 
-                  className={styles.taskCard} 
+                <div
+                  key={t.id}
+                  className={styles.taskCard}
                   draggable={true}
-                  onDragStart={(e)=>{ 
+                  onDragStart={(e)=>{
                     console.log('Drag start for task:', t.id, 'with status:', t.status);
                     e.dataTransfer.setData('taskId', String(t.id));
                     e.dataTransfer.setData('text/plain', String(t.id));
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.dropEffect = 'move';
                     e.currentTarget.classList.add(styles.dragging);
-                    
+
                     // Verify data was set
                     console.log('DataTransfer types:', e.dataTransfer.types);
                     console.log('DataTransfer taskId:', e.dataTransfer.getData('taskId'));
@@ -439,7 +439,7 @@ export default function DashboardPage() {
                               </div>
                               <div className={styles.attachmentActions}>
                                 <button className={styles.downloadBtn}>Download</button>
-                                <button 
+                                <button
                                   className={styles.removeBtn}
                                   onClick={() => handleRemoveAttachment(task.id, attachment.id)}
                                 >
@@ -468,7 +468,7 @@ export default function DashboardPage() {
                                 </span>
                               </div>
                               <div className={styles.commentText}>{comment.text}</div>
-                              <button 
+                              <button
                                 className={styles.removeCommentBtn}
                                 onClick={() => handleRemoveComment(task.id, comment.id)}
                               >
@@ -493,7 +493,7 @@ export default function DashboardPage() {
                             }
                           }}
                         />
-                        <button 
+                        <button
                           className={styles.addCommentBtn}
                           onClick={(e) => {
                             const textarea = e.target.previousElementSibling;

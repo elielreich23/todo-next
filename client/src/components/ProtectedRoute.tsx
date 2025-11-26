@@ -9,9 +9,9 @@ interface ProtectedRouteProps {
   fallback?: React.ReactNode;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  fallback = <div>Loading...</div> 
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  fallback = <div>Loading...</div>
 }) => {
   const { isAuthenticated, isSessionValid, isLoading } = useSession();
   const router = useRouter();

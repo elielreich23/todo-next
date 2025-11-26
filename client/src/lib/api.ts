@@ -8,11 +8,11 @@ const getAuthHeaders = (): HeadersInit => {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   return headers;
 };
 
@@ -32,7 +32,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     },
     cache: 'no-store',
   });
-  
+
   if (!res.ok) {
     // Handle authentication errors
     if (res.status === 401) {
@@ -74,7 +74,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         // Start new refresh
         isRefreshing = true;
         refreshPromise = refreshToken();
-        
+
         try {
           const newToken = await refreshPromise;
           if (!newToken) {
@@ -89,7 +89,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
             }
             throw new Error('Authentication failed. Please log in again.');
           }
-          
+
           // Retry the request with new token
           const retryRes = await fetch(`${API_BASE_URL}${path}`, {
             ...init,
@@ -99,10 +99,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
             },
             cache: 'no-store',
           });
-          
+
           isRefreshing = false;
           refreshPromise = null;
-          
+
           if (!retryRes.ok) {
             // If retry still fails with 401, redirect to login
             if (retryRes.status === 401) {
@@ -116,7 +116,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
             const message = await retryRes.text().catch(() => retryRes.statusText);
             throw new Error(message || `Request failed: ${retryRes.status}`);
           }
-          
+
           if (retryRes.status === 204) return undefined as unknown as T;
           return retryRes.json() as Promise<T>;
         } catch (error) {
@@ -129,11 +129,11 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         throw new Error('Authentication failed. Please log in again.');
       }
     }
-    
+
     const message = await res.text().catch(() => res.statusText);
     throw new Error(message || `Request failed: ${res.status}`);
   }
-  
+
   if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
 }
@@ -146,7 +146,7 @@ export const refreshToken = async (): Promise<string | null> => {
       console.log('No refresh token available');
       return null;
     }
-    
+
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.TOKEN_REFRESH}`, {
       method: 'POST',
       headers: {
@@ -154,7 +154,7 @@ export const refreshToken = async (): Promise<string | null> => {
       },
       body: JSON.stringify({ refresh: refreshTokenValue }),
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       if (data.access) {
@@ -170,10 +170,10 @@ export const refreshToken = async (): Promise<string | null> => {
       console.log('Token refresh failed with status:', response.status);
       clearAuthTokens();
       sessionStorage.clear();
-      
+
       // Dispatch logout event
       window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
-      
+
       // Don't redirect here - let the calling code handle it to avoid loops
       return null;
     }
@@ -183,5 +183,3 @@ export const refreshToken = async (): Promise<string | null> => {
     return null;
   }
 };
-
-

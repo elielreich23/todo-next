@@ -11,7 +11,7 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
   const { updateTask, createProject, createProjectAndWait, projects } = useProjects();
   const { user } = useUser();
   const currentProject = projects.find(p => p.id === projectId);
-  
+
   const [attachments, setAttachments] = useState([]);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -34,13 +34,13 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
     if (task) {
       setAttachments(task.attachments || []);
       setComments(task.comments || []);
-      
+
       // Prefill assignees by matching contributor names to actual user objects
       if (task.contributors && task.contributors.length > 0 && allUsers.length > 0) {
         const matchedUsers = task.contributors
           .map(contributorName => {
             // Try to find a user that matches by full_name, username, or email
-            const matchedUser = allUsers.find(user => 
+            const matchedUser = allUsers.find(user =>
               user.full_name === contributorName ||
               user.username === contributorName ||
               user.email === contributorName
@@ -66,13 +66,13 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
 
   const addFiles = (files) => {
     const maxSize = 200 * 1024 * 1024;
-    
+
     files.forEach(file => {
       if (file.size > maxSize) {
         alert(`File ${file.name} is too large. Maximum size is 200MB.`);
         return;
       }
-      
+
       const attachment = {
         id: Date.now() + Math.random(),
         name: file.name,
@@ -82,7 +82,7 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
         uploadedAt: new Date(),
         uploadedBy: user?.fullName || 'Unknown User'
       };
-      
+
       setAttachments(prev => [...prev, attachment]);
     });
   };
@@ -137,32 +137,32 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
 
   const steps = [
     [
-      { 
-        name: 'title', 
-        label: 'Task Title', 
-        placeholder: 'Task Title', 
+      {
+        name: 'title',
+        label: 'Task Title',
+        placeholder: 'Task Title',
         type: 'text',
-        defaultValue: task.title 
+        defaultValue: task.title
       },
-      { 
-        name: 'project', 
-        label: 'Project', 
-        placeholder: 'Select Project', 
-        type: 'select', 
+      {
+        name: 'project',
+        label: 'Project',
+        placeholder: 'Select Project',
+        type: 'select',
         options: [...projects.map(p => p.name), '+ Create New Project'],
-        defaultValue: currentProject?.name 
+        defaultValue: currentProject?.name
       },
-      { 
-        name: 'category', 
-        label: 'Category', 
-        placeholder: 'Select Category', 
-        type: 'select', 
+      {
+        name: 'category',
+        label: 'Category',
+        placeholder: 'Select Category',
+        type: 'select',
         options: ['Design', 'Development', 'Marketing', 'Research', 'UX', 'Content'],
-        defaultValue: task.category 
+        defaultValue: task.category
       },
-      { 
-        name: 'assignees', 
-        label: 'Contributors', 
+      {
+        name: 'assignees',
+        label: 'Contributors',
         type: 'custom',
         renderCustom: () => (
           <div className={styles.assigneesPicker}>
@@ -192,76 +192,76 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
       },
     ],
     [
-      { 
-        name: 'description', 
-        label: 'Description', 
-        placeholder: 'Describe the task', 
+      {
+        name: 'description',
+        label: 'Description',
+        placeholder: 'Describe the task',
         type: 'textarea',
-        defaultValue: task.description 
+        defaultValue: task.description
       },
-      { 
-        name: 'duration', 
-        label: 'Task Duration', 
-        placeholder: 'Select a duration', 
-        type: 'select', 
+      {
+        name: 'duration',
+        label: 'Task Duration',
+        placeholder: 'Select a duration',
+        type: 'select',
         options: ['1 day', '3 days', '1 week', '2 weeks', '1 month'],
-        defaultValue: task.duration 
+        defaultValue: task.duration
       },
     ],
     [
-      { 
-        name: 'progress', 
-        label: 'Progress Steps', 
-        placeholder: 'Number of completed steps', 
-        type: 'number', 
+      {
+        name: 'progress',
+        label: 'Progress Steps',
+        placeholder: 'Number of completed steps',
+        type: 'number',
         helpText: 'e.g., 7',
-        defaultValue: task.progress?.toString() 
+        defaultValue: task.progress?.toString()
       },
-      { 
-        name: 'totalSteps', 
-        label: 'Total Steps', 
-        placeholder: 'Total number of steps', 
-        type: 'number', 
+      {
+        name: 'totalSteps',
+        label: 'Total Steps',
+        placeholder: 'Total number of steps',
+        type: 'number',
         helpText: 'e.g., 10',
-        defaultValue: task.totalSteps?.toString() 
+        defaultValue: task.totalSteps?.toString()
       },
-      { 
-        name: 'dueDate', 
-        label: 'Due Date', 
-        placeholder: '', 
+      {
+        name: 'dueDate',
+        label: 'Due Date',
+        placeholder: '',
         type: 'date',
-        defaultValue: task.dueDate 
+        defaultValue: task.dueDate
       },
-      { 
-        name: 'status', 
-        label: 'Status', 
-        placeholder: 'Select status', 
-        type: 'select', 
+      {
+        name: 'status',
+        label: 'Status',
+        placeholder: 'Select status',
+        type: 'select',
         options: ['todo', 'in-progress', 'done'],
-        defaultValue: task.status 
+        defaultValue: task.status
       },
     ],
     [
-      { 
-        name: 'notes', 
-        label: 'Additional Notes', 
-        placeholder: 'Optional notes', 
+      {
+        name: 'notes',
+        label: 'Additional Notes',
+        placeholder: 'Optional notes',
         type: 'textarea',
-        defaultValue: task.notes 
+        defaultValue: task.notes
       },
     ],
     [
-      { 
-        name: 'fileUpload', 
-        label: 'File Attachments', 
-        placeholder: 'Upload files up to 200MB', 
+      {
+        name: 'fileUpload',
+        label: 'File Attachments',
+        placeholder: 'Upload files up to 200MB',
         type: 'custom',
         renderCustom: (field, values, handleChange) => (
           <div className={styles.fileUploadSection}>
             <h3>File Attachments</h3>
             <p className={styles.uploadInfo}>Upload files up to 200MB. Drag and drop or click to select.</p>
-            
-            <div 
+
+            <div
               className={`${styles.fileUploadArea} ${isDragOver ? styles.dragOver : ''}`}
               onClick={() => fileInputRef.current?.click()}
               onDragOver={handleDragOver}
@@ -313,16 +313,16 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
       },
     ],
     [
-      { 
-        name: 'comments', 
-        label: 'Comments', 
-        placeholder: 'Add any comments', 
+      {
+        name: 'comments',
+        label: 'Comments',
+        placeholder: 'Add any comments',
         type: 'custom',
         renderCustom: (field, values, handleChange) => (
           <div className={styles.commentsSection}>
             <h3>Comments</h3>
             <p className={styles.commentsInfo}>Add new comments or manage existing ones.</p>
-            
+
             <div className={styles.commentInputGroup}>
               <textarea
                 className={styles.commentTextarea}
@@ -392,7 +392,7 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
       ctas={{ submitLabel: 'UPDATE TASK' }}
       onSubmit={async (vals) => {
         let projectName = vals.project;
-        
+
         // Handle "Create New Project" option
         if (vals.project === '+ Create New Project') {
           // Create a new project with a default name and wait for real id
@@ -401,7 +401,7 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
           // Note: We don't change the task's projectId here since updateTask doesn't support that
           // The task will remain in its current project but show the new project name
         }
-        
+
         updateTask(task.id, {
           title: vals.title,
           project: projectName,
@@ -434,5 +434,3 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
     />
   );
 }
-
-

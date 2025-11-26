@@ -4,7 +4,7 @@
     width: 100vw;
     background-color: #1C1D22;
   }
-  
+
   .left {
     flex: 1;
     display: flex;
@@ -16,7 +16,7 @@
     background-size: contain;
     position: relative;
   }
-  
+
   .logo {
     position: absolute;
     top: 1rem;
@@ -24,14 +24,14 @@
     font-size: 1.5rem;
     font-weight: bold;
   }
-  
+
   .welcomeMessage {
     font-size: 5rem;
     margin-left: 2rem;
     top: -3.5rem;
     position: relative;
   }
-  
+
   .paragraph {
     position: relative;
     font-size: large;
@@ -39,13 +39,13 @@
     font-family: 'Exo 2';
     left: -7rem;
   }
-  
+
   .createAccountLink {
     color: #FEA451;
     text-decoration: none;
     margin-left: 0.5rem;
   }
-  
+
   .terms {
     position: absolute;
     bottom: 1rem;
@@ -53,11 +53,11 @@
     font-size: 0.75rem;
     color: #fff;
   }
-  
+
   .terms a {
     color: #FEA451;
   }
-  
+
   .right {
     flex: 1;
     display: flex;
@@ -66,7 +66,7 @@
     flex-direction: column;
     padding: 2rem;
   }
-  
+
   .form {
     display: flex;
     flex-direction: column;
@@ -74,7 +74,7 @@
     max-width: 400px;
     margin-top: 2rem; /* Added top margin to space out the form from the top */
   }
-  
+
   .googleButton {
     background: #ffffff;
     border: none;
@@ -90,13 +90,13 @@
     border-radius: 10px;
     background: linear-gradient(105deg, #ffa0483d, #00000059);
     box-shadow: 5px 5px 10px #5e3717, -5px -5px 10px #0c0c0e;
-  
+
     &:hover {
       background: linear-gradient(105deg, #361f0c, #000000);
       box-shadow: 5px 5px 10px #5e3717, -5px -5px 10px #0c0c0e;
     }
   }
-  
+
   .input {
     background: linear-gradient(145deg, #2e2f36, #17171b);
     border: none;
@@ -106,7 +106,7 @@
     border-radius: 25px;
     box-shadow: 5px 5px 10px #151516, -5px -5px 10px #27282f;
   }
-  
+
   .link {
     color: #FEA451;
     text-decoration: none;
@@ -115,11 +115,11 @@
     margin-bottom: 1rem;
     text-align: right;
   }
-  
+
   .textWhite {
     color: #FFFFFF;
   }
-  
+
   .loginButton {
     background: linear-gradient(145deg, #653100a2, #1c1d2291);
     border: none;
@@ -132,14 +132,13 @@
     align-self: center;
     width: 60%;
     margin-top: 2rem; /* Increased top margin for spacing */
-  
+
     &:hover {
       background: linear-gradient(145deg, #cf6909a2, #1c1d2291);
     }
   }
-  
+
   .loginButton a {
-    color: inherit; 
-    text-decoration: none; 
+    color: inherit;
+    text-decoration: none;
   }
-  

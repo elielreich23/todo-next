@@ -23,7 +23,7 @@ export default function ProfilePage() {
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const [profileData, setProfileData] = useState(() => loadProfileFromCache());
   const [tempData, setTempData] = useState(() => loadProfileFromCache());
 
@@ -40,12 +40,12 @@ export default function ProfilePage() {
   // Function to update profile data from user
   const updateProfileFromUser = useCallback((userData) => {
     if (!userData) return;
-    
+
     setProfileData(prev => {
       const newProfileData = createProfileDataFromUser(userData, prev);
       return newProfileData;
     });
-    
+
     setTempData(prev => {
       const newProfileData = createProfileDataFromUser(userData, prev);
       return newProfileData;
@@ -56,7 +56,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const cachedData = loadProfileFromCache();
     const hasCachedData = hasProfileData(cachedData);
-    
+
     if (userLoading) {
       // While loading, use cache if available and current data is empty
       if (hasCachedData) {
@@ -152,7 +152,7 @@ export default function ProfilePage() {
           },
           body: JSON.stringify(payload)
         });
-        
+
         if (response.ok) {
           setProfileData({ ...tempData });
           setIsEditing(false);
@@ -185,7 +185,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (activeTab !== 'assigned') return;
     if (!user || userLoading) return;
-    
+
     const fetchAssignedTasks = async () => {
       try {
         // Fetch tasks assigned to the current user (or the user whose profile is being viewed)
@@ -201,7 +201,7 @@ export default function ProfilePage() {
         console.error('Error fetching assigned tasks:', error);
       }
     };
-    
+
     fetchAssignedTasks();
   }, [activeTab, user, userLoading]);
 
@@ -359,7 +359,7 @@ export default function ProfilePage() {
                 <div className={styles.formField}>
                   <label>Phone Number</label>
                   <div className={styles.phoneInput}>
-                    <select 
+                    <select
                       value={isEditing ? tempData.phoneCode : profileData.phoneCode}
                       onChange={(e) => handleInputChange('phoneCode', e.target.value)}
                       disabled={!isEditing}
@@ -394,7 +394,7 @@ export default function ProfilePage() {
                 <div className={styles.formField}>
                   <label>Country</label>
                   <div className={styles.countryInput}>
-                    <select 
+                    <select
                       value={isEditing ? tempData.country : profileData.country}
                       onChange={(e) => handleInputChange('country', e.target.value)}
                       disabled={!isEditing}
@@ -425,13 +425,13 @@ export default function ProfilePage() {
             <div className={styles.actionButtons}>
               {isEditing ? (
                 <>
-                  <button 
+                  <button
                     className={styles.cancelButton}
                     onClick={handleCancel}
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     className={styles.saveButton}
                     onClick={handleEditProfile}
                   >
@@ -439,7 +439,7 @@ export default function ProfilePage() {
                   </button>
                 </>
               ) : (
-                <button 
+                <button
                   className={styles.editButton}
                   onClick={handleEditProfile}
                 >

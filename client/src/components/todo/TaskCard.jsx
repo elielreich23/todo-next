@@ -3,12 +3,12 @@
 import React from 'react';
 import styles from './TaskCard.module.css';
 
-export default function TaskCard({ 
-  task, 
-  onEdit, 
-  onStatusChange, 
-  onDelete, 
-  onMoveToProject, 
+export default function TaskCard({
+  task,
+  onEdit,
+  onStatusChange,
+  onDelete,
+  onMoveToProject,
   projects = [],
   showDropdown = true,
   draggable = false,
@@ -38,7 +38,7 @@ export default function TaskCard({
   };
 
   return (
-    <div 
+    <div
       className={`${styles.taskCard} ${className}`}
       draggable={draggable}
       onDragStart={onDragStart}
@@ -59,8 +59,8 @@ export default function TaskCard({
                 <div className={styles.moveToProject}>
                   <span>Move to project:</span>
                   {projects.map(project => (
-                    <button 
-                      key={project.id} 
+                    <button
+                      key={project.id}
                       onClick={() => onMoveToProject(task.id, project.id)}
                     >
                       {project.name}

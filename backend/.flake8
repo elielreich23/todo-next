@@ -1,6 +1,6 @@
 [flake8]
 max-line-length = 127
-exclude = 
+exclude =
     migrations,
     __pycache__,
     manage.py,
@@ -8,9 +8,8 @@ exclude =
     env,
     .venv,
     settings.py
-ignore = 
+ignore =
     E203,
     E501,
     W503
 max-complexity = 10
-

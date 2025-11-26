@@ -33,7 +33,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         alert(`File ${file.name} is too large. Maximum size is ${FILE_UPLOAD.MAX_SIZE_MB}MB.`);
         return;
       }
-      
+
       const attachment = {
         id: Date.now() + Math.random(),
         name: file.name,
@@ -43,7 +43,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
         uploadedAt: new Date(),
         uploadedBy: user?.fullName || DEFAULTS.UNKNOWN_USER
       };
-      
+
       setAttachments(prev => [...prev, attachment]);
     });
   };
@@ -92,10 +92,10 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       { name: 'title', label: 'Task Title', placeholder: 'Task Title', type: 'text' },
       { name: 'project', label: 'Project', placeholder: 'Select Project', type: 'select', options: [...projects.map(p => p.name), '+ Create New Project'], defaultValue: currentProject?.name },
       { name: 'category', label: 'Category', placeholder: 'Select Category', type: 'select', options: TASK_CATEGORIES },
-      { 
-        name: 'contributors', 
-        label: 'Contributors', 
-        placeholder: 'Search and add contributors...', 
+      {
+        name: 'contributors',
+        label: 'Contributors',
+        placeholder: 'Search and add contributors...',
         type: 'custom',
         helpText: `You can add up to ${VALIDATION.MAX_CONTRIBUTORS} team members`,
         renderCustom: (field, values, handleChange) => (
@@ -122,17 +122,17 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       { name: 'notes', label: 'Additional Notes', placeholder: 'Optional notes', type: 'textarea' },
     ],
     [
-      { 
-        name: 'fileUpload', 
-        label: 'File Attachments', 
-        placeholder: 'Upload files up to 200MB', 
+      {
+        name: 'fileUpload',
+        label: 'File Attachments',
+        placeholder: 'Upload files up to 200MB',
         type: 'custom',
         renderCustom: (field, values, handleChange) => (
           <div className={styles.fileUploadSection}>
             <h3>File Attachments</h3>
             <p className={styles.uploadInfo}>Upload files up to 200MB. Drag and drop or click to select.</p>
-            
-            <div 
+
+            <div
               className={`${styles.fileUploadArea} ${isDragOver ? styles.dragOver : ''}`}
               onClick={() => fileInputRef.current?.click()}
               onDragOver={handleDragOver}
@@ -184,16 +184,16 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       },
     ],
     [
-      { 
-        name: 'comments', 
-        label: 'Initial Comments', 
-        placeholder: 'Add any initial comments', 
+      {
+        name: 'comments',
+        label: 'Initial Comments',
+        placeholder: 'Add any initial comments',
         type: 'custom',
         renderCustom: (field, values, handleChange) => (
           <div className={styles.commentsSection}>
             <h3>Initial Comments</h3>
             <p className={styles.commentsInfo}>Add any initial comments or notes for this task.</p>
-            
+
             <div className={styles.commentInputGroup}>
               <textarea
                 className={styles.commentTextarea}
@@ -264,7 +264,7 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       onSubmit={async (vals) => {
         let targetProjectId = projectId;
         let projectName = vals.project;
-        
+
         // Handle "Create New Project" option
         if (vals.project === '+ Create New Project') {
           // Create a new project with a default name
@@ -278,9 +278,9 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
             targetProjectId = selectedProject.id;
           }
         }
-        
+
         console.log('Creating task for project:', targetProjectId, 'with name:', projectName);
-        
+
         createTask(targetProjectId, {
           title: vals.title,
           project: projectName,
@@ -306,4 +306,3 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
     />
   );
 }
-

@@ -115,14 +115,14 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     // Map assignees (user objects) to contributors (string array)
     let contributors: string[] = [];
     if (serverProject.assignees && Array.isArray(serverProject.assignees)) {
-      contributors = serverProject.assignees.map((assignee: any) => 
+      contributors = serverProject.assignees.map((assignee: any) =>
         assignee.full_name || assignee.username || assignee.email || String(assignee.id)
       );
     } else if (serverProject.contributors && Array.isArray(serverProject.contributors)) {
       // Fallback to contributors if assignees not present
       contributors = serverProject.contributors;
     }
-    
+
     return {
       id: serverProject.id,
       name: serverProject.name,
@@ -141,18 +141,18 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       if (s === "completed") return "done";
       return (s as Task["status"]) || "todo";
     };
-    
+
     // Map assignees (user objects) to contributors (string array)
     let contributors: string[] = [];
     if (serverTask.assignees && Array.isArray(serverTask.assignees)) {
-      contributors = serverTask.assignees.map((assignee: any) => 
+      contributors = serverTask.assignees.map((assignee: any) =>
         assignee.full_name || assignee.username || assignee.email || String(assignee.id)
       );
     } else if (serverTask.contributors && Array.isArray(serverTask.contributors)) {
       // Fallback to contributors if assignees not present
       contributors = serverTask.contributors;
     }
-    
+
     const normalized = {
       id: serverTask.id,
       projectId: Number(serverTask.project ?? serverTask.projectId),
@@ -231,16 +231,16 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       try {
         console.log('Loading projects for user:', user.username);
         console.log('Access token exists:', !!accessToken);
-        
+
         const response = await api<{ success: boolean; projects: any[] }>(
           "/api/projects/"
         );
-        
+
         // Check if component unmounted or user changed
         if (isCancelled) return;
-        
+
         console.log('Projects API response:', response);
-        
+
         if (response.success) {
           console.log('Loaded projects:', response.projects);
           const normalizedProjects = response.projects.map(normalizeProject);
@@ -252,10 +252,10 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
               success: boolean;
               tasks: Task[];
             }>(`/api/tasks/?projectId=${initialProjectId}`);
-            
+
             // Check again if cancelled
             if (isCancelled) return;
-            
+
             console.log('Tasks API response:', tasksResponse);
             if (tasksResponse.success) {
               console.log('Loaded tasks:', tasksResponse.tasks);
@@ -301,12 +301,12 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       const commentsResponse = await api<{ success: boolean; comments: any[] }>(
         `/api/tasks/${taskId}/comments/`
       );
-      
+
       // Load attachments
       const attachmentsResponse = await api<{ success: boolean; attachments: any[] }>(
         `/api/tasks/${taskId}/attachments/`
       );
-      
+
       return {
         comments: commentsResponse.success ? commentsResponse.comments.map((c: any) => ({
           id: c.id.toString(),
@@ -385,7 +385,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
     // Map contributors to strings for optimistic update
     const contributorsStrings = data.contributors && Array.isArray(data.contributors)
-      ? data.contributors.map((c: any) => 
+      ? data.contributors.map((c: any) =>
           typeof c === 'string' ? c : (c.full_name || c.username || c.email || String(c.id))
         )
       : [];
@@ -461,7 +461,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     setProjects((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
-    
+
     // Extract assignee IDs from contributors if provided
     let assignee_ids: number[] | undefined = undefined;
     if (updates.contributors !== undefined) {
@@ -478,13 +478,13 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         assignee_ids = [];
       }
     }
-    
+
     const payload: any = { ...updates };
     if (assignee_ids !== undefined) {
       payload.assignee_ids = assignee_ids;
       delete payload.contributors; // Remove contributors from payload, server uses assignee_ids
     }
-    
+
     api<{ success: boolean; project: any }>(`/api/projects/${id}/`, {
       method: "PUT",
       body: JSON.stringify(payload),
@@ -503,7 +503,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const createTask = (projectId: number, data: Partial<Task>): Task => {
     // Check if this is a real project ID (not optimistic)
     const isRealProject = projects.some(p => p.id === projectId && p.id < 1000000); // Real IDs are usually smaller
-    
+
     if (!isRealProject) {
       console.warn('Attempting to create task with optimistic project ID:', projectId);
       // Don't create the task on server yet, just return optimistic
@@ -659,7 +659,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      
+
       if (data.success && data.attachment) {
         const attachment: FileAttachment = {
           id: data.attachment.id.toString(),

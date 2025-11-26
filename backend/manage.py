@@ -17,11 +17,11 @@ def main():
         ) from exc
 
     # Apply Python 3.14 compatibility patch after Django imports but before running commands
-    import django
+    import django  # noqa: F401
 
     if not django.apps.apps.ready:
         django.setup()
-    from taskero_backend import compat_patch
+    from taskero_backend import compat_patch  # noqa: F401, E402
 
     execute_from_command_line(sys.argv)
 

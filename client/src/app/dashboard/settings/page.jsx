@@ -30,7 +30,7 @@ export default function SettingsPage() {
           <div className={styles.categoryContent}>
             <h2>Basic Information</h2>
             <p className={styles.categoryDescription}>Update your account information and personal details.</p>
-            
+
             <form className={styles.settingsForm} onSubmit={(e) => e.preventDefault()}>
               <div className={styles.formRow}>
                 <label className={styles.formField}>
@@ -77,11 +77,11 @@ export default function SettingsPage() {
               <div className={styles.planList}>
                 {plans.map((p) => (
                   <label key={p.id} className={`${styles.planCard} ${selectedPlan === p.id ? styles.planActive : ''}`}>
-                    <input 
-                      type="radio" 
-                      name="plan" 
-                      checked={selectedPlan === p.id} 
-                      onChange={() => setSelectedPlan(p.id)} 
+                    <input
+                      type="radio"
+                      name="plan"
+                      checked={selectedPlan === p.id}
+                      onChange={() => setSelectedPlan(p.id)}
                     />
                     <div className={styles.planBody}>
                       <div className={styles.planHeader}>
@@ -137,13 +137,13 @@ export default function SettingsPage() {
           <div className={styles.categoryContent}>
             <h2>Team Management</h2>
             <p className={styles.categoryDescription}>Manage your team members and their permissions.</p>
-            
+
             <div className={styles.teamSection}>
               <div className={styles.sectionHeader}>
                 <h3>Team Members</h3>
                 <button className={styles.addButton}>+ Add Member</button>
               </div>
-              
+
               <div className={styles.teamList}>
                 <div className={styles.teamMember}>
                   <div className={styles.memberAvatar}>JD</div>
@@ -164,7 +164,7 @@ export default function SettingsPage() {
           <div className={styles.categoryContent}>
             <h2>Appearance</h2>
             <p className={styles.categoryDescription}>Customize the look and feel of your interface.</p>
-            
+
             <div className={styles.appearanceSection}>
               <h3>Theme</h3>
               <div className={styles.themeOptions}>
@@ -199,7 +199,7 @@ export default function SettingsPage() {
           <div className={styles.categoryContent}>
             <h2>Notification Preferences</h2>
             <p className={styles.categoryDescription}>Configure how and when you receive notifications.</p>
-            
+
             <div className={styles.notificationSection}>
               <div className={styles.notificationItem}>
                 <div className={styles.notificationInfo}>
@@ -253,7 +253,7 @@ export default function SettingsPage() {
           <div className={styles.categoryContent}>
             <h2>Audit Trail</h2>
             <p className={styles.categoryDescription}>View all activity logs and system events.</p>
-            
+
             <div className={styles.auditSection}>
               <div className={styles.auditFilters}>
                 <select className={styles.filterSelect}>
@@ -282,7 +282,7 @@ export default function SettingsPage() {
           <div className={styles.categoryContent}>
             <h2>Integrations</h2>
             <p className={styles.categoryDescription}>Connect your favorite tools and services.</p>
-            
+
             <div className={styles.integrationsSection}>
               <div className={styles.integrationCard}>
                 <div className={styles.integrationIcon}>📧</div>

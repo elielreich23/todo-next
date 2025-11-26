@@ -12,7 +12,7 @@ function NotificationsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get('id');
-  
+
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +26,7 @@ function NotificationsContent() {
       if (response.success) {
         setNotifications(response.notifications || []);
         setUnreadCount(response.unread_count || 0);
-        
+
         // If there's a selected ID, find and show that notification
         if (selectedId) {
           const notification = response.notifications.find(n => n.id === parseInt(selectedId));
@@ -113,12 +113,12 @@ function NotificationsContent() {
     // Extract task ID from message (ID: 123) or use task field
     const idMatch = message.match(/ID:\s*(\d+)/);
     let taskId = idMatch ? idMatch[1] : (notification.task ? String(notification.task) : '');
-    
+
     // If taskId is a number, use it; otherwise try to extract from task object
     if (!taskId && notification.task && typeof notification.task === 'object') {
       taskId = String(notification.task.id || '');
     }
-    
+
     // Determine action based on notification type
     let action = 'Place an order';
     if (notification.notification_type === 'task_assigned') {
@@ -128,7 +128,7 @@ function NotificationsContent() {
     } else if (notification.notification_type === 'task_completed') {
       action = 'Complete an order';
     }
-    
+
     return taskId ? `${action} #${taskId}` : action;
   };
 
@@ -180,8 +180,8 @@ function NotificationsContent() {
                 onClick={() => handleNotificationClick(notification)}
               >
                 <div className={styles.avatar}>
-                  <Image 
-                    src={`/api/placeholder/40/40?seed=${notification.id}`} 
+                  <Image
+                    src={`/api/placeholder/40/40?seed=${notification.id}`}
                     alt={getUserDisplayName(notification)}
                     width={40}
                     height={40}
@@ -220,19 +220,19 @@ function NotificationsContent() {
                 </svg>
               </button>
             </div>
-            
+
             <div className={styles.detailContent}>
               <div className={styles.detailAvatar}>
-                <Image 
-                  src={`/api/placeholder/80/80?seed=${selectedNotification.id}`} 
+                <Image
+                  src={`/api/placeholder/80/80?seed=${selectedNotification.id}`}
                   alt={getUserDisplayName(selectedNotification)}
                   width={80}
                   height={80}
                 />
               </div>
-              
+
               <h2 className={styles.detailTitle}>{selectedNotification.title}</h2>
-              
+
               <div className={styles.detailMessage}>
                 <p>{selectedNotification.message}</p>
               </div>
@@ -281,4 +281,3 @@ export default function NotificationsPage() {
     </Suspense>
   );
 }
-

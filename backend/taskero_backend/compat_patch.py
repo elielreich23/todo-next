@@ -155,7 +155,9 @@ if sys.version_info >= (3, 14):
 
                         logger = logging.getLogger(__name__)
                         logger.warning(
-                            f"IndexError in bind_template: {e}. dicts len: {len(self.dicts)}, _processors_index: {self._processors_index}"
+                            f"IndexError in bind_template: {e}. "
+                            f"dicts len: {len(self.dicts)}, "
+                            f"_processors_index: {self._processors_index}"
                         )
 
                         # Emergency fix: ensure list is definitely large enough

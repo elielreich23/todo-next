@@ -21,5 +21,3 @@ export default function ThemeProvider({ children }: Props) {
 
   return <div className={theme === 'dark' ? 'dark-mode' : 'light-mode'}>{children}</div>;
 }
-
-

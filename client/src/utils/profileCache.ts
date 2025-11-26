@@ -48,10 +48,10 @@ export const getInitialProfileData = (): ProfileData => ({
 export const loadProfileFromCache = (): ProfileData => {
   try {
     const cachedUser = getCachedUserData<CachedUser>();
-    
+
     if (cachedUser) {
       const { firstName, lastName } = parseFullName(cachedUser.full_name);
-      
+
       return {
         firstName,
         lastName,
@@ -68,7 +68,7 @@ export const loadProfileFromCache = (): ProfileData => {
   } catch (error) {
     console.error('Error loading profile from cache:', error);
   }
-  
+
   return getInitialProfileData();
 };
 
@@ -87,7 +87,7 @@ export const createProfileDataFromUser = (
   existingData?: Partial<ProfileData>
 ): ProfileData => {
   const { firstName, lastName } = parseFullName(user.full_name);
-  
+
   return {
     firstName,
     lastName,
@@ -101,4 +101,3 @@ export const createProfileDataFromUser = (
     location: existingData?.location || '',
   };
 };
-

@@ -49,7 +49,7 @@
 
       &:hover {
         color: #ff6b35;
-        
+
         &::after {
           width: 100%;
         }
@@ -1070,7 +1070,7 @@
 @media (max-width: 768px) {
   .header {
     padding: 1rem 2rem;
-    
+
     nav {
       display: none;
     }
@@ -1170,4 +1170,3 @@
     }
   }
 }
-  

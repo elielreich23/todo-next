@@ -11,4 +11,4 @@ class TaskeroBackendConfig(AppConfig):
 
     def ready(self):
         """Apply compatibility patches when Django is ready."""
-        from . import compat_patch
+        from . import compat_patch  # noqa: F401

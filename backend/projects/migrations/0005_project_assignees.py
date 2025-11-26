@@ -7,14 +7,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('projects', '0004_taskattachment_taskcomment'),
+        ("projects", "0004_taskattachment_taskcomment"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='project',
-            name='assignees',
-            field=models.ManyToManyField(blank=True, related_name='assigned_projects', to=settings.AUTH_USER_MODEL),
+            model_name="project",
+            name="assignees",
+            field=models.ManyToManyField(blank=True, related_name="assigned_projects", to=settings.AUTH_USER_MODEL),
         ),
     ]

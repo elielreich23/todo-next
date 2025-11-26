@@ -78,11 +78,11 @@ export default function Dashboard({ children }) {
     const project = projects.find(p => p.id === projectId);
     selectProject(projectId);
     router.push('/dashboard');
-    
+
     // Add visual feedback
     setDoubleClickFeedback(projectId);
     setTimeout(() => setDoubleClickFeedback(null), 300);
-    
+
     // Show notification
     setNotification(`Project "${project?.name}" loaded in dashboard`);
     setTimeout(() => setNotification(null), 3000);
@@ -150,7 +150,7 @@ export default function Dashboard({ children }) {
             <div className="dot"></div>
             <div className="dot"></div>
           </div>
-          
+
           {/* Logo - Clickable to go to dashboard */}
           <div className="logo" onClick={handleLogoClick}>
             <div className="logo-icon">
@@ -163,7 +163,7 @@ export default function Dashboard({ children }) {
 
           <nav className="sidebar-nav">
             {/* Dashboard button - Toggles white sidebar */}
-            <button 
+            <button
               className={`nav-item ${activePage === 'dashboard' ? 'active' : ''}`}
               onClick={toggleWhiteSidebar}
               title="Dashboard"
@@ -174,7 +174,7 @@ export default function Dashboard({ children }) {
               </svg>
             </button>
 
-            <button 
+            <button
               className={`nav-item ${activePage === 'profile' ? 'active' : ''}`}
               onClick={() => navigateTo('profile')}
               title="Profile"
@@ -185,7 +185,7 @@ export default function Dashboard({ children }) {
               </svg>
             </button>
 
-            <button 
+            <button
               className={`nav-item ${activePage === 'calendar' ? 'active' : ''}`}
               onClick={() => navigateTo('calendar')}
               title="Calendar"
@@ -196,7 +196,7 @@ export default function Dashboard({ children }) {
               </svg>
             </button>
 
-            <button 
+            <button
               className={`nav-item ${activePage === 'statistics' ? 'active' : ''}`}
               onClick={() => navigateTo('statistics')}
               title="Statistics"
@@ -206,7 +206,7 @@ export default function Dashboard({ children }) {
               </svg>
             </button>
 
-            <button 
+            <button
               className={`nav-item ${activePage === 'uploads' ? 'active' : ''}`}
               onClick={() => navigateTo('uploads')}
               title="Uploads"
@@ -216,7 +216,7 @@ export default function Dashboard({ children }) {
               </svg>
             </button>
 
-            <button 
+            <button
               className={`nav-item ${activePage === 'settings' ? 'active' : ''}`}
               onClick={() => navigateTo('settings')}
               title="Settings"
@@ -226,7 +226,7 @@ export default function Dashboard({ children }) {
               </svg>
             </button>
 
-            <button 
+            <button
               className={`nav-item ${activePage === 'notifications' ? 'active' : ''}`}
               onClick={() => navigateTo('notifications')}
               title="Notifications"
@@ -300,9 +300,9 @@ export default function Dashboard({ children }) {
               <ul className="section-list">
                 <li className="list-item">All projects ({projects.length})</li>
                 {projects.map((p) => (
-                  <li 
-                    key={p.id} 
-                    className={`list-item ${currentProjectId === p.id ? 'active' : ''} ${doubleClickFeedback === p.id ? 'double-click-feedback' : ''}`} 
+                  <li
+                    key={p.id}
+                    className={`list-item ${currentProjectId === p.id ? 'active' : ''} ${doubleClickFeedback === p.id ? 'double-click-feedback' : ''}`}
                     onClick={() => { selectProject(p.id); router.push(`/dashboard/projects/${p.id}`); }}
                     onDoubleClick={() => handleProjectDoubleClick(p.id)}
                     style={{ cursor: 'pointer' }}
@@ -392,7 +392,7 @@ export default function Dashboard({ children }) {
 
         {/* Theme Toggle at bottom of white sidebar */}
         <div className="theme-toggle">
-          <button 
+          <button
             className={`theme-btn ${!isDarkMode ? 'active' : ''}`}
             onClick={() => toggleTheme('light')}
           >
@@ -401,7 +401,7 @@ export default function Dashboard({ children }) {
             </svg>
             Light
           </button>
-          <button 
+          <button
             className={`theme-btn ${isDarkMode ? 'active' : ''}`}
             onClick={() => toggleTheme('dark')}
           >
@@ -439,5 +439,3 @@ export default function Dashboard({ children }) {
     </div>
   );
 }
-
-

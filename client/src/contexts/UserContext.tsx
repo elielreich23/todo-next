@@ -64,14 +64,14 @@ const getUserFromCache = (): User | null => {
   try {
     const cachedUser = getCachedUserData<User>();
     if (!cachedUser) return null;
-    
+
     // Check cache expiration
     const cachedTimestamp = getStorageItem(STORAGE_KEYS.CACHED_USER_TIMESTAMP);
-    
+
     if (cachedTimestamp) {
       const timestamp = parseInt(cachedTimestamp, 10);
       const now = Date.now();
-      
+
       if (now - timestamp < CACHE_DURATION.USER_DATA) {
         return cachedUser;
       } else {
@@ -103,11 +103,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       try {
         const accessToken = getAccessToken();
         const refreshTokenValue = getRefreshToken();
-        
+
         if (accessToken && refreshTokenValue) {
           // Get current cached user to preserve it if API calls fail
           const cachedUser = getUserFromCache();
-          
+
           // Try to get user profile
           try {
             const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
@@ -183,16 +183,16 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   const remoteLogin = async (params: { email: string; password: string }) => {
-    const response = await api<LoginResponse>(API_ENDPOINTS.AUTH.SIGNIN, { 
-      method: 'POST', 
-      body: JSON.stringify(params) 
+    const response = await api<LoginResponse>(API_ENDPOINTS.AUTH.SIGNIN, {
+      method: 'POST',
+      body: JSON.stringify(params)
     });
-    
+
     if (response.success) {
       // Store tokens
       setAccessToken(response.tokens.access);
       setRefreshToken(response.tokens.refresh);
-      
+
       // Set user in context and cache
       setUser(response.user); // This will also save to cache
     } else {
@@ -201,16 +201,16 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   };
 
   const remoteSignup = async (params: { username: string; email: string; full_name: string; password: string; password_confirm: string }) => {
-    const response = await api<SignupResponse>(API_ENDPOINTS.AUTH.SIGNUP, { 
-      method: 'POST', 
-      body: JSON.stringify(params) 
+    const response = await api<SignupResponse>(API_ENDPOINTS.AUTH.SIGNUP, {
+      method: 'POST',
+      body: JSON.stringify(params)
     });
-    
+
     if (response.success) {
       // Store tokens
       setAccessToken(response.tokens.access);
       setRefreshToken(response.tokens.refresh);
-      
+
       // Set user in context and cache
       setUser(response.user); // This will also save to cache
     } else {
@@ -221,14 +221,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const logout = () => {
     // Clear tokens
     clearAuthTokens();
-    
+
     // Clear session storage but KEEP cached user data (as requested)
     // This allows user data to persist even after logout
     sessionStorage.clear();
-    
+
     // Reset user state (but cache remains for next login)
     setUserState(null);
-    
+
     // Dispatch custom event to notify other contexts
     window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
   };
@@ -237,11 +237,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     try {
       const accessToken = getAccessToken();
       const refreshTokenValue = getRefreshToken();
-      
+
       if (!accessToken || !refreshTokenValue) {
         return false;
       }
-      
+
       // Try to get user profile to validate session
       const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
       if (response) {

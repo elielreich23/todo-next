@@ -93,7 +93,7 @@ export default function StatisticsPage() {
         <h1>Statistics</h1>
         <p>View your task and project statistics</p>
       </div>
-      
+
       <div className={styles.statsGrid}>
         {/* Task Overview Cards */}
         <div className={styles.statCard}>
@@ -234,7 +234,7 @@ export default function StatisticsPage() {
                 </span>
               </div>
               <div className={styles.progressBar}>
-                <div 
+                <div
                   className={styles.progressFill}
                   style={{ width: `${stats.tasks.completion_rate}%` }}
                 />
@@ -259,7 +259,7 @@ export default function StatisticsPage() {
                   <div key={project.id} className={styles.projectItem}>
                     <div className={styles.projectName}>{project.name}</div>
                     <div className={styles.projectBar}>
-                      <div 
+                      <div
                         className={styles.projectBarFill}
                         style={{ width: `${percentage}%` }}
                       />
@@ -288,7 +288,7 @@ export default function StatisticsPage() {
                 const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
                 return (
                   <div key={index} className={styles.trendBar}>
-                    <div 
+                    <div
                       className={styles.trendBarFill}
                       style={{ height: `${height}%` }}
                     />

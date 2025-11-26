@@ -11,9 +11,9 @@ const Features = () => {
         <p className={styles.sectionDescription}>
           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
         </p>
-        
+
         <h3 className={styles.featuresTitle}>Key features</h3>
-        
+
         <div className={styles.featureCards}>
           <div className={styles.featureCard}>
             <div className={styles.cardContent}>
@@ -23,7 +23,7 @@ const Features = () => {
               <button className={styles.viewMore}>View more</button>
             </div>
           </div>
-          
+
           <div className={styles.featureCard}>
             <div className={styles.cardContent}>
               <h4 className={styles.cardTitle}>Fast documentation</h4>
@@ -54,7 +54,7 @@ const Features = () => {
               </div>
             </div>
           </div>
-          
+
           <div className={styles.featureCard}>
             <div className={styles.cardContent}>
               <h4 className={styles.cardTitle}>Lorem ipsum</h4>
@@ -77,7 +77,7 @@ const Features = () => {
             </div>
           </div>
         </div>
-        
+
         <div className={styles.createTaskSection}>
           <button className={styles.createTask}>
             Create Task

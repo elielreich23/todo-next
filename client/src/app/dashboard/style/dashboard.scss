@@ -5,12 +5,12 @@
   display: flex;
   height: 100vh;
   font-family: 'Inter', sans-serif;
-  
+
   &.light-mode {
     background: #f8f9fa;
     color: #333;
   }
-  
+
   &.dark-mode {
     background: #1a1a1a;
     color: #ffffff;
@@ -37,7 +37,7 @@
       gap: 4px;
       margin-bottom: 1.5rem;
       justify-content: center;
-      
+
       .dot {
         width: 4px;
         height: 4px;
@@ -50,7 +50,7 @@
       display: flex;
       justify-content: center;
       margin-bottom: 2rem;
-      
+
       .logo-icon {
         width: 40px;
         height: 40px;
@@ -60,7 +60,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        
+
         svg {
           width: 24px;
           height: 24px;

@@ -61,7 +61,7 @@ export default function ProjectDetailPage() {
           <button className={projStyles.button}>Sort</button>
           <button className={`${projStyles.button} ${projStyles.newTemplateButton}`} onClick={() => setIsCreateProjectOpen(true)}>New template</button>
           <button className={projStyles.button} onClick={() => setIsCreateTaskOpen(true)}>Create task</button>
-          
+
         </div>
       </div>
 
@@ -92,8 +92,8 @@ export default function ProjectDetailPage() {
           </div>
           <ul className={projStyles.taskList}>
             {tasks.map((t) => (
-              <li 
-                key={t.id} 
+              <li
+                key={t.id}
                 className={projStyles.taskItem}
                 onClick={() => setEditingTaskId(t.id)}
                 style={{ cursor: 'pointer' }}
@@ -108,7 +108,7 @@ export default function ProjectDetailPage() {
 
       <ProjectWizard isOpen={isCreateProjectOpen} onClose={() => setIsCreateProjectOpen(false)} onCreate={() => setIsCreateProjectOpen(false)} />
       <CreateTaskModal isOpen={isCreateTaskOpen} onClose={() => setIsCreateTaskOpen(false)} projectId={projectId} />
-      
+
       {/* Task Edit Modal */}
       {editingTaskId && (
         <TaskEditModal
@@ -121,5 +121,3 @@ export default function ProjectDetailPage() {
     </div>
   );
 }
-
-

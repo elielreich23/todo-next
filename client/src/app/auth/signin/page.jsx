@@ -30,7 +30,7 @@ export default function SignInPage() {
         email: email.trim(),
         password: password
       });
-      
+
       // If we get here, login was successful
       router.push('/dashboard');
     } catch (err) {
@@ -38,7 +38,7 @@ export default function SignInPage() {
       if (err.message.includes('Invalid email or password')) {
         setError(
           <span>
-            Wrong password or invalid account. 
+            Wrong password or invalid account.
             <Link href="/auth/signup" className={styles.signupLink}>
               Create account
             </Link>
@@ -66,11 +66,11 @@ export default function SignInPage() {
       {/* Left Section - Welcome Message */}
       <div className={styles.left}>
         <div className={styles.logo}>taskers</div>
-        
+
         <h1 className={styles.welcomeMessage}>Welcome back!</h1>
-        
+
         <p className={styles.paragraph}>
-          Don&apos;t have an account? 
+          Don&apos;t have an account?
           <Link href="/auth/signup" className={styles.createAccountLink}>
             Create Account
           </Link>
@@ -94,18 +94,18 @@ export default function SignInPage() {
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>Sign in</h2>
           <p className={styles.formSubtitle}>All in one platform to get tasks done</p>
-          
+
           {/* Error Display */}
           {error && (
             <div className={styles.error}>
               {error}
             </div>
           )}
-          
+
           <form className={styles.form} onSubmit={handleSubmit}>
             {/* Google Signin Button */}
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={styles.googleButton}
               onClick={handleGoogleSignin}
             >
@@ -155,19 +155,19 @@ export default function SignInPage() {
             </div>
 
             {/* Login Button */}
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className={styles.loginButton}
               disabled={isLoading}
             >
               {isLoading ? 'Signing in...' : 'Login'}
             </button>
           </form>
-          
+
           {/* Helpful signup guidance */}
           <div className={styles.signupGuidance}>
             <p>
-              New to Taskers? 
+              New to Taskers?
               <Link href="/auth/signup" className={styles.signupGuidanceLink}>
                 Sign up for free
               </Link>

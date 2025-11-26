@@ -6,7 +6,7 @@ const HowItWorks = () => {
     <section className={styles.howItWorks}>
       <div className={styles.container}>
         <h2 className={styles.sectionTitle}>How It Works</h2>
-        
+
         <div className={styles.steps}>
           <div className={styles.step}>
             <div className={styles.stepIcon}>
@@ -18,7 +18,7 @@ const HowItWorks = () => {
             </div>
             <h3 className={styles.stepTitle}>Sign up</h3>
           </div>
-          
+
           <div className={styles.step}>
             <div className={styles.stepIcon}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -30,7 +30,7 @@ const HowItWorks = () => {
             </div>
             <h3 className={styles.stepTitle}>Select a Plan</h3>
           </div>
-          
+
           <div className={styles.step}>
             <div className={styles.stepIcon}>
               <span className={styles.emojiIcon}>😉</span>

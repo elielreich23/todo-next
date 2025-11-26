@@ -69,7 +69,7 @@ POST /api/auth/signin/
 ## Default Admin User
 
 - Email: admin@taskero.com
-- Password: 
+- Password:
 
 
 ## Environment Variables

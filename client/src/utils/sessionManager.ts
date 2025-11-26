@@ -7,7 +7,7 @@ export class SessionManager {
   // Store user session data
   static setSessionData(userData: any, tokens: { access: string; refresh: string }) {
     if (typeof window === 'undefined') return;
-    
+
     localStorage.setItem(this.USER_DATA_KEY, JSON.stringify(userData));
     localStorage.setItem(this.ACCESS_TOKEN_KEY, tokens.access);
     localStorage.setItem(this.REFRESH_TOKEN_KEY, tokens.refresh);
@@ -16,13 +16,13 @@ export class SessionManager {
   // Get user session data
   static getSessionData() {
     if (typeof window === 'undefined') return null;
-    
+
     const userData = localStorage.getItem(this.USER_DATA_KEY);
     const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
-    
+
     if (!userData || !accessToken || !refreshToken) return null;
-    
+
     return {
       user: JSON.parse(userData),
       tokens: { access: accessToken, refresh: refreshToken }
@@ -32,12 +32,12 @@ export class SessionManager {
   // Clear all session data
   static clearSession() {
     if (typeof window === 'undefined') return;
-    
+
     localStorage.removeItem(this.USER_DATA_KEY);
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     sessionStorage.clear();
-    
+
     // Dispatch logout event
     window.dispatchEvent(new CustomEvent('userLogout'));
   }
@@ -45,7 +45,7 @@ export class SessionManager {
   // Check if session exists
   static hasSession(): boolean {
     if (typeof window === 'undefined') return false;
-    
+
     return !!(
       localStorage.getItem(this.ACCESS_TOKEN_KEY) &&
       localStorage.getItem(this.REFRESH_TOKEN_KEY)

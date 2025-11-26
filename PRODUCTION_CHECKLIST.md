@@ -115,5 +115,3 @@ Use this as an implementation tracker. Check off items as you complete them.
 ### Notes
 - If moving to cookie-based auth, coordinate CORS/CSRF and cookie settings; plan a short migration window.
 - Keep environments separate and reproducible (dev, staging, prod) with distinct env files and databases.
-
-

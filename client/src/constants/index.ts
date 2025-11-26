@@ -119,4 +119,3 @@ export const VALIDATION = {
   PASSWORD_REGEX: /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/,
   MAX_CONTRIBUTORS: 3,
 } as const;
-

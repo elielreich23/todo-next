@@ -88,7 +88,7 @@ export default function NotificationBell() {
         console.error('Error marking notification as read:', error);
       }
     }
-    
+
     setIsOpen(false);
     router.push(`/dashboard/notifications?id=${notification.id}`);
   };
@@ -110,12 +110,12 @@ export default function NotificationBell() {
     // Extract task ID from message (ID: 123) or use task field
     const idMatch = message.match(/ID:\s*(\d+)/);
     let taskId = idMatch ? idMatch[1] : (notification.task ? String(notification.task) : '');
-    
+
     // If taskId is a number, use it; otherwise try to extract from task object
     if (!taskId && notification.task && typeof notification.task === 'object') {
       taskId = String(notification.task.id || '');
     }
-    
+
     // Determine action based on notification type
     let action = 'Place an order';
     if (notification.notification_type === 'task_assigned') {
@@ -125,7 +125,7 @@ export default function NotificationBell() {
     } else if (notification.notification_type === 'task_completed') {
       action = 'Complete an order';
     }
-    
+
     return taskId ? `${action} #${taskId}` : action;
   };
 
@@ -165,7 +165,7 @@ export default function NotificationBell() {
           <div className={styles.dropdownHeader}>
             <h3>Notification</h3>
           </div>
-          
+
           <div className={styles.notificationsList}>
             {isLoading ? (
               <div className={styles.loading}>Loading notifications...</div>
@@ -179,8 +179,8 @@ export default function NotificationBell() {
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className={styles.avatar}>
-                    <Image 
-                      src={`/api/placeholder/40/40?seed=${notification.id}`} 
+                    <Image
+                      src={`/api/placeholder/40/40?seed=${notification.id}`}
                       alt={getUserDisplayName(notification)}
                       width={40}
                       height={40}
@@ -217,4 +217,3 @@ export default function NotificationBell() {
     </div>
   );
 }
-

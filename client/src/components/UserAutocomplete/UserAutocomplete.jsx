@@ -8,18 +8,18 @@ import styles from './UserAutocomplete.module.scss';
 const MIN_SEARCH_LENGTH = 3;
 const DEBOUNCE_DELAY = 300; // milliseconds
 
-export default function UserAutocomplete({ 
-  selectedUsers = [], 
-  onUsersChange, 
+export default function UserAutocomplete({
+  selectedUsers = [],
+  onUsersChange,
   placeholder = "Search users by name, username, or email...",
-  maxUsers = 50 
+  maxUsers = 50
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Clear error after 3 seconds
   useEffect(() => {
     if (error) {
@@ -58,7 +58,7 @@ export default function UserAutocomplete({
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Filter out already selected users
         const filteredUsers = data.users.filter(
@@ -223,4 +223,3 @@ export default function UserAutocomplete({
     </div>
   );
 }
-

@@ -4,6 +4,27 @@
 
 ---
 
+## 📑 Table of Contents
+
+- [Key Features](#-key-features)
+- [Architecture Overview](#️-architecture-overview)
+- [Technologies Used](#-technologies-used)
+- [Getting Started](#-getting-started)
+- [Project Structure](#-project-structure)
+- [API Endpoints](#-api-endpoints)
+- [Database Schema](#️-database-schema)
+- [Development](#-development)
+- [Docker Deployment](#-docker-deployment)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Deployment Guide](#-deployment-guide)
+- [Session Management](#-session-management)
+- [Production Checklist](#-production-checklist)
+- [Feature Roadmap](#-feature-roadmap)
+- [Contributing](#-contributing)
+- [Support](#-support)
+
+---
+
 ## 🛠️ Key Features
 
 - **🔐 Authentication System**: Secure user registration and login with JWT tokens
@@ -47,10 +68,9 @@ todo-next/
 - **Sass/SCSS** - CSS preprocessing
 - **FullCalendar** - Calendar component integration
 - **UUID** - Unique identifier generation
-- **Axios** - HTTP client for API requests
 
 ### Backend (Django)
-- **Django 4.2.7** - High-level Python web framework
+- **Django 5.1.4** - High-level Python web framework
 - **Django REST Framework** - Powerful API framework
 - **Django REST Framework SimpleJWT** - JWT authentication
 - **Django CORS Headers** - Cross-origin resource sharing
@@ -112,7 +132,7 @@ Backend API will be available at `http://localhost:8000`
 
 **Build and run all services:**
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 **Access the application:**
@@ -150,10 +170,6 @@ todo-next/
 │   │   │   │   └── uploads/        # File uploads
 │   │   │   └── landing/           # Landing page
 │   │   ├── components/            # Reusable components
-│   │   │   ├── todo/              # Task-related components
-│   │   │   ├── sideBar/           # Navigation sidebar
-│   │   │   ├── ProjectWizard/     # Project creation wizard
-│   │   │   └── WizardModal/       # Modal components
 │   │   ├── contexts/               # React contexts (User, Projects)
 │   │   ├── hooks/                  # Custom React hooks
 │   │   ├── lib/                    # API client and utilities
@@ -165,31 +181,14 @@ todo-next/
 │
 ├── backend/                         # Django REST Framework Backend
 │   ├── accounts/                   # User authentication app
-│   │   ├── models.py              # Custom User model
-│   │   ├── views.py               # Authentication views
-│   │   ├── serializers.py         # User serializers
-│   │   └── urls.py                # Authentication URLs
 │   ├── projects/                   # Project and task management app
-│   │   ├── models.py              # Project and Task models
-│   │   ├── views.py               # Project/Task views
-│   │   ├── serializers.py         # Project/Task serializers
-│   │   └── urls.py                # Project/Task URLs
 │   ├── taskero_backend/           # Django project settings
-│   │   ├── settings.py            # Django configuration
-│   │   ├── urls.py                # Main URL configuration
-│   │   └── wsgi.py                # WSGI configuration
 │   ├── data/                      # Data directory for Docker
 │   ├── manage.py                  # Django management script
-│   ├── run.py                     # Custom server runner
-│   ├── setup_db.py                # Database setup script
-│   ├── db.sqlite3                 # SQLite database
-│   ├── users.db                   # Additional database file
 │   ├── requirements.txt           # Python dependencies
 │   └── Dockerfile                 # Backend Docker configuration
 │
 ├── docker-compose.yml              # Docker services configuration
-├── README-Docker.md                # Docker-specific documentation
-├── SESSION_MANAGEMENT.md           # Session management documentation
 └── README.md                       # This file
 ```
 
@@ -224,42 +223,11 @@ todo-next/
 | `/api/tasks/{id}/` | DELETE | Delete task |
 | `/api/tasks/{id}/assign/` | POST | Assign task to users |
 
-### Admin & Utility
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/admin/` | GET | Django admin interface |
-| `/api/` | GET | API root endpoint |
-| `/api/setup-db/` | POST | Create test users (development) |
-
 ### Authentication Flow
 All protected endpoints require JWT authentication. Include the token in the Authorization header:
 ```
 Authorization: Bearer <your-jwt-token>
 ```
-
----
-
-## 🛡️ Authentication Flow
-
-1. **User Registration**: 
-   - Send POST request to `/api/auth/register/` with user details
-   - Backend creates user account and returns JWT tokens (access + refresh)
-   - Frontend stores tokens in localStorage
-
-2. **User Login**: 
-   - Send POST request to `/api/auth/login/` with credentials
-   - Backend validates credentials and returns JWT tokens
-   - Frontend stores tokens and redirects to dashboard
-
-3. **Authenticated Requests**: 
-   - Include JWT token in `Authorization: Bearer <access-token>` header
-   - Backend validates token for protected routes
-   - Automatic token refresh when access token expires
-
-4. **Session Management**:
-   - Tokens are automatically refreshed before expiry
-   - User data is isolated per session
-   - Logout clears all stored tokens and user data
 
 ---
 
@@ -300,7 +268,7 @@ Authorization: Bearer <your-jwt-token>
 
 ---
 
-## 🧪 Development Features
+## 🧪 Development
 
 ### Test Users
 The Django backend includes a setup script to create test users for development:
@@ -320,57 +288,482 @@ Access the Django admin interface at `http://localhost:8000/admin/` to:
 - View database records
 - Monitor application activity
 
-### Environment Configuration
-The Django backend uses environment variables for configuration. Key settings in `backend/taskero_backend/settings.py`:
-- `SECRET_KEY` - Django secret key
-- `DEBUG` - Debug mode (True for development)
-- `ALLOWED_HOSTS` - Allowed host names
-- `CORS_ALLOWED_ORIGINS` - Frontend origins for CORS
+### Development Commands
+
+#### Frontend
+```bash
+cd client
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript checks
+```
+
+#### Backend
+```bash
+cd backend
+python manage.py runserver     # Start development server
+python manage.py test          # Run tests
+python manage.py makemigrations # Create migrations
+python manage.py migrate       # Apply migrations
+python manage.py shell         # Django shell
+```
 
 ---
 
-## 🚧 Upcoming Features & Roadmap
+## 🐳 Docker Deployment
 
-### Phase 1: Core Enhancements (Q1 2024)
-- **🔔 Real-time Notifications**: WebSocket integration for live updates
-- **📁 File Attachments**: Upload and manage files within tasks
-- **🏷️ Task Labels & Tags**: Categorize tasks with custom labels
-- **📊 Advanced Analytics**: Detailed productivity metrics and reports
-- **🔍 Search & Filtering**: Advanced search across projects and tasks
+### Quick Start
 
-### Phase 2: Collaboration Features (Q2 2024)
-- **👥 Team Collaboration**: Multi-user project sharing and permissions
-- **💬 Task Comments**: Add comments and collaborate on tasks
-- **📧 Email Notifications**: Email alerts for task assignments and updates
-- **📅 Calendar Sync**: Integration with Google Calendar and Outlook
-- **🔄 Task Dependencies**: Link tasks and create project workflows
+1. **Build and run all services:**
+   ```bash
+   docker compose up --build
+   ```
 
-### Phase 3: Advanced Features (Q3 2024)
-- **📱 Mobile App**: React Native mobile application
-- **🤖 AI-Powered Insights**: Smart task suggestions and productivity analysis
-- **📈 Time Tracking**: Built-in time tracking for tasks
-- **🎯 Goal Setting**: Set and track project goals and milestones
-- **📋 Templates**: Pre-built project and task templates
+2. **Access the application:**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
 
-### Phase 4: Enterprise Features (Q4 2024)
-- **🏢 Multi-tenant Support**: Organization-level project management
-- **🔐 Advanced Security**: SSO integration and advanced permissions
-- **📊 Custom Dashboards**: Configurable analytics dashboards
-- **🔗 Third-party Integrations**: Slack, Microsoft Teams, GitHub integration
-- **☁️ Cloud Deployment**: Production-ready cloud hosting solutions
+### Services
 
-### Technical Improvements
-- **🧪 Testing Suite**: Comprehensive unit and integration tests
-- **📚 API Documentation**: Interactive API documentation with Swagger
-- **🚀 Performance Optimization**: Database optimization and caching
-- **🔒 Security Enhancements**: Rate limiting, input validation, and security headers
-- **📦 CI/CD Pipeline**: ✅ Automated testing and deployment (See [CI_CD_SETUP.md](CI_CD_SETUP.md))
+#### Frontend (Next.js)
+- **Port:** 3000
+- **Container:** `todo-next_frontend_1`
+- **Build:** Optimized production build
+- **Environment:** Production mode
+
+#### Backend (Django)
+- **Port:** 8000
+- **Container:** `todo-next_backend_1`
+- **Database:** SQLite (persisted via volume)
+- **Features:** Auto-migration on startup
+
+### Docker Commands
+
+```bash
+# Start services
+docker compose up
+
+# Start in background
+docker compose up -d
+
+# Stop services
+docker compose down
+
+# Rebuild and start
+docker compose up --build
+
+# View logs
+docker compose logs frontend
+docker compose logs backend
+
+# Access backend shell
+docker compose exec backend bash
+
+# Access frontend shell
+docker compose exec frontend sh
+```
+
+### Data Persistence
+
+- SQLite database is persisted in `./backend/data/` and `./backend/db.sqlite3`
+- Existing data will be preserved when using Docker
+
+### Troubleshooting
+
+1. **Port conflicts:** Ensure ports 3000 and 8000 are available
+2. **Database issues:** Check volume mounts in docker-compose.yml
+3. **Build failures:** Check Dockerfile syntax and dependencies
+4. **API connection:** Verify NEXT_PUBLIC_API_BASE_URL environment variable
+
+---
+
+## CI/CD Pipeline
+
+### Overview
+
+The project uses GitHub Actions for continuous integration and deployment. The pipeline includes:
+
+- **CI Pipeline**: Automated testing, linting, and code quality checks
+- **CD Pipeline**: Automated building and deployment of Docker images
+- **PR Checks**: Code quality and security checks for pull requests
+- **Nightly Tests**: Comprehensive test suite across multiple versions
+- **Dependabot**: Automated dependency updates
+
+### Quick Start (5-Minute Setup)
+
+1. **Configure GitHub Secrets**
+   Go to your repository → Settings → Secrets and variables → Actions → New repository secret
+
+   Add these secrets:
+   ```
+   STAGING_URL=https://staging.yourdomain.com
+   STAGING_API_URL=https://api-staging.yourdomain.com
+   STAGING_DB_URL=postgresql://user:pass@host:5432/dbname
+   PRODUCTION_URL=https://yourdomain.com
+   PRODUCTION_API_URL=https://api.yourdomain.com
+   PRODUCTION_DB_URL=postgresql://user:pass@host:5432/dbname
+   NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com
+   ```
+
+2. **Enable GitHub Actions**
+   Workflows are automatically enabled. Check the Actions tab to see them run.
+
+3. **Test Locally (Optional)**
+   ```bash
+   # Frontend
+   cd client
+   npm install
+   npm run lint
+   npm run build
+
+   # Backend
+   cd backend
+   pip install -r requirements.txt
+   pip install black flake8 isort pytest pytest-django
+   make check  # or: black --check . && isort --check-only . && flake8 .
+   ```
+
+### Workflows
+
+#### 1. CI Pipeline (`.github/workflows/ci.yml`)
+Runs on every push and pull request to main/master/develop branches.
+
+**Jobs:**
+- **Frontend CI**: Linting, type checking, and building the Next.js application
+- **Backend CI**: Code formatting, linting, Django checks, and tests
+- **Docker Build Test**: Validates Docker images can be built
+- **Security Scan**: Checks for vulnerabilities in dependencies
+
+#### 2. CD Pipeline (`.github/workflows/cd.yml`)
+Runs on pushes to main/master and version tags.
+
+**Jobs:**
+- **Build and Push**: Builds and pushes Docker images to GitHub Container Registry
+- **Deploy to Staging**: Deploys to staging environment (develop branch)
+- **Deploy to Production**: Deploys to production environment (main/master branch)
+- **Notify**: Sends deployment notifications
+
+#### 3. PR Checks (`.github/workflows/pr-checks.yml`)
+Runs on pull request events.
+
+**Checks:**
+- Semantic PR title validation
+- Large file detection
+- Secret scanning
+- Dependency review
+
+#### 4. Nightly Tests (`.github/workflows/nightly-tests.yml`)
+Runs daily at 2 AM UTC and can be manually triggered.
+
+**Tests:**
+- Full test suite across multiple Python versions (3.10, 3.11, 3.12)
+- Full test suite across multiple Node.js versions (18, 20)
+
+### Code Quality Tools
+
+#### Frontend
+- **ESLint**: Code linting (configured in `client/.eslintrc.json`)
+- **TypeScript**: Type checking
+- **Next.js**: Built-in linting and type checking
+
+#### Backend
+- **Black**: Code formatting (configured in `backend/pyproject.toml`)
+- **isort**: Import sorting (configured in `backend/pyproject.toml`)
+- **Flake8**: Code linting (configured in `backend/.flake8`)
+- **Pytest**: Testing framework (configured in `backend/pytest.ini`)
+- **Bandit**: Security linting (via pre-commit)
+
+### Pre-commit Hooks
+
+Install pre-commit hooks to run checks before committing:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install hooks
+pre-commit install
+
+# Run hooks manually
+pre-commit run --all-files
+```
+
+### Troubleshooting CI/CD
+
+**CI Pipeline Fails:**
+1. **Linting errors**: Fix code style issues locally
+2. **Test failures**: Run tests locally to debug
+3. **Build failures**: Check Dockerfile and dependencies
+4. **Timeout errors**: Increase timeout in workflow file
+
+**CD Pipeline Fails:**
+1. **Docker build fails**: Check Dockerfile syntax
+2. **Deployment fails**: Verify secrets and deployment scripts
+3. **Health checks fail**: Ensure services are running
+
+**Common Issues:**
+- **"Permission denied" errors**: Check GitHub Actions permissions in repository settings
+- **"Secret not found" errors**: Ensure all required secrets are configured
+- **"Docker build context" errors**: Verify Dockerfile paths are correct
+
+For detailed CI/CD documentation, see the workflow files in `.github/workflows/`.
+
+---
+
+## 🚀 Deployment Guide
+
+### Frontend Deployment on Vercel
+
+#### Option A: Deploy via Vercel Dashboard (Recommended for First Time)
+
+1. **Sign up/Login to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Sign up with your GitHub account
+
+2. **Import Your Project**
+   - Click "Add New..." → "Project"
+   - Select your GitHub repository
+   - Choose the repository: `todo-next`
+
+3. **Configure Project Settings**
+   - **Root Directory**: Set to `client` (click "Edit" next to Root Directory)
+   - **Framework Preset**: Next.js (auto-detected)
+   - **Build Command**: `npm run build` (default)
+   - **Output Directory**: `.next` (default)
+   - **Install Command**: `npm ci` (default)
+
+4. **Environment Variables**
+   - Click "Environment Variables"
+   - Add: `NEXT_PUBLIC_API_BASE_URL` = `https://your-backend-url.com` (you'll update this after deploying backend)
+
+5. **Deploy**
+   - Click "Deploy"
+   - Wait for build to complete (usually 2-5 minutes)
+   - Your app will be live at `https://your-project.vercel.app`
+
+#### Option B: Deploy via Vercel CLI
+
+```bash
+npm i -g vercel
+vercel login
+cd client
+vercel
+vercel --prod
+```
+
+### Backend Deployment Options
+
+#### Option 1: Railway (Recommended - Easy & Free Tier Available)
+
+1. **Sign up for Railway**
+   - Go to [railway.app](https://railway.app)
+   - Sign up with GitHub
+
+2. **Create New Project**
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose your repository
+
+3. **Configure Service**
+   - Railway will detect it's a Python project
+   - **Root Directory**: Set to `backend`
+   - **Start Command**: `python manage.py migrate && gunicorn taskero_backend.wsgi:application --bind 0.0.0.0:$PORT`
+
+4. **Add PostgreSQL Database**
+   - Click "New" → "Database" → "PostgreSQL"
+   - Railway will automatically provide `DATABASE_URL` environment variable
+
+5. **Set Environment Variables**
+   - `SECRET_KEY`: Generate a secure key
+   - `DEBUG`: `False`
+   - `DJANGO_SETTINGS_MODULE`: `taskero_backend.settings`
+   - `ALLOWED_HOSTS`: `your-app.railway.app,your-vercel-domain.vercel.app`
+   - `CORS_ALLOWED_ORIGINS`: `https://your-vercel-domain.vercel.app`
+
+6. **Deploy**
+   - Railway will automatically deploy on push to main branch
+   - Get your backend URL from the service settings
+
+#### Option 2: Render (Free Tier Available)
+
+Similar process to Railway. See `DEPLOYMENT_GUIDE.md` for detailed instructions.
+
+#### Option 3: DigitalOcean App Platform
+
+See `DEPLOYMENT_GUIDE.md` for detailed instructions.
+
+### Post-Deployment
+
+1. **Update Frontend Environment Variable**
+   - Go back to Vercel
+   - Update `NEXT_PUBLIC_API_BASE_URL` to your backend URL
+
+2. **Update Backend CORS Settings**
+   - Update `CORS_ALLOWED_ORIGINS` to include your Vercel domain
+
+3. **Run Migrations**
+   - Backend should auto-run migrations, but verify in deployment logs
+
+4. **Create Admin User**
+   - Access your backend shell and run:
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+For complete deployment instructions, see `DEPLOYMENT_GUIDE.md` and `DEPLOYMENT_CHECKLIST.md`.
+
+---
+
+## 🔒 Session Management
+
+The application implements comprehensive session management to ensure user data isolation and security.
+
+### Key Features
+
+- **User Isolation**: Each user only sees their own tasks and projects
+- **Session Persistence**: User sessions persist across browser refreshes
+- **Automatic Logout**: Sessions are cleared when users log out or tokens expire
+- **Security**: Proper token validation and refresh handling
+
+### Architecture
+
+#### Backend (Django)
+- Models filter data by `owner=request.user`
+- JWT token-based authentication with refresh tokens
+- All API endpoints require authentication
+
+#### Frontend (Next.js)
+- **UserContext**: Manages user authentication state
+- **ProjectsContext**: Manages projects and tasks data, listens for logout events
+- **API Client**: Handles authentication headers and token refresh
+- **Session Manager**: Utility for session storage operations
+
+### Session Flow
+
+1. **Login**: User provides credentials → Backend validates → Returns JWT tokens → Frontend stores tokens
+2. **API Requests**: Frontend includes Bearer token → Backend validates → Returns user-specific data
+3. **Token Expiry**: API returns 401 → Frontend attempts refresh → If refresh fails → Logout
+4. **Logout**: User clicks logout → All data cleared → Redirect to login page
+
+### Security Considerations
+
+1. **Token Storage**: Tokens are stored in localStorage
+2. **Token Refresh**: Automatic refresh prevents session interruption
+3. **Data Clearing**: All user data is cleared on logout
+4. **Session Validation**: Regular validation ensures session integrity
+5. **Error Handling**: Proper error handling prevents data leaks
+
+For detailed session management documentation, see `SESSION_MANAGEMENT.md`.
+
+---
+
+## ✅ Production Checklist
+
+### Frontend (Next.js)
+- [ ] Environment variables set correctly
+- [ ] API URL points to deployed backend
+- [ ] Custom domain configured (if needed)
+- [ ] SSL certificate active (automatic on Vercel)
+- [ ] Remove hardcoded localhost URLs
+- [ ] Error boundaries implemented
+- [ ] Loading states for all API calls
+- [ ] Console logs removed or disabled in production
+
+### Backend (Django)
+- [ ] Database migrations run
+- [ ] Static files collected
+- [ ] Environment variables configured
+- [ ] CORS configured for frontend domain
+- [ ] Admin user created
+- [ ] Health check endpoint working
+- [ ] DEBUG set to False
+- [ ] SECRET_KEY is not default value
+- [ ] Security headers configured
+- [ ] Use PostgreSQL in production (not SQLite)
+
+### Security
+- [ ] DEBUG is False
+- [ ] SECRET_KEY is not default value
+- [ ] HTTPS enabled
+- [ ] CORS properly configured
+- [ ] Environment variables not exposed in frontend
+- [ ] Rate limiting on auth endpoints
+- [ ] Input validation on all endpoints
+
+### Monitoring
+- [ ] Set up error tracking (optional: Sentry)
+- [ ] Monitor deployment logs
+- [ ] Check database connections
+- [ ] Verify API response times
+
+For a complete production checklist, see `PRODUCTION_CHECKLIST.md`.
+
+---
+
+## 🚧 Feature Roadmap
+
+### ✅ Implemented Features
+- JWT Authentication (login, register, token refresh)
+- Project Management (CRUD operations)
+- Task Management (CRUD operations)
+- Task Assignment (multiple assignees per task)
+- Basic Notifications (task assignment notifications)
+- Calendar View (FullCalendar integration)
+- Dashboard with Kanban board
+- User Profiles
+- Settings Page
+- Theme Support (light/dark mode)
+- Responsive Design
+- Session Management
+
+### ⚠️ Partially Implemented
+- **File Attachments**: UI exists in frontend but not persisted to backend
+- **Task Comments**: UI exists in frontend but not persisted to backend
+- **Statistics Page**: Page exists but is empty/placeholder
+- **Uploads Page**: Standalone CSV upload page (not integrated with tasks)
+
+### 🎯 High Priority Features
+
+1. **Backend Persistence for Comments** ⭐⭐⭐
+2. **Backend Persistence for File Attachments** ⭐⭐⭐
+3. **Real-time Notifications with WebSockets** ⭐⭐⭐
+4. **Project Sharing & Collaboration** ⭐⭐⭐
+5. **Advanced Search & Filtering** ⭐⭐
+6. **Task Labels/Tags System** ⭐⭐
+7. **Task Dependencies** ⭐⭐
+8. **Time Tracking** ⭐⭐
+9. **Statistics & Analytics Dashboard** ⭐⭐
+10. **Email Notifications** ⭐⭐
+
+### 🔧 Medium Priority Features
+
+- Calendar Integration with Tasks
+- Recurring Tasks
+- Subtasks/Checklists
+- Task Templates
+- Activity Log/Audit Trail
+- Bulk Operations
+- Export/Import Functionality
+- Due Date Reminders
+
+### 🌟 Advanced/Enterprise Features
+
+- Advanced Permissions & Roles
+- Multi-tenant/Organization Support
+- Third-party Integrations (GitHub, Slack, Teams)
+- AI-Powered Features
+- Custom Fields & Workflows
+- Mobile App (React Native)
+- Advanced Reporting
+
+For complete feature roadmap, see `FEATURE_ROADMAP.md`.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! This project is open source and we appreciate any help you can provide. Please read this guide before contributing.
+We welcome contributions from the community! This project is open source and we appreciate any help you can provide.
 
 ### Getting Started
 
@@ -392,7 +785,7 @@ We welcome contributions from the community! This project is open source and we 
    # Frontend setup
    cd client
    npm install
-   
+
    # Backend setup
    cd ../backend
    pip install -r requirements.txt
@@ -423,7 +816,7 @@ We welcome contributions from the community! This project is open source and we 
    cd client
    npm run lint
    npm run build
-   
+
    # Backend tests
    cd ../backend
    python manage.py test
@@ -440,113 +833,12 @@ We welcome contributions from the community! This project is open source and we 
    ```
 6. **Create a Pull Request** on GitHub
 
-#### Pull Request Template
-
-When creating a PR, please include:
-
-- **Description**: What changes were made and why
-- **Type**: Feature, Bug Fix, Documentation, Refactoring, etc.
-- **Testing**: How the changes were tested
-- **Screenshots**: If applicable, include screenshots of UI changes
-- **Breaking Changes**: List any breaking changes
-- **Related Issues**: Link to any related issues
-
 ### Types of Contributions
 
-#### 🐛 Bug Reports
-- Use the GitHub issue template
-- Include steps to reproduce the bug
-- Provide expected vs actual behavior
-- Include system information (OS, browser, etc.)
-
-#### ✨ Feature Requests
-- Use the GitHub issue template
-- Describe the feature in detail
-- Explain the use case and benefits
-- Consider implementation complexity
-
-#### 📝 Documentation
-- Fix typos and improve clarity
-- Add examples and code snippets
-- Update API documentation
-- Improve setup instructions
-
-#### 🔧 Code Contributions
-- Bug fixes
-- New features
-- Performance improvements
-- Code refactoring
-- Test coverage improvements
-
-### Development Workflow
-
-#### Frontend Development
-```bash
-cd client
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run lint         # Run ESLint
-npm run type-check   # Run TypeScript checks
-```
-
-#### Backend Development
-```bash
-cd backend
-python manage.py runserver     # Start development server
-python manage.py test          # Run tests
-python manage.py makemigrations # Create migrations
-python manage.py migrate       # Apply migrations
-python manage.py shell         # Django shell
-```
-
-#### Docker Development
-```bash
-docker-compose up --build      # Build and run containers
-docker-compose down            # Stop containers
-docker-compose logs backend    # View backend logs
-docker-compose logs frontend   # View frontend logs
-```
-
-### Code Review Process
-
-1. **Automated Checks**: All PRs must pass automated tests and linting
-2. **Code Review**: At least one maintainer will review your code
-3. **Feedback**: Address any feedback or requested changes
-4. **Approval**: Once approved, your PR will be merged
-
-### Issue Labels
-
-We use the following labels to categorize issues:
-- `bug` - Something isn't working
-- `enhancement` - New feature or request
-- `documentation` - Improvements or additions to documentation
-- `good first issue` - Good for newcomers
-- `help wanted` - Extra attention is needed
-- `priority: high` - High priority issues
-- `priority: low` - Low priority issues
-
-### Community Guidelines
-
-- Be respectful and inclusive
-- Help others learn and grow
-- Provide constructive feedback
-- Follow the code of conduct
-- Ask questions if you're unsure
-
-### Getting Help
-
-- **GitHub Issues**: For bugs and feature requests
-- **Discussions**: For questions and general discussion
-- **Email**: Contact the maintainers directly for sensitive issues
-
-### Recognition
-
-Contributors will be recognized in:
-- README contributors section
-- Release notes
-- Project documentation
-
-Thank you for contributing to Taskero! 🎉
+- 🐛 Bug Reports
+- ✨ Feature Requests
+- 📝 Documentation
+- 🔧 Code Contributions
 
 ---
 
@@ -558,17 +850,17 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🛠️ Developed by
 
-- **Eliel Reich**  
+- **Eliel Reich**
   GitHub: [@elielreich23](https://github.com/elielreich23)
 
-- **Dimedji**  
+- **Dimedji**
   GitHub: [@Oladee](https://github.com/Oladee)
 
 ---
 
 ## ✨ Designed By
 
-- **Adeyemi**  
+- **Adeyemi**
   GitHub: [@elielreich23](https://github.com/elielreich23)
 
 ---

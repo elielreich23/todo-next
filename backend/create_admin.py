@@ -3,7 +3,6 @@
 Script to create a Django admin superuser
 """
 import os
-import sys
 
 import django
 
@@ -11,7 +10,7 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskero_backend.settings")
 django.setup()
 
-from accounts.models import User
+from accounts.models import User  # noqa: E402
 
 
 def create_admin():

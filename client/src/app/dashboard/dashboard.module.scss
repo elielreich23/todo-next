@@ -2,7 +2,7 @@
 .dragging {
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  
+
   * {
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -310,7 +310,7 @@
   position: relative;
   transition: all 0.2s ease;
   pointer-events: auto;
-   
+
   /* Subtle hover effect only */
   &:hover {
     border-color: #d1d5db;
@@ -358,30 +358,30 @@
   scroll-behavior: smooth;
   border-radius: 8px;
   transition: all 0.2s ease;
-  
+
   /* Custom scrollbar styling */
   &::-webkit-scrollbar {
     width: 6px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 3px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 3px;
-    
+
     &:hover {
       background: #a8a8a8;
     }
   }
-  
+
   /* Firefox scrollbar styling */
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 #f1f1f1;
-  
+
   /* Subtle drag over effect */
   &.dragOver {
     background: rgba(0, 0, 0, 0.02);
@@ -416,7 +416,7 @@
   &:active {
     cursor: grabbing;
   }
-  
+
   /* Dragging state */
   &.dragging {
     opacity: 0.7;
@@ -439,10 +439,10 @@
       flex: 1;
       margin-right: 8px;
     }
-    
+
     .taskStatus {
       margin-right: 8px;
-      
+
       .statusBadge {
         padding: 2px 8px;
         border-radius: 12px;
@@ -451,17 +451,17 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
-      
+
       .statusTodo {
         background: #fee2e2;
         color: #dc2626;
       }
-      
+
       .statusInProgress {
         background: #fef3c7;
         color: #d97706;
       }
-      
+
       .statusDone {
         background: #d1fae5;
         color: #059669;
@@ -606,14 +606,14 @@
 }
 
 @media (max-width: 960px) {
-  .boardWrapper { 
-    grid-template-columns: 1fr; 
+  .boardWrapper {
+    grid-template-columns: 1fr;
   }
-  
+
   .boardColumn {
     max-height: calc(100vh - 180px);
   }
-  
+
   .cards {
     max-height: calc(100vh - 260px);
   }
@@ -627,7 +627,7 @@
 
 .header.darkMode {
   border-bottom-color: #2a2f36;
-  
+
   .headerLeft {
     h1 { color: #e5e7eb; }
     p { color: #9aa4b2; }
@@ -641,15 +641,15 @@
 
 .columnHeader.darkMode {
   .title { color: #e5e7eb; }
-  
+
   .addTaskBtn {
     border-color: #3b4250;
     color: #9aa4b2;
-    
-    &:hover { 
-      border-color: #60a5fa; 
-      color: #60a5fa; 
-      background: #0f141c; 
+
+    &:hover {
+      border-color: #60a5fa;
+      color: #60a5fa;
+      background: #0f141c;
     }
   }
 }
@@ -657,30 +657,30 @@
 .taskCard.darkMode {
   background: #0f141c;
   border-color: #2a2f36;
-  
+
   .taskCardHeader {
     .taskTitle { color: #e5e7eb; }
-    
+
     .taskMenu {
       &:hover {
         background-color: rgba(255, 255, 255, 0.1);
       }
-      
+
       .dropdownMenu {
         background: #1f2937;
         border-color: #374151;
-        
+
         button {
           color: #e5e7eb;
-          
+
           &:hover {
             background-color: #374151;
           }
         }
-        
+
         .moveToProject {
           border-top-color: #374151;
-          
+
           span {
             color: #9ca3af;
           }
@@ -688,29 +688,29 @@
       }
     }
   }
-  
+
   .taskProject { color: #9ca3af; }
-  
+
   .taskProgress {
     span { color: #9ca3af; }
-    
+
     .progressBar {
       background-color: #374151;
     }
-    
+
     .progressText { color: #9ca3af; }
   }
-  
+
   .taskFooter {
     .taskDate {
       background: #374151;
       color: #9ca3af;
     }
-    
+
     .taskMeta {
       .metaItem {
         color: #9ca3af;
-        
+
         svg {
           color: #6b7280;
         }
@@ -971,15 +971,15 @@
   .header .headerLeft h1 {
     font-size: 1.75rem;
   }
-  
+
   .boardColumn {
     max-height: calc(100vh - 160px);
   }
-  
+
   .cards {
     max-height: calc(100vh - 240px);
   }
-  
+
   /* Mobile drag and drop improvements */
   .taskCard {
     &.dragging {
@@ -987,7 +987,7 @@
       opacity: 0.8;
     }
   }
-  
+
   .cards.dragOver {
     background: rgba(0, 0, 0, 0.01);
     border: 1px dashed #e5e7eb;

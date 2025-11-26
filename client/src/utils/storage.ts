@@ -88,7 +88,7 @@ export const clearAuthTokens = (): void => {
 export const getCachedUserData = <T>(): T | null => {
   const cachedData = getStorageItem(STORAGE_KEYS.CACHED_USER_DATA);
   if (!cachedData) return null;
-  
+
   try {
     return JSON.parse(cachedData) as T;
   } catch (error) {
@@ -105,15 +105,15 @@ export const setCachedUserData = <T>(data: T): boolean => {
   try {
     const serialized = JSON.stringify(data);
     const timestamp = Date.now().toString();
-    
+
     const success = setStorageItem(STORAGE_KEYS.CACHED_USER_DATA, serialized) &&
                    setStorageItem(STORAGE_KEYS.CACHED_USER_TIMESTAMP, timestamp);
-    
+
     if (success) {
       // Dispatch event to notify other components
       window.dispatchEvent(new CustomEvent('userDataUpdated'));
     }
-    
+
     return success;
   } catch (error) {
     console.error('Error caching user data:', error);
@@ -128,4 +128,3 @@ export const clearCachedUserData = (): void => {
   removeStorageItem(STORAGE_KEYS.CACHED_USER_DATA);
   removeStorageItem(STORAGE_KEYS.CACHED_USER_TIMESTAMP);
 };
-

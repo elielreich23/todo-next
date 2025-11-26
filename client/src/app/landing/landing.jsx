@@ -141,7 +141,7 @@ export default function Home() {
             <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
           </div>
         </div>
-      </section> 
+      </section>
 
       {/* TESTIMONIALS SECTION */}
       <section id="testimonials" className="testimonials">
@@ -202,7 +202,7 @@ export default function Home() {
              </div>
              <button className="subscribe-btn" onClick={handleGetStarted}>Subscribe now</button>
            </div>
-          
+
           <div className="pricing-card enterprise featured">
             <h3>Enterprise</h3>
             <div className="price">
@@ -218,7 +218,7 @@ export default function Home() {
             </div>
                          <button className="subscribe-btn featured" onClick={handleGetStarted}>Subscribe now</button>
           </div>
-          
+
           <div className="pricing-card standard">
             <h3>Standard</h3>
             <div className="price">
@@ -235,7 +235,7 @@ export default function Home() {
                          <button className="subscribe-btn" onClick={handleGetStarted}>Subscribe now</button>
           </div>
         </div>
-        
+
         <div className="taskers-section">
           <div className="taskers-brand">taskers</div>
                      <div className="taskers-buttons">
@@ -297,7 +297,7 @@ export default function Home() {
             <div className="footer-logo">taskers</div>
             <p className="footer-tagline">Committing to making work process easier.</p>
           </div>
-          
+
           <div className="footer-middle">
             <div className="footer-column">
               <h4>Company</h4>
@@ -308,7 +308,7 @@ export default function Home() {
                 <li><a href="#mission">Our Mission</a></li>
               </ul>
             </div>
-            
+
             <div className="footer-column">
               <h4>Help</h4>
               <ul>
@@ -319,7 +319,7 @@ export default function Home() {
               </ul>
             </div>
           </div>
-          
+
           <div className="footer-right">
             <h4>Socials</h4>
             <div className="social-links">
@@ -330,7 +330,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
+
         <div className="footer-bottom">
           <div className="copyright">
             © 2024 Taskers all right reserved
@@ -343,5 +343,3 @@ export default function Home() {
     </div>
   );
 }
-
-

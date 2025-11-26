@@ -48,9 +48,9 @@ export default function Signup() {
   // Show loading if checking authentication, user is loading, or we just signed up
   if (userLoading || (isAuthenticated && user) || isSigningUp) {
     return (
-      <div style={{ 
-        textAlign: 'center', 
-        marginTop: '50px', 
+      <div style={{
+        textAlign: 'center',
+        marginTop: '50px',
         fontSize: '1.5rem',
         color: '#666'
       }}>
@@ -112,7 +112,7 @@ export default function Signup() {
     try {
       setIsSigningUp(true);
       console.log("Attempting to signup with:", { fullName, username, email });
-      
+
       // Send signup request to our Django backend
       await remoteSignup({
         username: username.trim(),
@@ -121,10 +121,10 @@ export default function Signup() {
         password: password,
         password_confirm: confirmPassword
       });
-      
+
       setError("");
       console.log("Signup successful, user data cached, waiting for context to update...");
-      
+
       // Wait for user context to finish loading and user to be available
       // The useEffect will handle the redirect once user is ready
       // We keep isSigningUp true so the loading screen shows
@@ -132,7 +132,7 @@ export default function Signup() {
     } catch (err: any) {
       console.error("Signup error:", err);
       setIsSigningUp(false);
-      
+
       if (err.response?.data?.detail) {
         setError(err.response.data.detail);
       } else if (err.code === 'ERR_NETWORK') {
@@ -146,17 +146,17 @@ export default function Signup() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className={styles.container}>
       {/* Left Section - Welcome Message */}
       <div className={styles.left}>
         <div className={styles.logo}>taskero</div>
-        
+
         <h1 className={styles.welcomeMessage}>Sign Up</h1>
-        
+
         <p className={styles.paragraph}>
-          Already have an account? 
+          Already have an account?
           <Link href="/auth/signin" className={styles.createAccountLink}>
             Login here
           </Link>
@@ -180,11 +180,11 @@ export default function Signup() {
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>Create Your Account</h2>
           <p className={styles.formSubtitle}>All in one platform to get tasks done</p>
-          
+
           <form className={styles.form} onSubmit={handleSignup}>
             {/* Google Signup Button */}
-            <button 
-              type="button" 
+            <button
+              type="button"
               className={styles.googleButton}
               disabled={isLoading}
             >
@@ -282,8 +282,8 @@ export default function Signup() {
             {error && <p className={styles.error}>{error}</p>}
 
             {/* Submit Button */}
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className={styles.signupButton}
               disabled={isLoading}
             >

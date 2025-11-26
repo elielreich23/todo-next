@@ -3,7 +3,6 @@
 Script to set up the database with migrations
 """
 import os
-import sys
 
 import django
 from django.core.management import execute_from_command_line

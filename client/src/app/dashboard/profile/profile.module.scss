@@ -7,7 +7,7 @@
   max-width: 100%;
   box-sizing: border-box;
   overflow-x: hidden;
-  
+
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -32,7 +32,7 @@
     font-weight: 700;
     color: #2c3e50;
     margin: 0;
-    
+
     @media (max-width: 768px) {
       font-size: 1.5rem;
     }
@@ -247,7 +247,7 @@
   max-width: 100%;
   box-sizing: border-box;
   flex-wrap: wrap;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: center;
@@ -286,7 +286,7 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  
+
   h2 {
     font-size: 2.5rem;
     font-weight: 700;
@@ -294,11 +294,11 @@
     margin: 0 0 0.5rem 0;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    
+
     @media (max-width: 1024px) {
       font-size: 2rem;
     }
-    
+
     @media (max-width: 768px) {
       font-size: 1.75rem;
     }
@@ -310,7 +310,7 @@
     font-size: 1.1rem;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    
+
     @media (max-width: 768px) {
       font-size: 1rem;
     }
@@ -357,19 +357,19 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  
+
   @media (max-width: 768px) {
     padding: 0 1rem;
   }
-  
+
   &::-webkit-scrollbar {
     height: 4px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 2px;
@@ -469,7 +469,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  
+
   @media (max-width: 768px) {
     width: 100%;
   }
@@ -561,7 +561,7 @@
 
 .countryInput {
   width: 100%;
-  
+
   select {
     width: 100%;
     padding: 0.75rem 1rem;

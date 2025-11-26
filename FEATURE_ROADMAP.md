@@ -29,7 +29,7 @@ This document outlines important features that can be added to enhance the Taske
 ## 🎯 High Priority Features
 
 ### 1. **Backend Persistence for Comments** ⭐⭐⭐
-**Current State**: Comments exist only in frontend state, lost on refresh  
+**Current State**: Comments exist only in frontend state, lost on refresh
 **Implementation**:
 - Add `Comment` model to backend (text, author, task, created_at)
 - Create comment serializers and views
@@ -41,7 +41,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 2. **Backend Persistence for File Attachments** ⭐⭐⭐
-**Current State**: File upload UI exists but files are not saved  
+**Current State**: File upload UI exists but files are not saved
 **Implementation**:
 - Add `TaskAttachment` model (file, task, uploaded_by, created_at)
 - Configure Django file storage (local or cloud)
@@ -53,7 +53,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 3. **Real-time Notifications with WebSockets** ⭐⭐⭐
-**Current State**: Polling-based notifications (30s interval)  
+**Current State**: Polling-based notifications (30s interval)
 **Implementation**:
 - Integrate Django Channels for WebSocket support
 - Create WebSocket consumers for notifications
@@ -65,7 +65,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 4. **Project Sharing & Collaboration** ⭐⭐⭐
-**Current State**: Projects are owner-only  
+**Current State**: Projects are owner-only
 **Implementation**:
 - Add `ProjectMember` model (project, user, role: owner/editor/viewer)
 - Permission system for project actions
@@ -77,7 +77,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 5. **Advanced Search & Filtering** ⭐⭐
-**Current State**: No search functionality  
+**Current State**: No search functionality
 **Implementation**:
 - Backend: Search API with filters (title, description, status, priority, assignee, date range)
 - Frontend: Search bar with advanced filter UI
@@ -88,7 +88,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 6. **Task Labels/Tags System** ⭐⭐
-**Current State**: No categorization beyond projects  
+**Current State**: No categorization beyond projects
 **Implementation**:
 - Add `Tag` model and many-to-many with `Task`
 - Tag creation/management UI
@@ -100,7 +100,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 7. **Task Dependencies** ⭐⭐
-**Current State**: Tasks are independent  
+**Current State**: Tasks are independent
 **Implementation**:
 - Add `TaskDependency` model (blocking_task, blocked_task)
 - Visual dependency graph in UI
@@ -112,7 +112,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 8. **Time Tracking** ⭐⭐
-**Current State**: No time tracking  
+**Current State**: No time tracking
 **Implementation**:
 - Add `TimeEntry` model (task, user, start_time, end_time, duration, notes)
 - Start/stop timer UI
@@ -124,7 +124,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 9. **Statistics & Analytics Dashboard** ⭐⭐
-**Current State**: Empty placeholder page  
+**Current State**: Empty placeholder page
 **Implementation**:
 - Task completion rates
 - Time spent per project/task
@@ -137,7 +137,7 @@ This document outlines important features that can be added to enhance the Taske
 ---
 
 ### 10. **Email Notifications** ⭐⭐
-**Current State**: Only in-app notifications  
+**Current State**: Only in-app notifications
 **Implementation**:
 - Configure Django email backend
 - Email templates for key events
@@ -151,7 +151,7 @@ This document outlines important features that can be added to enhance the Taske
 ## 🔧 Medium Priority Features
 
 ### 11. **Calendar Integration with Tasks**
-**Current State**: Calendar exists but is separate from tasks  
+**Current State**: Calendar exists but is separate from tasks
 **Implementation**:
 - Sync tasks with due dates to calendar
 - Calendar events for task due dates
@@ -489,4 +489,3 @@ This document outlines important features that can be added to enhance the Taske
 
 *Last Updated: 2024*
 *Project: Taskero - Modern Task Management Application*
-

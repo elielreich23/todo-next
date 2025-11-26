@@ -24,7 +24,7 @@ const Hero = () => {
             </button>
           </div>
         </div>
-        
+
         <div className={styles.heroVisual}>
           <div className={styles.circles}>
             <div className={styles.circle}>

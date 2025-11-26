@@ -45,4 +45,3 @@ This directory contains all GitHub Actions workflows for CI/CD.
 ## Required Secrets
 
 See `CI_CD_SETUP.md` for complete list of required secrets.
-
