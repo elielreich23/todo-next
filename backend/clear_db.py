@@ -7,6 +7,7 @@ import sys
 
 import django
 
+# setup
 # Setup Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskero_backend.settings")
 django.setup()
