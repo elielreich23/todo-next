@@ -9,6 +9,7 @@
 - [Key Features](#-key-features)
 - [Architecture Overview](#️-architecture-overview)
 - [Technologies Used](#-technologies-used)
+- [Documentation](#-documentation)
 - [Getting Started](#-getting-started)
 - [Project Structure](#-project-structure)
 - [API Endpoints](#-api-endpoints)
@@ -16,12 +17,18 @@
 - [Development](#-development)
 - [Docker Deployment](#-docker-deployment)
 - [CI/CD Pipeline](#cicd-pipeline)
-- [Deployment Guide](#-deployment-guide)
-- [Session Management](#-session-management)
-- [Production Checklist](#-production-checklist)
-- [Feature Roadmap](#-feature-roadmap)
 - [Contributing](#-contributing)
 - [Support](#-support)
+
+---
+
+## 📚 Documentation
+
+For detailed guides, please refer to these consolidated documentation files:
+
+- **[SETUP_AND_DEVELOPMENT.md](./SETUP_AND_DEVELOPMENT.md)** - Local setup, development workflow, troubleshooting, and feature roadmap
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment guides for Railway, Render, Vercel, and production checklists
+- **[README.md](./README.md)** - This file - Project overview and quick start guide
 
 ---
 
@@ -697,7 +704,7 @@ For detailed session management documentation, see `SESSION_MANAGEMENT.md`.
 - [ ] Check database connections
 - [ ] Verify API response times
 
-For a complete production checklist, see `PRODUCTION_CHECKLIST.md`.
+For a complete production checklist, see **[DEPLOYMENT.md](./DEPLOYMENT.md#production-checklist)**.
 
 ---
 
@@ -757,7 +764,7 @@ For a complete production checklist, see `PRODUCTION_CHECKLIST.md`.
 - Mobile App (React Native)
 - Advanced Reporting
 
-For complete feature roadmap, see `FEATURE_ROADMAP.md`.
+For complete feature roadmap, see **[SETUP_AND_DEVELOPMENT.md](./SETUP_AND_DEVELOPMENT.md#feature-roadmap)**.
 
 ---
 
