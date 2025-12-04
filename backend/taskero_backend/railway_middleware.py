@@ -4,8 +4,8 @@ This allows Railway domains even if not explicitly in ALLOWED_HOSTS.
 Must be placed BEFORE CommonMiddleware in MIDDLEWARE list.
 """
 
-from django.http import HttpRequest
-from django.utils.deprecation import MiddlewareMixin
+from django.http import HttpRequest  # type: ignore[import]
+from django.utils.deprecation import MiddlewareMixin  # type: ignore[import]
 
 
 class RailwayHostMiddleware(MiddlewareMixin):
@@ -30,7 +30,7 @@ class RailwayHostMiddleware(MiddlewareMixin):
 
         # If on Railway and host ends with .up.railway.app, allow it
         if is_railway and host.endswith(".up.railway.app"):
-            from django.conf import settings
+            from django.conf import settings  # type: ignore[import]
 
             # Add to ALLOWED_HOSTS if not already there
             if host not in settings.ALLOWED_HOSTS:
@@ -38,7 +38,7 @@ class RailwayHostMiddleware(MiddlewareMixin):
 
         # Also check if host contains .up.railway.app (fallback detection)
         elif ".up.railway.app" in host:
-            from django.conf import settings
+            from django.conf import settings  # type: ignore[import]
 
             if host not in settings.ALLOWED_HOSTS:
                 settings.ALLOWED_HOSTS.append(host)
