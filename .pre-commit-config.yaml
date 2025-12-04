@@ -80,7 +80,7 @@ repos:
     rev: 1.9.1
     hooks:
       - id: bandit
-        args: ['-r', 'backend/', '-f', 'json', '-o', 'bandit-report.json', '--skip', 'B101,B104,B105,B106']
+        args: ['-r', 'backend/', '-f', 'json', '-o', 'bandit-report.json', '--skip', 'B101,B104,B105,B106', '--exclude', 'backend/venv/,backend/env/,backend/migrations/,backend/__pycache__/']
         files: ^backend/.*\.py$
         exclude: ^backend/(migrations|venv|env|__pycache__)/
         pass_filenames: false

@@ -14,6 +14,8 @@ export const API_ENDPOINTS = {
     TOKEN_REFRESH: '/api/token/refresh/',
     USERS_LIST: '/api/auth/users/',
     USERS_SEARCH: '/api/auth/users/search/',
+    PASSWORD_RESET_REQUEST: '/api/auth/password/reset/request/',
+    PASSWORD_RESET: '/api/auth/password/reset/',
   },
   TASKS: {
     LIST: '/api/tasks/',

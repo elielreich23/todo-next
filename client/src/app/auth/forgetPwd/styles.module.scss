@@ -122,3 +122,45 @@
 .signup:hover {
   background: linear-gradient(145deg, #EF7707, #e49d5b);
 }
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.error {
+  color: #f44336;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0.75rem;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.success {
+  color: #4CAF50;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0.75rem;
+  background-color: rgba(76, 175, 80, 0.1);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.resetButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.resetButton:disabled:hover {
+  background: linear-gradient(145deg, #2914012f, #4221016b, #9e5007, #020100b9);
+}

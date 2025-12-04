@@ -17,6 +17,16 @@ services:
         value: 3.11.0
       - key: DEBUG
         value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: taskero-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: taskero-backend.onrender.com,localhost,127.0.0.1
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://todo-next-ajio-git-master-elielreich23s-projects.vercel.app
       - key: SECURE_SSL_REDIRECT
         value: true
       - key: SESSION_COOKIE_SECURE
