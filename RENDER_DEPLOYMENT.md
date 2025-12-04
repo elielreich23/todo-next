@@ -207,10 +207,42 @@ NEXT_PUBLIC_API_BASE_URL=https://taskero-backend.onrender.com
 
 ## Troubleshooting
 
+### ModuleNotFoundError: No module named 'your_application'
+
+This error occurs when Render is using a placeholder start command instead of your actual configuration.
+
+**Solution:**
+
+1. **If using render.yaml:**
+   - Go to your Render service dashboard
+   - Click on **Settings** → **Service Details**
+   - Verify that **Start Command** shows:
+     ```
+     cd backend && python manage.py migrate && gunicorn taskero_backend.wsgi:application --bind 0.0.0.0:$PORT
+     ```
+   - If it shows `your_application` or something else, update it to the command above
+   - Click **Save Changes** and redeploy
+
+2. **If manually configured:**
+   - Go to your Render service → **Settings** tab
+   - Scroll to **Start Command** section
+   - Replace any placeholder with:
+     ```
+     cd backend && python manage.py migrate && gunicorn taskero_backend.wsgi:application --bind 0.0.0.0:$PORT
+     ```
+   - Ensure **Root Directory** is empty (not set to `backend`)
+   - Save and redeploy
+
+3. **Verify the command:**
+   - The correct module path is: `taskero_backend.wsgi:application`
+   - Make sure you're in the `backend` directory when running gunicorn
+   - The `taskero_backend` folder should be inside the `backend` directory
+
 ### Backend Not Starting
 - Check Render logs for Python errors
 - Verify all dependencies are in `requirements.txt`
 - Ensure `DJANGO_SETTINGS_MODULE` is correct
+- Verify the start command uses `taskero_backend.wsgi:application` (not `your_application`)
 
 ### Database Connection Errors
 - Verify `DATABASE_URL` is set correctly

@@ -67,7 +67,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "taskero_backend.wsgi.application"
+WSGI_APPLICATION = "backend.taskero_backend.wsgi.application"
+ASGI_APPLICATION = "backend.taskero_backend.wsgi.application"
 
 
 # Database
