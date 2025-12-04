@@ -4,8 +4,8 @@ Script to set up the database with migrations
 """
 import os
 
-import django
-from django.core.management import execute_from_command_line
+import django  # type: ignore[import]
+from django.core.management import execute_from_command_line  # type: ignore[import]
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskero_backend.settings")
