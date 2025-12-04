@@ -22,7 +22,7 @@ SECRET_KEY = config("SECRET_KEY", default="django-insecure-change-this-in-produc
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 # Update ALLOWED_HOSTS for production
-# Automatically include Render service URL if available
+# Automatically include Render or Railway service URL if available
 allowed_hosts_str = config("ALLOWED_HOSTS", default="localhost,127.0.0.1")
 if isinstance(allowed_hosts_str, str):
     ALLOWED_HOSTS = [s.strip() for s in allowed_hosts_str.split(",")]
@@ -39,8 +39,49 @@ if render_service_url:
     if parsed_url.hostname and parsed_url.hostname not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(parsed_url.hostname)
 
+# Auto-detect Railway service URL from environment
+railway_public_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+if railway_public_domain and railway_public_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(railway_public_domain)
+
+# Also check for Railway custom domain
+railway_custom_domain = os.environ.get("RAILWAY_CUSTOM_DOMAIN")
+if railway_custom_domain:
+    if isinstance(railway_custom_domain, str):
+        domains = [s.strip() for s in railway_custom_domain.split(",")]
+        for domain in domains:
+            if domain and domain not in ALLOWED_HOSTS:
+                ALLOWED_HOSTS.append(domain)
+    elif railway_custom_domain not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(railway_custom_domain)
+
+# Railway detection: Check if we're running on Railway
+# Railway sets various environment variables we can check
+is_railway = any(
+    [
+        os.environ.get("RAILWAY_ENVIRONMENT_NAME"),
+        os.environ.get("RAILWAY_SERVICE_NAME"),
+        os.environ.get("RAILWAY_PUBLIC_DOMAIN"),
+        os.environ.get("RAILWAY_DEPLOYMENT_ID"),
+    ]
+)
+
+# If on Railway but no specific domain set, we need to handle it dynamically
+# Since Django doesn't support wildcards, we'll use middleware (see below)
+# For now, add common Railway domain patterns if detected
+if is_railway and not any(".up.railway.app" in str(host) for host in ALLOWED_HOSTS):
+    # Try to get domain from Railway environment
+    # Railway sometimes provides it in different env vars
+    railway_domain = (
+        os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+        or os.environ.get("RAILWAY_STATIC_URL", "").replace("https://", "").replace("http://", "").split("/")[0]
+    )
+    if railway_domain and railway_domain.endswith(".up.railway.app"):
+        if railway_domain not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(railway_domain)
+
 # Database configuration for production (PostgreSQL recommended)
-# Render automatically provides DATABASE_URL for linked databases
+# Render and Railway automatically provide DATABASE_URL for linked databases
 DATABASES = {
     "default": dj_database_url.config(
         default=config("DATABASE_URL", default="sqlite:///db.sqlite3"),
@@ -72,6 +113,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Add WhiteNoise middleware for static files
 MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+# Add Railway host middleware to handle dynamic Railway domains
+# This should be early in the middleware stack, before CommonMiddleware
+MIDDLEWARE.insert(0, "taskero_backend.railway_middleware.RailwayHostMiddleware")
 
 # Security settings for production
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=False, cast=bool)
