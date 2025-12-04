@@ -2,6 +2,7 @@
 Django settings for taskero_backend project.
 """
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -19,6 +20,7 @@ SECRET_KEY = "django-insecure-your-secret-key-here"
 DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 
 
 # Application definition
