@@ -16,6 +16,8 @@ export const API_ENDPOINTS = {
     USERS_SEARCH: '/api/auth/users/search/',
     PASSWORD_RESET_REQUEST: '/api/auth/password/reset/request/',
     PASSWORD_RESET: '/api/auth/password/reset/',
+    PASSWORD_CHECK_STRENGTH: '/api/auth/password/check-strength/',
+    GOOGLE_AUTH: '/api/auth/google/',
   },
   TASKS: {
     LIST: '/api/tasks/',

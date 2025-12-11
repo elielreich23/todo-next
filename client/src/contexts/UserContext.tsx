@@ -42,6 +42,7 @@ interface UserContextType {
   isLoading: boolean;
   remoteLogin: (params: { email: string; password: string }) => Promise<void>;
   remoteSignup: (params: { username: string; email: string; full_name: string; password: string; password_confirm: string }) => Promise<void>;
+  googleAuth: (token: string) => Promise<void>;
   validateSession: () => Promise<boolean>;
 }
 
@@ -218,6 +219,24 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
+  const googleAuth = async (token: string) => {
+    const response = await api<LoginResponse>(API_ENDPOINTS.AUTH.GOOGLE_AUTH, {
+      method: 'POST',
+      body: JSON.stringify({ token })
+    });
+
+    if (response.success) {
+      // Store tokens
+      setAccessToken(response.tokens.access);
+      setRefreshToken(response.tokens.refresh);
+
+      // Set user in context and cache
+      setUser(response.user);
+    } else {
+      throw new Error(response.message || 'Google authentication failed');
+    }
+  };
+
   const logout = () => {
     // Clear tokens
     clearAuthTokens();
@@ -266,6 +285,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     isLoading,
     remoteLogin,
     remoteSignup,
+    googleAuth,
     validateSession,
   };
 

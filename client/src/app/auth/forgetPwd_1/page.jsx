@@ -7,6 +7,7 @@ import styles from "./styles.module.css";
 import "../../../styles/global.scss";
 import Link from "next/link";
 import { API_BASE_URL, API_ENDPOINTS } from "../../../constants";
+import PasswordStrengthMeter from "../../../components/PasswordStrengthMeter/PasswordStrengthMeter";
 
 function ForgotPasswordContent() {
   const [password, setPassword] = useState("");
@@ -14,6 +15,7 @@ function ForgotPasswordContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({ score: 0, isValid: false });
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useUser();
@@ -51,6 +53,12 @@ function ForgotPasswordContent() {
     // Validate password length
     if (password.length < 8) {
       setError("Password must be at least 8 characters long");
+      return;
+    }
+
+    // Check password strength meets minimum requirement
+    if (passwordStrength.score < 2) {
+      setError("Password is too weak. Please choose a stronger password.");
       return;
     }
 
@@ -148,6 +156,12 @@ function ForgotPasswordContent() {
               placeholder="Enter new password"
               required
               disabled={isLoading || success}
+            />
+            <PasswordStrengthMeter
+              password={password}
+              onStrengthChange={setPasswordStrength}
+              showFeedback={true}
+              minScore={2}
             />
           </div>
 

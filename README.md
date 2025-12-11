@@ -622,6 +622,256 @@ For complete deployment instructions, see `DEPLOYMENT_GUIDE.md` and `DEPLOYMENT_
 
 ---
 
+# Password Strength Validation Implementation
+
+This document describes the password strength validation feature implementation using the zxcvbn algorithm.
+
+## Overview
+
+Password strength validation has been implemented with:
+- **Backend**: zxcvbn algorithm integration with Django password validators
+- **Frontend**: Real-time password strength meter component
+- **API**: Endpoint for checking password strength
+
+## Backend Implementation
+
+### Dependencies
+
+Added to `requirements.txt`:
+```
+zxcvbn==4.4.28
+```
+
+### Custom Validator
+
+**File**: `backend/accounts/validators.py`
+
+- `ZxcvbnPasswordValidator`: Django password validator using zxcvbn
+  - Minimum score: 2 (configurable via settings)
+  - Checks against user attributes (email, username, full_name)
+  - Provides detailed feedback messages
+
+- `get_password_strength()`: Utility function for API responses
+  - Returns score, label, feedback, and crack time estimates
+
+### Settings Configuration
+
+**File**: `backend/taskero_backend/settings.py`
+
+Added to `AUTH_PASSWORD_VALIDATORS`:
+```python
+{
+    "NAME": "accounts.validators.ZxcvbnPasswordValidator",
+    "OPTIONS": {
+        "min_score": 2,  # Require at least "fair" strength
+    },
+}
+```
+
+### API Endpoint
+
+**Endpoint**: `POST /api/auth/password/check-strength/`
+
+**Request**:
+```json
+{
+  "password": "user_password",
+  "user_inputs": ["username", "email"]  // optional
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "strength": {
+    "score": 3,
+    "label": "good",
+    "crack_times_display": {
+      "offline_fast_hashing_1e10_per_second": "centuries"
+    },
+    "feedback": {
+      "warning": "",
+      "suggestions": []
+    }
+  }
+}
+```
+
+## Frontend Implementation
+
+### Password Strength Meter Component
+
+**Location**: `client/src/components/PasswordStrengthMeter/`
+
+**Features**:
+- Real-time strength assessment (debounced)
+- Visual strength bar (5 levels: Too Weak → Strong)
+- Feedback messages and suggestions
+- Minimum requirement indicator
+- Estimated crack time display
+
+**Props**:
+- `password` (string): Password to check
+- `userInputs` (array): User attributes to avoid (email, username, etc.)
+- `onStrengthChange` (function): Callback with strength info
+- `showFeedback` (boolean): Show/hide feedback messages
+- `minScore` (number): Minimum required score (default: 2)
+
+### Integration
+
+#### Signup Page
+
+**File**: `client/src/app/auth/signup/page.tsx`
+
+- Integrated password strength meter
+- Validates minimum strength before submission
+- Uses email, username, and full name as user inputs
+
+#### Password Reset Page
+
+**File**: `client/src/app/auth/forgetPwd_1/page.jsx`
+
+- Integrated password strength meter
+- Validates minimum strength before submission
+
+## Password Strength Levels
+
+| Score | Label     | Description                    | Color    |
+|-------|-----------|--------------------------------|----------|
+| 0     | Too Weak  | Very guessable                 | Red      |
+| 1     | Weak      | Easily guessable               | Orange   |
+| 2     | Fair      | Somewhat guessable             | Yellow   |
+| 3     | Good      | Somewhat safe                  | Light Green |
+| 4     | Strong    | Very safe                      | Green    |
+
+## Usage Examples
+
+### Basic Usage
+
+```jsx
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
+
+<PasswordStrengthMeter
+  password={password}
+  onStrengthChange={(strength) => console.log(strength)}
+/>
+```
+
+### With User Inputs
+
+```jsx
+<PasswordStrengthMeter
+  password={password}
+  userInputs={[email, username, fullName]}
+  onStrengthChange={setPasswordStrength}
+  minScore={2}
+  showFeedback={true}
+/>
+```
+
+### Validation
+
+```jsx
+const [passwordStrength, setPasswordStrength] = useState({ score: 0, isValid: false });
+
+// In form submission
+if (passwordStrength.score < 2) {
+  setError("Password is too weak. Please choose a stronger password.");
+  return;
+}
+```
+
+## Configuration
+
+### Minimum Score
+
+Adjust in `backend/taskero_backend/settings.py`:
+
+```python
+{
+    "NAME": "accounts.validators.ZxcvbnPasswordValidator",
+    "OPTIONS": {
+        "min_score": 3,  # Change to require "good" strength
+    },
+}
+```
+
+### Frontend Minimum Score
+
+Pass `minScore` prop to component:
+
+```jsx
+<PasswordStrengthMeter minScore={3} ... />
+```
+
+## Testing
+
+### Backend
+
+Test password validation:
+
+```python
+from accounts.validators import ZxcvbnPasswordValidator
+
+validator = ZxcvbnPasswordValidator(min_score=2)
+validator.validate("weakpassword")  # Raises ValidationError
+validator.validate("StrongP@ssw0rd123!")  # Passes
+```
+
+### Frontend
+
+1. Visit signup page
+2. Type password in password field
+3. Observe real-time strength meter
+4. Check feedback messages
+5. Verify form submission requires minimum strength
+
+## Security Considerations
+
+1. **Client-side validation** is for UX only - backend always validates
+2. **API endpoint** is rate-limited (should be added)
+3. **Password** is sent to server - ensure HTTPS in production
+4. **User inputs** help prevent personal information in passwords
+
+## Future Enhancements
+
+- [ ] Add rate limiting to password strength check endpoint
+- [ ] Cache strength results to reduce API calls
+- [ ] Add password history check (prevent reuse)
+- [ ] Implement password expiration policy
+- [ ] Add password strength requirements customization per user/team
+
+## Troubleshooting
+
+### Backend Issues
+
+**Error**: `ModuleNotFoundError: No module named 'zxcvbn'`
+- Solution: Run `pip install -r requirements.txt`
+
+**Error**: Validator not working
+- Check `AUTH_PASSWORD_VALIDATORS` in settings
+- Verify validator class is properly structured
+
+### Frontend Issues
+
+**Component not showing**
+- Check API endpoint is accessible
+- Verify API_BASE_URL is correctly configured
+- Check browser console for errors
+
+**Strength not updating**
+- Verify debounce delay (300ms)
+- Check network tab for API calls
+- Ensure password prop is updating
+
+## References
+
+- [zxcvbn Documentation](https://github.com/dropbox/zxcvbn)
+- [Django Password Validation](https://docs.djangoproject.com/en/stable/topics/auth/passwords/#password-validation)
+- [OWASP Password Guidelines](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+
+
 ## 🔒 Session Management
 
 The application implements comprehensive session management to ensure user data isolation and security.
