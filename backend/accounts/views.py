@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .google_auth import verify_google_token
 from .models import User
 from .serializers import (
     PasswordResetRequestSerializer,
@@ -21,6 +22,7 @@ from .serializers import (
     UserRegistrationSerializer,
     UserSerializer,
 )
+from .validators import get_password_strength
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +203,7 @@ Tasker Team
             recipient_list=[email],
             fail_silently=False,
         )
+        logger.info(f"Password reset email sent to {email}")
     except Exception as e:
         # Log error but still return success (don't reveal email errors)
         logger.error(f"Error sending password reset email: {e}", exc_info=True)
@@ -246,3 +249,103 @@ def reset_password(request):
     user.save()
 
     return Response({"success": True, "message": "Password has been reset successfully"}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def check_password_strength(request):
+    """Check password strength using zxcvbn algorithm"""
+    password = request.data.get("password", "")
+    user_inputs = request.data.get("user_inputs", [])  # Optional: username, email, etc.
+
+    if not password:
+        return Response(
+            {"success": False, "message": "Password is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    strength_info = get_password_strength(password, user_inputs)
+
+    return Response(
+        {
+            "success": True,
+            "strength": strength_info,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def google_auth(request):
+    """Authenticate user with Google OAuth token"""
+    token = request.data.get("token")
+
+    if not token:
+        return Response(
+            {"success": False, "message": "Google token is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Verify Google token
+    google_user_info = verify_google_token(token)
+
+    if not google_user_info:
+        return Response(
+            {"success": False, "message": "Invalid Google token"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    email = google_user_info.get("email")
+    if not email or not google_user_info.get("email_verified"):
+        return Response(
+            {"success": False, "message": "Email not verified by Google"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Get or create user
+    try:
+        user = User.objects.get(email=email)
+        # Update user info if needed
+        if google_user_info.get("name") and not user.full_name:
+            user.full_name = google_user_info["name"]
+            user.save()
+    except User.DoesNotExist:
+        # Create new user from Google info
+        username = google_user_info.get("sub", email.split("@")[0])  # Use Google sub or email prefix
+        full_name = google_user_info.get("name", google_user_info.get("given_name", ""))
+
+        # Ensure username is unique
+        base_username = username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        # Create user with a secure random password for OAuth users
+        # Users can set a password later if needed via password reset
+        import secrets
+
+        random_password = secrets.token_urlsafe(32)
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            full_name=full_name or email.split("@")[0],
+            password=random_password,  # OAuth users get random password (can be changed later)
+        )
+
+    # Generate JWT tokens
+    refresh = RefreshToken.for_user(user)
+
+    return Response(
+        {
+            "success": True,
+            "message": "Authentication successful",
+            "user": UserSerializer(user).data,
+            "tokens": {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            },
+        },
+        status=status.HTTP_200_OK,
+    )

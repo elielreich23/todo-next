@@ -7,8 +7,8 @@ Production settings for taskero_backend project.
 import os
 from pathlib import Path
 
-import dj_database_url
-from decouple import config
+import dj_database_url  # type: ignore[import-untyped]
+from decouple import config  # type: ignore[import-untyped]
 
 from .settings import *  # Import base settings
 

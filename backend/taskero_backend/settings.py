@@ -23,8 +23,14 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 CSRF_TRUSTED_ORIGINS = [
     "https://todo-next-production.up.railway.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+
+# Override with environment variable if provided, filtering out empty values
+env_csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if env_csrf_origins:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in env_csrf_origins.split(",") if origin.strip()]
 
 
 # Application definition
@@ -73,8 +79,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "backend.taskero_backend.wsgi.application"
-ASGI_APPLICATION = "backend.taskero_backend.wsgi.application"
+WSGI_APPLICATION = "taskero_backend.wsgi.application"
+ASGI_APPLICATION = "taskero_backend.asgi.application"
 
 
 # Database
@@ -97,12 +103,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 8,
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+    {
+        "NAME": "accounts.validators.ZxcvbnPasswordValidator",
+        "OPTIONS": {
+            "min_score": 2,  # Require at least "fair" strength (score 2 out of 4)
+        },
     },
 ]
 
@@ -162,3 +177,16 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Email configuration for password reset
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")  # Console backend for development
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@taskero.com")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+# Google OAuth Configuration
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")

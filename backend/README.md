@@ -9,28 +9,46 @@ A Django REST API backend with JWT authentication for the Taskero todo applicati
 - Custom user model with email as username
 - CORS enabled for frontend integration
 - Django REST Framework
+- Password strength validation with zxcvbn
 
 ## Setup
 
-1. Install dependencies:
+### Option 1: Local Development (SQLite - Recommended for Windows)
+
+For local development, use the local requirements file which excludes PostgreSQL dependencies:
+
+```bash
+pip install -r requirements-local.txt
+```
+
+### Option 2: Full Installation (Includes PostgreSQL support)
+
+If you need PostgreSQL support, install from the main requirements file:
+
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Run migrations:
+**Note:** On Windows, `psycopg2-binary` may require additional setup. If you encounter errors, use `requirements-local.txt` for local development with SQLite instead.
+
+### Database Setup
+
+1. Run migrations:
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-3. Create superuser (optional):
+2. Create superuser (optional):
 ```bash
 python manage.py createsuperuser
 ```
 
-4. Start the development server:
+3. Start the development server:
 ```bash
 python run.py
+# OR
+python manage.py runserver
 ```
 
 The server will run on `http://localhost:8000`
@@ -41,60 +59,74 @@ The server will run on `http://localhost:8000`
 - `POST /api/auth/signup/` - User registration
 - `POST /api/auth/signin/` - User login
 - `GET /api/auth/profile/` - Get user profile (requires authentication)
+- `PUT /api/auth/profile/update/` - Update user profile (requires authentication)
 - `POST /api/auth/logout/` - Logout (requires authentication)
+- `POST /api/auth/password/reset/request/` - Request password reset
+- `POST /api/auth/password/reset/` - Reset password with token
+- `POST /api/auth/password/check-strength/` - Check password strength (requires authentication)
 
 ### Example Requests
 
 **Signup:**
 ```json
 POST /api/auth/signup/
+Content-Type: application/json
+
 {
   "username": "johndoe",
   "email": "john@example.com",
   "full_name": "John Doe",
-  "password": "securepassword123",
-  "password_confirm": "securepassword123"
+  "password": "SecurePass123!",
+  "password_confirm": "SecurePass123!"
 }
 ```
 
-**Signin:**
+**Login:**
 ```json
 POST /api/auth/signin/
+Content-Type: application/json
+
 {
   "email": "john@example.com",
-  "password": "securepassword123"
+  "password": "SecurePass123!"
 }
 ```
 
-## Default Admin User
+**Check Password Strength:**
+```json
+POST /api/auth/password/check-strength/
+Content-Type: application/json
 
-- Email: admin@taskero.com
-- Password:
+{
+  "password": "MyPassword123!",
+  "user_inputs": ["john", "johndoe"]  // optional
+}
+```
 
+## Development
 
-## Environment Variables
+### Running Tests
 
-You can set these environment variables:
-- `DJANGO_SETTINGS_MODULE` - Django settings module (default: taskero_backend.settings)
-- `DEBUG` - Debug mode (default: True)
-- `SECRET_KEY` - Django secret key (default: development key)
+```bash
+python manage.py test
+```
 
-## Production Deployment
+### Creating Migrations
 
-This backend is ready for deployment on Render. See `DEPLOYMENT.md` for detailed instructions.
+```bash
+python manage.py makemigrations
+```
 
-### Quick Deploy to Render
+### Applying Migrations
 
-1. Push your code to GitHub
-2. Connect your repository to Render
-3. The `render.yaml` file will automatically configure your deployment
-4. Set the required environment variables in Render dashboard
+```bash
+python manage.py migrate
+```
 
-### Required Environment Variables for Production
+## Production
 
-- `SECRET_KEY` - Generate a strong secret key
-- `DATABASE_URL` - PostgreSQL connection string from Render
-- `ALLOWED_HOSTS` - Your Render app domain
-- `CORS_ALLOWED_ORIGINS` - Your frontend domain(s)
-
-See `env.example` for a complete list of environment variables.
+For production deployment:
+- Use PostgreSQL database
+- Set `DJANGO_SETTINGS_MODULE=taskero_backend.settings_production`
+- Use `requirements.txt` for all dependencies including `psycopg2-binary`
+- Configure environment variables as per `env.example`
