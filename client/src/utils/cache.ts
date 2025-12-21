@@ -48,7 +48,9 @@ class APICache {
     // Check max size and remove oldest if needed
     if (this.cache.size >= (config?.maxSize || this.defaultMaxSize)) {
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
 
     this.cache.set(key, {

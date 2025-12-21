@@ -24,8 +24,8 @@ const nextConfig = {
   // Compression
   compress: true,
 
-  // Output configuration for better code splitting
-  output: 'standalone',
+  // Output configuration - removed 'standalone' for Vercel compatibility
+  // Vercel handles its own deployment and doesn't need standalone output
 
   // Webpack optimizations
   webpack: (config, { dev, isServer }) => {
