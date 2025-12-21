@@ -305,7 +305,6 @@ CORS_ALLOWED_ORIGINS=https://your-vercel-app.vercel.app,http://localhost:3000
 
 ## Need More Help?
 
-- Check [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment guide
-- Check [VERCEL_RAILWAY_SETUP.md](./VERCEL_RAILWAY_SETUP.md) for setup instructions
+- Check [Deployment Guide](./DEPLOYMENT.md) for complete deployment guide
 - Railway Documentation: https://docs.railway.app
 - Vercel Documentation: https://vercel.com/docs

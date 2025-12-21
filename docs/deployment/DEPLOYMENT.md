@@ -249,7 +249,7 @@ railway run python backend/manage.py createsuperuser
 python manage.py createsuperuser
 ```
 
-**For detailed instructions, see [RAILWAY_ADMIN_SETUP.md](./RAILWAY_ADMIN_SETUP.md)**
+**For detailed instructions, see [Railway Admin Setup](./RAILWAY_ADMIN_SETUP.md)**
 
 ### Run Migrations
 

@@ -26,8 +26,20 @@
 
 For detailed guides, please refer to these consolidated documentation files:
 
-- **[SETUP_AND_DEVELOPMENT.md](./SETUP_AND_DEVELOPMENT.md)** - Local setup, development workflow, troubleshooting, and feature roadmap
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete deployment guides for Railway, Render, Vercel, and production checklists
+### Setup & Development
+- **[Setup and Development Guide](./docs/setup/SETUP_AND_DEVELOPMENT.md)** - Local setup, development workflow, troubleshooting, and feature roadmap
+- **[Feature Summary](./docs/setup/FEATURE_SUMMARY.md)** - Feature enhancement checklist and implementation guide
+
+### Deployment
+- **[Deployment Guide](./docs/deployment/DEPLOYMENT.md)** - Complete deployment guides for Railway, Render, Vercel, and production checklists
+- **[Railway Admin Setup](./docs/deployment/RAILWAY_ADMIN_SETUP.md)** - Guide for creating admin user on Railway
+- **[Railway Start Command Fix](./docs/deployment/RAILWAY_START_COMMAND_FIX.md)** - Fix for Railway start command errors
+- **[Vercel-Railway Connection Fix](./docs/deployment/VERCEL_RAILWAY_CONNECTION_FIX.md)** - Fix for Vercel-Railway connection issues
+
+### Troubleshooting
+- **[Troubleshooting Guide](./docs/troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
+
+### Main Documentation
 - **[README.md](./README.md)** - This file - Project overview and quick start guide
 
 ---
@@ -954,7 +966,7 @@ For detailed session management documentation, see `SESSION_MANAGEMENT.md`.
 - [ ] Check database connections
 - [ ] Verify API response times
 
-For a complete production checklist, see **[DEPLOYMENT.md](./DEPLOYMENT.md#production-checklist)**.
+For a complete production checklist, see **[Deployment Guide](./docs/deployment/DEPLOYMENT.md#production-checklist)**.
 
 ---
 
@@ -1014,7 +1026,7 @@ For a complete production checklist, see **[DEPLOYMENT.md](./DEPLOYMENT.md#produ
 - Mobile App (React Native)
 - Advanced Reporting
 
-For complete feature roadmap, see **[SETUP_AND_DEVELOPMENT.md](./SETUP_AND_DEVELOPMENT.md#feature-roadmap)**.
+For complete feature roadmap, see **[Setup and Development Guide](./docs/setup/SETUP_AND_DEVELOPMENT.md#feature-roadmap)**.
 
 ---
 

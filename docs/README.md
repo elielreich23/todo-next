@@ -13,18 +13,23 @@ All frontend-specific documentation is now located in the `client/` folder:
 
 ## Main Project Documentation
 
-Project-wide documentation is in the root directory:
+Project-wide documentation is organized by category:
 
-1. **[../README.md](../README.md)** - Project overview and quick start guide
-2. **[../SETUP_AND_DEVELOPMENT.md](../SETUP_AND_DEVELOPMENT.md)** - Local setup, development workflow, troubleshooting, and feature roadmap
-3. **[../DEPLOYMENT.md](../DEPLOYMENT.md)** - Complete deployment guides for Railway, Render, Vercel, and production checklists
+### Setup & Development
+- **[Setup and Development Guide](./setup/SETUP_AND_DEVELOPMENT.md)** - Local setup, development workflow, troubleshooting, and feature roadmap
+- **[Feature Summary](./setup/FEATURE_SUMMARY.md)** - Executive summary and quick reference guide
 
-## Feature Enhancement Documentation
+### Deployment
+- **[Deployment Guide](./deployment/DEPLOYMENT.md)** - Complete deployment guides for Railway, Render, Vercel, and production checklists
+- **[Railway Admin Setup](./deployment/RAILWAY_ADMIN_SETUP.md)** - Guide for creating admin user on Railway
+- **[Railway Start Command Fix](./deployment/RAILWAY_START_COMMAND_FIX.md)** - Fix for Railway start command errors
+- **[Vercel-Railway Connection Fix](./deployment/VERCEL_RAILWAY_CONNECTION_FIX.md)** - Fix for Vercel-Railway connection issues
 
-Feature planning documents:
+### Troubleshooting
+- **[Troubleshooting Guide](./troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
 
-- **[../FEATURE_CHECKLIST.md](../FEATURE_CHECKLIST.md)** - Comprehensive checklist of security, UI/UX, and AI/LLM features
-- **[../FEATURE_SUMMARY.md](../FEATURE_SUMMARY.md)** - Executive summary and quick reference guide
+### Root Documentation
+- **[../README.md](../README.md)** - Project overview and quick start guide
 
 ## Why This Structure?
 
@@ -36,8 +41,9 @@ The documentation was reorganized to:
 
 ## Finding Information
 
-- **Need to set up locally?** → See `SETUP_AND_DEVELOPMENT.md` (root)
-- **Want to deploy?** → See `DEPLOYMENT.md` (root)
-- **Looking for project overview?** → See `README.md` (root)
+- **Need to set up locally?** → See [Setup and Development Guide](./setup/SETUP_AND_DEVELOPMENT.md)
+- **Want to deploy?** → See [Deployment Guide](./deployment/DEPLOYMENT.md)
+- **Having issues?** → See [Troubleshooting Guide](./troubleshooting/TROUBLESHOOTING.md)
+- **Looking for project overview?** → See [README.md](../README.md) (root)
 - **Frontend setup/auth?** → See `client/README.md` and `client/AUTHENTICATION_SETUP.md`
-- **Planning new features?** → See `FEATURE_CHECKLIST.md` (root)
+- **Planning new features?** → See [Feature Summary](./setup/FEATURE_SUMMARY.md)
