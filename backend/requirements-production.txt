@@ -1,6 +1,6 @@
 # Production requirements
 Django==5.1.4
-djangorestframework==3.15.2
+djangorestframework==3.16.1
 djangorestframework-simplejwt==5.3.1
 django-cors-headers==4.4.0
 setuptools
