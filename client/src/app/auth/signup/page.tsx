@@ -2,13 +2,12 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './styles.module.scss';
 import "../../../styles/global.scss";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../../../contexts/UserContext';
-import PasswordStrengthMeter from '../../../components/PasswordStrengthMeter/PasswordStrengthMeter';
 import GoogleSignIn from '../../../components/GoogleSignIn/GoogleSignIn';
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
@@ -24,11 +23,14 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [usernameError, setUsernameError] = useState('');
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, isValid: false });
   const router = useRouter();
   const { remoteSignup, googleAuth, isAuthenticated, isLoading: userLoading, user } = useUser();
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Use ref to prevent double submissions (React StrictMode protection)
+  const isSubmittingRef = useRef(false);
+  const lastSubmissionRef = useRef<string | null>(null);
 
   // Apply auth page body styles while this page is mounted
   useEffect(() => {
@@ -87,6 +89,29 @@ export default function Signup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent multiple simultaneous signup attempts (React StrictMode protection)
+    if (isSubmittingRef.current || isLoading || isSigningUp) {
+      console.log('Signup already in progress, ignoring duplicate submission');
+      return;
+    }
+
+    // Create a unique submission ID to prevent duplicate submissions
+    const submissionId = `${Date.now()}-${Math.random()}`;
+
+    // Check if this is a duplicate submission (within 2 seconds)
+    if (lastSubmissionRef.current) {
+      const lastSubmissionTime = parseInt(lastSubmissionRef.current.split('-')[0]);
+      const timeSinceLastSubmission = Date.now() - lastSubmissionTime;
+      if (timeSinceLastSubmission < 2000) {
+        console.log('Duplicate submission detected, ignoring');
+        return;
+      }
+    }
+
+    lastSubmissionRef.current = submissionId;
+    isSubmittingRef.current = true;
+
     setError("");
     setIsLoading(true);
 
@@ -103,13 +128,6 @@ export default function Signup() {
     }
 
     if (!validatePassword(password)) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Check password strength meets minimum requirement
-    if (passwordStrength.score < 2) {
-      setError("Password is too weak. Please choose a stronger password.");
       setIsLoading(false);
       return;
     }
@@ -143,18 +161,29 @@ export default function Signup() {
     } catch (err: any) {
       console.error("Signup error:", err);
       setIsSigningUp(false);
+      isSubmittingRef.current = false;
+      const errorMessage = err.message || err.toString();
 
-      if (err.response?.data?.detail) {
+      if (errorMessage.includes('Too many requests') || errorMessage.includes('rate limit')) {
+        // Extract time remaining if available
+        const timeMatch = errorMessage.match(/wait (.*?) before/);
+        const timeStr = timeMatch ? timeMatch[1] : 'a moment';
+        setError(`Too many signup attempts. Please wait ${timeStr} before trying again.`);
+      } else if (err.response?.data?.detail) {
         setError(err.response.data.detail);
       } else if (err.code === 'ERR_NETWORK') {
         setError("Network error: Cannot connect to server. Please check if the backend is running.");
-      } else if (err.message) {
-        setError(`Error: ${err.message}`);
+      } else if (errorMessage) {
+        setError(`Error: ${errorMessage}`);
       } else {
         setError("Failed to sign up. Please try again.");
       }
     } finally {
       setIsLoading(false);
+      // Reset submission lock after a delay to prevent rapid re-submissions
+      setTimeout(() => {
+        isSubmittingRef.current = false;
+      }, 1000);
     }
   };
 
@@ -192,10 +221,17 @@ export default function Signup() {
           <h2 className={styles.formTitle}>Create Your Account</h2>
           <p className={styles.formSubtitle}>All in one platform to get tasks done</p>
 
-          <form className={styles.form} onSubmit={handleSignup}>
+          <form className={styles.form} onSubmit={handleSignup} noValidate>
             {/* Google Signup Button */}
             <GoogleSignIn
                 onSuccess={async (credential: string) => {
+                  // Prevent duplicate Google signup attempts
+                  if (isSubmittingRef.current || isSigningUp || isGoogleLoading) {
+                    console.log('Google signup already in progress, ignoring duplicate');
+                    return;
+                  }
+
+                  isSubmittingRef.current = true;
                   setIsGoogleLoading(true);
                   setError('');
                   try {
@@ -204,16 +240,24 @@ export default function Signup() {
                     // UserContext and useEffect will handle redirect
                   } catch (err: any) {
                     setIsSigningUp(false);
+                    isSubmittingRef.current = false;
                     console.error('Google signup error:', err);
-                    if (err.response?.data?.message) {
+                    const errorMessage = err.message || err.toString();
+
+                    if (errorMessage.includes('Too many requests') || errorMessage.includes('rate limit')) {
+                      setError(`Too many authentication attempts. ${errorMessage.includes('wait') ? errorMessage.split('Too many requests. ')[1] || 'Please wait a moment before trying again.' : 'Please wait a moment before trying again.'}`);
+                    } else if (err.response?.data?.message) {
                       setError(err.response.data.message);
-                    } else if (err.message) {
-                      setError(err.message);
+                    } else if (errorMessage) {
+                      setError(errorMessage);
                     } else {
                       setError('Google signup failed. Please try again.');
                     }
                   } finally {
                     setIsGoogleLoading(false);
+                    setTimeout(() => {
+                      isSubmittingRef.current = false;
+                    }, 1000);
                   }
                 }}
                 onError={(errorMessage: string) => {
@@ -285,13 +329,6 @@ export default function Signup() {
                 disabled={isLoading}
               />
               {passwordError && <p className={styles.error}>{passwordError}</p>}
-              <PasswordStrengthMeter
-                password={password}
-                userInputs={[]}
-                onStrengthChange={setPasswordStrength}
-                showFeedback={true}
-                minScore={2}
-              />
             </div>
 
             {/* Confirm Password Input */}
@@ -315,7 +352,7 @@ export default function Signup() {
             <button
               type="submit"
               className={styles.signupButton}
-              disabled={isLoading}
+              disabled={isLoading || isSigningUp || isGoogleLoading}
             >
               {isLoading ? 'Creating Account...' : (
                 <>

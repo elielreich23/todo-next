@@ -4,15 +4,17 @@ import React from 'react';
 import styles from '../style/calendar.module.scss';*/
 "use client";
 
-import React, { useMemo, useState, useRef } from "react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import listPlugin from "@fullcalendar/list";
+import React, { useMemo, useState, useRef, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { v4 as uuidv4 } from "uuid";
 
 import styles from "./calendar.module.scss";
+
+// Lazy load FullCalendar
+const FullCalendar = dynamic(() => import("@fullcalendar/react"), {
+  loading: () => <div style={{ padding: '20px', textAlign: 'center' }}>Loading calendar...</div>,
+  ssr: false,
+});
 
 export default function Calendar() {
   const [events, setEvents] = useState([]);
@@ -138,6 +140,29 @@ export default function Calendar() {
     setEditingEventId(null);
   };
 
+  if (!pluginsLoaded) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <div style={{
+          width: '40px',
+          height: '40px',
+          border: '4px solid #f3f3f3',
+          borderTop: '4px solid #3498db',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto 20px'
+        }}></div>
+        <p>Loading calendar...</p>
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.calendarWrapper}>
       <div className={styles.headerBar}>
@@ -159,7 +184,7 @@ export default function Calendar() {
         </div>
       </div>
       <FullCalendar
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+        plugins={plugins}
         initialView="timeGridWeek"
         headerToolbar={false}
         events={filteredEvents}

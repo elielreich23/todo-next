@@ -8,6 +8,20 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .cache import (
+    cache_project_detail,
+    cache_project_list,
+    cache_statistics,
+    cache_task_detail,
+    cache_task_list,
+    get_cached_project_detail,
+    get_cached_project_list,
+    get_cached_statistics,
+    get_cached_task_detail,
+    get_cached_task_list,
+    invalidate_project_cache,
+    invalidate_task_cache,
+)
 from .models import Project, Task, TaskAttachment, TaskComment
 from .notifications import (
     create_task_completed_notifications,
@@ -26,13 +40,21 @@ from .serializers import (
 
 
 def _project_queryset_for_user(user):
-    return Project.objects.filter(Q(owner=user) | Q(assignees=user)).distinct()
+    return (
+        Project.objects.filter(Q(owner=user) | Q(assignees=user))
+        .select_related("owner")
+        .prefetch_related("assignees", "tasks")
+        .distinct()
+    )
 
 
 def _task_queryset_for_user(user):
-    return Task.objects.filter(
-        Q(owner=user) | Q(assignees=user) | Q(project__owner=user) | Q(project__assignees=user)
-    ).distinct()
+    return (
+        Task.objects.filter(Q(owner=user) | Q(assignees=user) | Q(project__owner=user) | Q(project__assignees=user))
+        .select_related("owner", "project", "project__owner")
+        .prefetch_related("assignees", "comments", "attachments")
+        .distinct()
+    )
 
 
 def _get_project_or_404_for_user(pk, user):
@@ -49,9 +71,41 @@ def _get_task_or_404_for_user(pk, user):
 def project_list_create(request):
     """List all projects for the authenticated user or create a new project"""
     if request.method == "GET":
-        projects = _project_queryset_for_user(request.user)
-        serializer = ProjectSerializer(projects, many=True)
-        return Response({"success": True, "projects": serializer.data})
+        from rest_framework.pagination import PageNumberPagination
+
+        class ProjectPagination(PageNumberPagination):
+            page_size = 20
+            page_size_query_param = "page_size"
+            max_page_size = 100
+
+        # Try to get from cache first
+        cached_data = get_cached_project_list(request.user.id)
+        if cached_data and not request.query_params.get("page"):
+            # Return cached data for first page
+            return Response({"success": True, "projects": cached_data})
+
+        paginator = ProjectPagination()
+        projects = _project_queryset_for_user(request.user).order_by("-created_at")
+        paginated_projects = paginator.paginate_queryset(projects, request)
+        serializer = ProjectSerializer(paginated_projects, many=True)
+
+        # Cache the first page
+        if not request.query_params.get("page"):
+            cache_project_list(request.user.id, serializer.data)
+
+        # If no pagination requested, return simple format
+        if not request.query_params.get("page"):
+            return Response({"success": True, "projects": serializer.data})
+
+        # Return paginated response
+        response = paginator.get_paginated_response(serializer.data)
+        # Ensure response has success field and projects field
+        if hasattr(response, "data") and isinstance(response.data, dict):
+            response.data["success"] = True
+            # Add projects field for compatibility
+            if "results" in response.data:
+                response.data["projects"] = response.data["results"]
+        return response
 
     elif request.method == "POST":
         serializer = ProjectCreateUpdateSerializer(data=request.data)
@@ -61,6 +115,9 @@ def project_list_create(request):
             # Notify newly assigned collaborators
             if project.assignees.exists():
                 notify_project_assignees(project, list(project.assignees.values_list("id", flat=True)), request.user)
+
+            # Invalidate cache
+            invalidate_project_cache(request.user.id)
 
             return Response(
                 {"success": True, "message": "Project created successfully", "project": ProjectSerializer(project).data},
@@ -80,8 +137,18 @@ def project_detail(request, pk):
         return Response({"success": False, "message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
+        # Try to get from cache first
+        cached_data = get_cached_project_detail(request.user.id, pk)
+        if cached_data:
+            return Response({"success": True, "project": cached_data})
+
         serializer = ProjectSerializer(project)
-        return Response({"success": True, "project": serializer.data})
+        project_data = serializer.data
+
+        # Cache the result
+        cache_project_detail(request.user.id, pk, project_data)
+
+        return Response({"success": True, "project": project_data})
 
     elif request.method == "PUT":
         serializer = ProjectCreateUpdateSerializer(project, data=request.data, partial=True)
@@ -93,6 +160,10 @@ def project_detail(request, pk):
             added = list(new_assignees - old_assignees)
             if added:
                 notify_project_assignees(project, added, request.user)
+
+            # Invalidate cache
+            invalidate_project_cache(request.user.id, pk)
+
             return Response(
                 {"success": True, "message": "Project updated successfully", "project": ProjectSerializer(project).data}
             )
@@ -106,6 +177,10 @@ def project_detail(request, pk):
                 {"success": False, "message": "Only project owners can delete projects"}, status=status.HTTP_403_FORBIDDEN
             )
         project.delete()
+
+        # Invalidate cache
+        invalidate_project_cache(request.user.id, pk)
+
         return Response({"success": True, "message": "Project deleted successfully"})
 
 
@@ -137,8 +212,41 @@ def task_list_create(request):
         if assigned_to_me or user_id:
             tasks = tasks.filter(assignees=request.user)
 
-        serializer = TaskSerializer(tasks.distinct(), many=True)
-        return Response({"success": True, "tasks": serializer.data})
+        from rest_framework.pagination import PageNumberPagination
+
+        class TaskPagination(PageNumberPagination):
+            page_size = 50
+            page_size_query_param = "page_size"
+            max_page_size = 200
+
+        # Try to get from cache first (only for first page, no filters)
+        if not project_id and not assigned_to_me and not user_id and not request.query_params.get("page"):
+            cached_data = get_cached_task_list(request.user.id, None)
+            if cached_data:
+                return Response({"success": True, "tasks": cached_data})
+
+        paginator = TaskPagination()
+        tasks = tasks.distinct().order_by("-created_at")
+        paginated_tasks = paginator.paginate_queryset(tasks, request)
+        serializer = TaskSerializer(paginated_tasks, many=True)
+
+        # Cache the first page if no filters
+        if not project_id and not assigned_to_me and not user_id and not request.query_params.get("page"):
+            cache_task_list(request.user.id, None, serializer.data)
+
+        # If no pagination requested, return simple format
+        if not request.query_params.get("page"):
+            return Response({"success": True, "tasks": serializer.data})
+
+        # Return paginated response
+        response = paginator.get_paginated_response(serializer.data)
+        # Ensure response has success field and tasks field
+        if hasattr(response, "data") and isinstance(response.data, dict):
+            response.data["success"] = True
+            # Add tasks field for compatibility
+            if "results" in response.data:
+                response.data["tasks"] = response.data["results"]
+        return response
 
     elif request.method == "POST":
         serializer = TaskCreateUpdateSerializer(data=request.data)
@@ -153,6 +261,9 @@ def task_list_create(request):
                 assignee_ids = request.data.get("assignee_ids", [])
                 if assignee_ids:
                     notify_task_assignees(task, assignee_ids, request.user)
+
+                # Invalidate cache
+                invalidate_task_cache(request.user.id, task.id, project.id if project else None)
 
                 return Response(
                     {"success": True, "message": "Task created successfully", "task": TaskSerializer(task).data},
@@ -174,8 +285,18 @@ def task_detail(request, pk):
         return Response({"success": False, "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
+        # Try to get from cache first
+        cached_data = get_cached_task_detail(request.user.id, pk)
+        if cached_data:
+            return Response({"success": True, "task": cached_data})
+
         serializer = TaskSerializer(task)
-        return Response({"success": True, "task": serializer.data})
+        task_data = serializer.data
+
+        # Cache the result
+        cache_task_detail(request.user.id, pk, task_data)
+
+        return Response({"success": True, "task": task_data})
 
     elif request.method == "PUT":
         if task.owner_id != request.user.id:
@@ -204,6 +325,9 @@ def task_detail(request, pk):
                 else:
                     create_task_update_notifications(task, request.user)
 
+            # Invalidate cache
+            invalidate_task_cache(request.user.id, pk, task.project_id if task.project else None)
+
             return Response({"success": True, "message": "Task updated successfully", "task": TaskSerializer(task).data})
 
         return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
@@ -213,7 +337,12 @@ def task_detail(request, pk):
             return Response(
                 {"success": False, "message": "Only the task owner can delete this task"}, status=status.HTTP_403_FORBIDDEN
             )
+        project_id = task.project_id if task.project else None
         task.delete()
+
+        # Invalidate cache
+        invalidate_task_cache(request.user.id, pk, project_id)
+
         return Response({"success": True, "message": "Task deleted successfully"})
 
 
@@ -228,7 +357,7 @@ def task_comments_list_create(request, task_id):
         return Response({"success": False, "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
-        comments = TaskComment.objects.filter(task=task)
+        comments = TaskComment.objects.filter(task=task).select_related("author", "task").order_by("-created_at")
         serializer = TaskCommentSerializer(comments, many=True, context={"request": request})
         return Response({"success": True, "comments": serializer.data})
 
@@ -295,7 +424,7 @@ def task_attachments_list_create(request, task_id):
         return Response({"success": False, "message": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
-        attachments = TaskAttachment.objects.filter(task=task)
+        attachments = TaskAttachment.objects.filter(task=task).select_related("uploaded_by", "task").order_by("-uploaded_at")
         serializer = TaskAttachmentSerializer(attachments, many=True, context={"request": request})
         return Response({"success": True, "attachments": serializer.data})
 
@@ -358,6 +487,12 @@ def task_attachment_detail(request, task_id, attachment_id):
 def statistics_overview(request):
     """Get statistics overview for the authenticated user"""
     user = request.user
+
+    # Try to get from cache first
+    cached_stats = get_cached_statistics(user.id)
+    if cached_stats:
+        return Response({"success": True, "statistics": cached_stats})
+
     now = timezone.now()
     thirty_days_ago = now - timedelta(days=30)
 
@@ -409,38 +544,39 @@ def statistics_overview(request):
         count = Task.objects.filter(owner=user, status="completed", completed_at__date=date.date()).count()
         daily_completions.append({"date": date.date().isoformat(), "count": count})
 
-    return Response(
-        {
-            "success": True,
-            "statistics": {
-                "tasks": {
-                    "total": total_tasks,
-                    "completed": completed_tasks,
-                    "in_progress": in_progress_tasks,
-                    "todo": todo_tasks,
-                    "completion_rate": round(completion_rate, 2),
-                    "overdue": overdue_tasks,
-                    "recent_completed": recent_completed,
-                    "recent_created": recent_created,
-                    "assigned_to_me": assigned_to_me,
-                },
-                "priorities": {
-                    "high": high_priority_tasks,
-                    "medium": medium_priority_tasks,
-                    "low": low_priority_tasks,
-                },
-                "projects": {
-                    "total": total_projects,
-                    "with_tasks": projects_with_tasks,
-                    "tasks_by_project": list(tasks_by_project),
-                },
-                "activity": {
-                    "total_comments": total_comments,
-                    "total_attachments": total_attachments,
-                },
-                "trends": {
-                    "daily_completions": daily_completions,
-                },
-            },
-        }
-    )
+    # Calculate statistics
+    stats_data = {
+        "tasks": {
+            "total": total_tasks,
+            "completed": completed_tasks,
+            "in_progress": in_progress_tasks,
+            "todo": todo_tasks,
+            "completion_rate": round(completion_rate, 2),
+            "overdue": overdue_tasks,
+            "recent_completed": recent_completed,
+            "recent_created": recent_created,
+            "assigned_to_me": assigned_to_me,
+        },
+        "priorities": {
+            "high": high_priority_tasks,
+            "medium": medium_priority_tasks,
+            "low": low_priority_tasks,
+        },
+        "projects": {
+            "total": total_projects,
+            "with_tasks": projects_with_tasks,
+            "tasks_by_project": list(tasks_by_project),
+        },
+        "activity": {
+            "total_comments": total_comments,
+            "total_attachments": total_attachments,
+        },
+        "trends": {
+            "daily_completions": daily_completions,
+        },
+    }
+
+    # Cache the statistics
+    cache_statistics(user.id, stats_data)
+
+    return Response({"success": True, "statistics": stats_data})

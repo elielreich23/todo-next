@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import styles from './settings.module.scss';
+import SessionManagement from '../../../components/SessionManagement/SessionManagement';
 
 const settingsCategories = [
   { id: 'basic-info', name: 'Basic Info', icon: '👤', description: 'Manage your account information' },
+  { id: 'sessions', name: 'Sessions', icon: '🔒', description: 'Manage active sessions and devices' },
   { id: 'plans-billing', name: 'Plans & Billing', icon: '💳', description: 'Manage subscription and billing' },
   { id: 'team', name: 'Team', icon: '👥', description: 'Manage team members and permissions' },
   { id: 'appearance', name: 'Appearance', icon: '🎨', description: 'Customize your interface' },
@@ -63,6 +65,13 @@ export default function SettingsPage() {
                 <button className={styles.cancelButton}>Cancel</button>
               </div>
             </form>
+          </div>
+        );
+
+      case 'sessions':
+        return (
+          <div className={styles.categoryContent}>
+            <SessionManagement />
           </div>
         );
 

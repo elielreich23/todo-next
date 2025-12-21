@@ -12,6 +12,8 @@ urlpatterns = [
     path("logout/", views.logout, name="logout"),
     path("password/reset/request/", views.request_password_reset, name="request_password_reset"),
     path("password/reset/", views.reset_password, name="reset_password"),
-    path("password/check-strength/", views.check_password_strength, name="check_password_strength"),
     path("google/", views.google_auth, name="google_auth"),
+    path("sessions/", views.list_sessions, name="list_sessions"),
+    path("sessions/revoke/", views.revoke_session, name="revoke_session"),
+    path("sessions/revoke-all/", views.revoke_all_sessions_view, name="revoke_all_sessions"),
 ]

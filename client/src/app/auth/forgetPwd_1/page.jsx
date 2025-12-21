@@ -7,7 +7,6 @@ import styles from "./styles.module.css";
 import "../../../styles/global.scss";
 import Link from "next/link";
 import { API_BASE_URL, API_ENDPOINTS } from "../../../constants";
-import PasswordStrengthMeter from "../../../components/PasswordStrengthMeter/PasswordStrengthMeter";
 
 function ForgotPasswordContent() {
   const [password, setPassword] = useState("");
@@ -15,7 +14,6 @@ function ForgotPasswordContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState({ score: 0, isValid: false });
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useUser();
@@ -56,12 +54,6 @@ function ForgotPasswordContent() {
       return;
     }
 
-    // Check password strength meets minimum requirement
-    if (passwordStrength.score < 2) {
-      setError("Password is too weak. Please choose a stronger password.");
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -87,14 +79,23 @@ function ForgotPasswordContent() {
           router.push("/auth/signin");
         }, 2000);
       } else {
-        setError(data.message || data.errors?.password?.[0] || "Failed to reset password. Please try again.");
+        // Check for rate limit error
+        if (response.status === 429 || data.error === 'rate_limit_exceeded') {
+          setError(data.message || data.detail || "Too many password reset attempts. Please wait a moment before trying again.");
+        } else {
+          setError(data.message || data.errors?.password?.[0] || "Failed to reset password. Please try again.");
+        }
       }
     } catch (err) {
       console.error("Password reset error:", err);
-      if (err.message.includes("Network") || err.code === "ERR_NETWORK") {
+      const errorMessage = err.message || err.toString();
+
+      if (errorMessage.includes('Too many requests') || errorMessage.includes('rate limit')) {
+        setError(`Too many password reset attempts. ${errorMessage.includes('wait') ? errorMessage.split('Too many requests. ')[1] || 'Please wait a moment before trying again.' : 'Please wait a moment before trying again.'}`);
+      } else if (errorMessage.includes("Network") || err.code === "ERR_NETWORK") {
         setError("Network error: Cannot connect to server. Please check if the backend is running.");
       } else {
-        setError("An error occurred. Please try again.");
+        setError(errorMessage || "An error occurred. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -156,12 +157,6 @@ function ForgotPasswordContent() {
               placeholder="Enter new password"
               required
               disabled={isLoading || success}
-            />
-            <PasswordStrengthMeter
-              password={password}
-              onStrengthChange={setPasswordStrength}
-              showFeedback={true}
-              minScore={2}
             />
           </div>
 

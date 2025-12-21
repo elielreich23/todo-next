@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { API_BASE_URL, API_ENDPOINTS } from '../../constants';
 import { getAccessToken } from '../../utils/storage';
 import styles from './UserAutocomplete.module.scss';
@@ -8,7 +8,7 @@ import styles from './UserAutocomplete.module.scss';
 const MIN_SEARCH_LENGTH = 3;
 const DEBOUNCE_DELAY = 300; // milliseconds
 
-export default function UserAutocomplete({
+const UserAutocomplete = memo(function UserAutocomplete({
   selectedUsers = [],
   onUsersChange,
   placeholder = "Search users by name, username, or email...",
@@ -222,4 +222,6 @@ export default function UserAutocomplete({
       )}
     </div>
   );
-}
+});
+
+export default UserAutocomplete;

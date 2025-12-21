@@ -1,11 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, usePathname } from 'next/navigation';
 import './style/styles.scss';
 import { useUser } from '../../contexts/UserContext';
 import { useProjects } from '../../contexts/ProjectsContext';
-import ProjectWizard from '../../components/ProjectWizard/ProjectWizard';
+
+// Lazy load ProjectWizard component
+const ProjectWizard = dynamic(() => import('../../components/ProjectWizard/ProjectWizard'), {
+  loading: () => null,
+  ssr: false,
+});
 
 export default function Dashboard({ children }) {
   const router = useRouter();

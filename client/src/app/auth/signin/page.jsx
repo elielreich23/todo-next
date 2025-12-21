@@ -37,7 +37,11 @@ export default function SignInPage() {
       router.push('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
-      if (err.message.includes('Invalid email or password')) {
+      const errorMessage = err.message || err.toString();
+
+      if (errorMessage.includes('Too many requests') || errorMessage.includes('rate limit')) {
+        setError(`Too many login attempts. ${errorMessage.includes('wait') ? errorMessage.split('Too many requests. ')[1] || 'Please wait a moment before trying again.' : 'Please wait a moment before trying again.'}`);
+      } else if (errorMessage.includes('Invalid email or password')) {
         setError(
           <span>
             Wrong password or invalid account.
@@ -46,12 +50,12 @@ export default function SignInPage() {
             </Link>
           </span>
         );
-      } else if (err.message.includes('Account is deactivated')) {
+      } else if (errorMessage.includes('Account is deactivated')) {
         setError('This account has been deactivated. Please contact support.');
-      } else if (err.message.includes('Network') || err.code === 'ERR_NETWORK') {
+      } else if (errorMessage.includes('Network') || err.code === 'ERR_NETWORK') {
         setError("Network error: Cannot connect to server. Please check if the backend is running.");
       } else {
-        setError(err.message || 'Login failed. Please try again.');
+        setError(errorMessage || 'Login failed. Please try again.');
       }
     } finally {
       setIsLoading(false);
@@ -66,10 +70,14 @@ export default function SignInPage() {
       router.push('/dashboard');
     } catch (err) {
       console.error('Google signin error:', err);
-      if (err.response?.data?.message) {
+      const errorMessage = err.message || err.toString();
+
+      if (errorMessage.includes('Too many requests') || errorMessage.includes('rate limit')) {
+        setError(`Too many authentication attempts. ${errorMessage.includes('wait') ? errorMessage.split('Too many requests. ')[1] || 'Please wait a moment before trying again.' : 'Please wait a moment before trying again.'}`);
+      } else if (err.response?.data?.message) {
         setError(err.response.data.message);
-      } else if (err.message) {
-        setError(err.message);
+      } else if (errorMessage) {
+        setError(errorMessage);
       } else {
         setError('Google sign-in failed. Please try again.');
       }

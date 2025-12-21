@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { API_BASE_URL, API_ENDPOINTS } from '../../constants';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { API_ENDPOINTS } from '../../constants';
+import { api } from '../../lib/api';
 import styles from './PasswordStrengthMeter.module.scss';
 
 /**
@@ -25,19 +26,6 @@ export default function PasswordStrengthMeter({
   });
   const [isChecking, setIsChecking] = useState(false);
 
-  // Debounce function to avoid excessive API calls
-  const debounce = useCallback((func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }, []);
-
   // Check password strength
   const checkPasswordStrength = useCallback(async (pwd) => {
     if (!pwd || pwd.length === 0) {
@@ -55,50 +43,62 @@ export default function PasswordStrengthMeter({
 
     setIsChecking(true);
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.PASSWORD_CHECK_STRENGTH}`, {
+      const data = await api(API_ENDPOINTS.AUTH.PASSWORD_CHECK_STRENGTH, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           password: pwd,
           user_inputs: userInputs
         }),
-      });
+      }, false); // Don't cache password strength checks
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.strength) {
-          const strengthData = {
-            score: data.strength.score,
-            label: data.strength.label,
-            feedback: data.strength.feedback || { warning: '', suggestions: [] },
-            crackTimesDisplay: data.strength.crack_times_display || {}
-          };
-          setStrength(strengthData);
+      if (data && data.success && data.strength) {
+        const strengthData = {
+          score: data.strength.score,
+          label: data.strength.label,
+          feedback: data.strength.feedback || { warning: '', suggestions: [] },
+          crackTimesDisplay: data.strength.crack_times_display || {}
+        };
 
-          // Notify parent component
-          if (onStrengthChange) {
-            onStrengthChange({
-              score: strengthData.score,
-              isValid: strengthData.score >= minScore,
-              label: strengthData.label
-            });
-          }
+        // Use the backend's label if available, otherwise map from score
+        const displayLabel = strengthData.label || getStrengthLabel(strengthData.score);
+
+        setStrength({
+          ...strengthData,
+          label: displayLabel
+        });
+
+        // Notify parent component
+        if (onStrengthChange) {
+          onStrengthChange({
+            score: strengthData.score,
+            isValid: strengthData.score >= minScore,
+            label: displayLabel
+          });
         }
+      } else {
+        // If response doesn't have expected format, use fallback
+        console.warn('Unexpected API response format:', data);
+        throw new Error('Invalid response format');
       }
     } catch (error) {
+      // Log the error for debugging, but don't show to user
       console.error('Error checking password strength:', error);
+      console.log('Falling back to client-side validation for password:', pwd.substring(0, 3) + '...');
       // Fallback: use basic client-side validation
       const basicScore = calculateBasicStrength(pwd);
+      const basicLabel = getStrengthLabel(basicScore);
       setStrength({
         score: basicScore,
-        label: getStrengthLabel(basicScore),
+        label: basicLabel,
         feedback: { warning: '', suggestions: [] },
         crackTimesDisplay: {}
       });
       if (onStrengthChange) {
-        onStrengthChange({ score: basicScore, isValid: basicScore >= minScore });
+        onStrengthChange({
+          score: basicScore,
+          isValid: basicScore >= minScore,
+          label: basicLabel
+        });
       }
     } finally {
       setIsChecking(false);
@@ -106,13 +106,21 @@ export default function PasswordStrengthMeter({
   }, [userInputs, onStrengthChange, minScore]);
 
   // Client-side fallback strength calculation
+  // Note: This is less accurate than backend zxcvbn, but provides a fallback
   const calculateBasicStrength = (pwd) => {
+    if (!pwd || pwd.length === 0) return 0;
+
     let score = 0;
+    // Length checks (more weight on longer passwords)
     if (pwd.length >= 8) score++;
     if (pwd.length >= 12) score++;
+    if (pwd.length >= 16) score++;
+    // Character variety checks
     if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
     if (/\d/.test(pwd)) score++;
     if (/[^a-zA-Z\d]/.test(pwd)) score++;
+
+    // Cap at 4 (strong)
     return Math.min(score, 4);
   };
 
@@ -127,18 +135,59 @@ export default function PasswordStrengthMeter({
     return labels[score] || 'too_weak';
   };
 
-  // Debounced strength check
-  const debouncedCheck = useCallback(
-    debounce((pwd) => {
-      checkPasswordStrength(pwd);
-    }, 300),
-    [checkPasswordStrength]
-  );
+  // Track last checked password to avoid duplicate API calls
+  const lastCheckedPasswordRef = useRef('');
+  const timeoutRef = useRef(null);
 
-  // Check strength when password changes
+  // Debounced strength check - only check after user stops typing for 2 seconds
+  const debouncedCheck = useCallback((pwd) => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // If password is empty, reset immediately without API call
+    if (!pwd || pwd.length === 0) {
+      setStrength({
+        score: 0,
+        label: 'too_weak',
+        feedback: { warning: '', suggestions: [] },
+        crackTimesDisplay: {}
+      });
+      if (onStrengthChange) {
+        onStrengthChange({ score: 0, isValid: false });
+      }
+      lastCheckedPasswordRef.current = '';
+      return;
+    }
+
+    // If we already checked this exact password, don't check again
+    if (pwd === lastCheckedPasswordRef.current) {
+      return;
+    }
+
+    // Wait 2 seconds after user stops typing before checking
+    timeoutRef.current = setTimeout(() => {
+      // Verify password hasn't changed during the delay
+      if (pwd === password) {
+        checkPasswordStrength(pwd);
+        lastCheckedPasswordRef.current = pwd;
+      }
+    }, 2000); // 2 second delay - only check when user finishes typing
+  }, [checkPasswordStrength, password]);
+
+  // Check strength when password changes (with 2 second debounce)
   useEffect(() => {
     debouncedCheck(password);
+
+    // Cleanup timeout on unmount or when password changes
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [password, debouncedCheck]);
+
 
   // Strength configuration - matching the image design
   const strengthConfig = {

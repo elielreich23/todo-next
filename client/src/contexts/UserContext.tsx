@@ -237,19 +237,36 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    // Clear tokens
-    clearAuthTokens();
+  const logout = async () => {
+    try {
+      // Call logout API to revoke session on server
+      const refreshTokenValue = getRefreshToken();
+      if (refreshTokenValue) {
+        try {
+          await api(API_ENDPOINTS.AUTH.LOGOUT, {
+            method: 'POST',
+            body: JSON.stringify({ refresh: refreshTokenValue }),
+          });
+        } catch (error) {
+          // Even if API call fails, continue with local logout
+          console.error('Logout API call failed:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Clear tokens and session from browser
+      clearAuthTokens();
+      sessionStorage.clear();
+      localStorage.removeItem('session_id'); // Clear session ID if stored
 
-    // Clear session storage but KEEP cached user data (as requested)
-    // This allows user data to persist even after logout
-    sessionStorage.clear();
+      // Reset user state
+      setUserState(null);
+      clearCachedUserData(); // Clear cached user data on logout
 
-    // Reset user state (but cache remains for next login)
-    setUserState(null);
-
-    // Dispatch custom event to notify other contexts
-    window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
+      // Dispatch custom event to notify other contexts
+      window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
+    }
   };
 
   const validateSession = async (): Promise<boolean> => {

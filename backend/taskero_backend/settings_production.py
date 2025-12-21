@@ -126,6 +126,33 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
+# Cache configuration for production (use Redis if available, otherwise use default)
+# For rate limiting to work effectively in production, Redis is recommended
+redis_url = os.environ.get("REDIS_URL")
+if redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": redis_url,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+else:
+    # Fallback to in-memory cache if Redis not available
+    # Note: This won't work across multiple instances
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
+    }
+
+# Rate limiting configuration for production
+RATELIMIT_ENABLE = config("RATELIMIT_ENABLE", default=True, cast=bool)
+RATELIMIT_USE_CACHE = "default"
+
 # Logging configuration
 LOGGING = {
     "version": 1,

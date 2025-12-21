@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
-from .models import User
+from .models import User, UserSession
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -26,7 +26,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("password_confirm")
-        user = User.objects.create_user(**validated_data)
+        password = validated_data.pop("password")
+
+        # Extract all fields from validated_data to avoid passing them twice
+        email = validated_data.pop("email")
+        username = validated_data.pop("username")
+        full_name = validated_data.pop("full_name")
+
+        # Create user manually to avoid create_user() conflicts with custom USERNAME_FIELD
+        # Since USERNAME_FIELD is "email", we set email as the username field
+        user = User(
+            email=email,  # This is the USERNAME_FIELD
+            username=username,  # This is a separate field in REQUIRED_FIELDS
+            full_name=full_name,
+        )
+        user.set_password(password)  # Set password using set_password for proper hashing
+        user.save()
         return user
 
 
@@ -64,3 +79,29 @@ class PasswordResetSerializer(serializers.Serializer):
         if attrs["password"] != attrs["password_confirm"]:
             raise serializers.ValidationError("Passwords don't match")
         return attrs
+
+
+class UserSessionSerializer(serializers.ModelSerializer):
+    """Serializer for user session information"""
+
+    is_active = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserSession
+        fields = [
+            "id",
+            "device_name",
+            "browser",
+            "os",
+            "ip_address",
+            "location",
+            "is_current",
+            "last_activity",
+            "created_at",
+            "is_active",
+        ]
+        read_only_fields = fields
+
+    def get_is_active(self, obj):
+        """Check if session is still active"""
+        return obj.is_active()

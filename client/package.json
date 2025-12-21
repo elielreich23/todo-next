@@ -18,6 +18,7 @@
     "@fullcalendar/list": "^6.1.19",
     "@fullcalendar/react": "^6.1.19",
     "@fullcalendar/timegrid": "^6.1.19",
+    "critters": "^0.0.23",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",

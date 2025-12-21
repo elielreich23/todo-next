@@ -1,0 +1,232 @@
+.container {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary, #1a1a1a);
+  }
+
+  .description {
+    color: var(--text-secondary, #666);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary, #666);
+}
+
+.error {
+  color: var(--error-color, #ef4444);
+}
+
+.retryButton {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary-color, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.currentSession,
+.otherSessions {
+  margin-bottom: 2rem;
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #1a1a1a);
+  }
+}
+
+.otherSessionsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h3 {
+    margin-bottom: 0;
+  }
+}
+
+.revokeAllButton {
+  padding: 0.5rem 1rem;
+  background: var(--error-color, #ef4444);
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+
+  &:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.sessionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sessionCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem;
+  background: var(--bg-secondary, #f9fafb);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.5rem;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.sessionInfo {
+  flex: 1;
+}
+
+.deviceInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  .deviceName {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary, #1a1a1a);
+  }
+}
+
+.badge,
+.activeBadge,
+.inactiveBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge {
+  background: var(--primary-color, #6366f1);
+  color: white;
+}
+
+.activeBadge {
+  background: var(--success-color, #10b981);
+  color: white;
+}
+
+.inactiveBadge {
+  background: var(--warning-color, #f59e0b);
+  color: white;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  .label {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .value {
+    font-size: 0.9rem;
+    color: var(--text-primary, #1a1a1a);
+    font-weight: 500;
+  }
+}
+
+.revokeButton {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--error-color, #ef4444);
+  border: 1px solid var(--error-color, #ef4444);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: var(--error-color, #ef4444);
+    color: white;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary, #666);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .sessionCard {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .revokeButton {
+    width: 100%;
+  }
+
+  .otherSessionsHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .revokeAllButton {
+    width: 100%;
+  }
+
+  .details {
+    grid-template-columns: 1fr;
+  }
+}

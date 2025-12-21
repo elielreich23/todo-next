@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
+import React, { memo } from 'react';
 import styles from './TaskCard.module.css';
 
-export default function TaskCard({
+const TaskCard = memo(function TaskCard({
   task,
   onEdit,
   onStatusChange,
@@ -116,4 +116,6 @@ export default function TaskCard({
       </div>
     </div>
   );
-}
+});
+
+export default TaskCard;

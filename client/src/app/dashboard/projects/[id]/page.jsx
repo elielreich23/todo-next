@@ -1,11 +1,26 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { useProjects } from '../../../../contexts/ProjectsContext';
-import ProjectWizard from '../../../../components/ProjectWizard/ProjectWizard';
-import { CreateTaskModal, TaskEditModal } from '../../../../components/todo';
 import projStyles from './project.module.scss';
+
+// Lazy load heavy components
+const ProjectWizard = dynamic(() => import('../../../../components/ProjectWizard/ProjectWizard'), {
+  loading: () => null,
+  ssr: false,
+});
+
+const CreateTaskModal = dynamic(() => import('../../../../components/todo').then(mod => ({ default: mod.CreateTaskModal })), {
+  loading: () => null,
+  ssr: false,
+});
+
+const TaskEditModal = dynamic(() => import('../../../../components/todo').then(mod => ({ default: mod.TaskEditModal })), {
+  loading: () => null,
+  ssr: false,
+});
 
 export default function ProjectDetailPage() {
   const params = useParams();

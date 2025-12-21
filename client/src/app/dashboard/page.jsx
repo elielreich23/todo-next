@@ -1,10 +1,21 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useProjects } from '../../contexts/ProjectsContext';
 import { useUser } from '../../contexts/UserContext';
-import { CreateTaskModal, TaskEditModal } from '../../components/todo';
 import styles from './dashboard.module.scss';
+
+// Lazy load heavy modal components
+const CreateTaskModal = dynamic(() => import('../../components/todo').then(mod => ({ default: mod.CreateTaskModal })), {
+  loading: () => null,
+  ssr: false,
+});
+
+const TaskEditModal = dynamic(() => import('../../components/todo').then(mod => ({ default: mod.TaskEditModal })), {
+  loading: () => null,
+  ssr: false,
+});
 
 export default function DashboardPage() {
   const { projects, tasks, selectedProjectId, createProject, moveTaskStatus, deleteProject, updateTask, deleteTask } = useProjects();

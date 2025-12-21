@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
+import LazyImage from '../../../components/LazyImage';
 import { api } from '../../../lib/api';
 import { API_ENDPOINTS } from '../../../constants';
 import { formatDate } from '../../../utils/formatters';
@@ -180,7 +181,7 @@ function NotificationsContent() {
                 onClick={() => handleNotificationClick(notification)}
               >
                 <div className={styles.avatar}>
-                  <Image
+                  <LazyImage
                     src={`/api/placeholder/40/40?seed=${notification.id}`}
                     alt={getUserDisplayName(notification)}
                     width={40}
