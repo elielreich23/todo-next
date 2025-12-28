@@ -1,16 +1,10 @@
 /**
- * Loading component for dashboard routes
- * Server Component - uses CSS modules for styling
+ * Loading component for dashboard routes with skeleton loaders
  */
-import styles from './loading.module.css';
+'use client';
+
+import { DashboardSkeleton } from '../../components/SkeletonLoader';
 
 export default function DashboardLoading() {
-  return (
-    <div className={styles.container}>
-      <div>
-        <div className={styles.spinner}></div>
-        <p>Loading...</p>
-      </div>
-    </div>
-  );
+  return <DashboardSkeleton />;
 }

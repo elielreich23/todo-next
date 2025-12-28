@@ -1,52 +1,32 @@
 "use client";
 
-import React, { Suspense, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useUser } from '../../contexts/UserContext';
-import { useSessionTimeout } from '../../hooks/useSessionTimeout';
+import SideBar from '../../components/sideBar/sideBar';
+import { DashboardSkeleton } from '../../components/SkeletonLoader';
 
-// Lazy load the Dashboard component
-const Dashboard = dynamic(() => import('./dashboard'), {
-  loading: () => (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      fontSize: '18px',
-      color: '#666'
-    }}>
-      Loading dashboard...
-    </div>
-  ),
-  ssr: false, // Disable SSR for dashboard if needed
+// Lazy load heavy components
+const NotificationBell = dynamic(() => import('../../components/NotificationBell/NotificationBell'), {
+  ssr: false,
+  loading: () => <div style={{ width: '40px', height: '40px' }} />,
 });
 
 export default function DashboardLayout({ children }) {
-  const { isAuthenticated, isLoading, validateSession } = useUser();
   const router = useRouter();
-
-  // Enable session timeout checking
-  useSessionTimeout();
+  const { isAuthenticated, isLoading, validateSession } = useUser();
 
   useEffect(() => {
-    // Check authentication when component mounts
-    const checkAuth = async () => {
-      if (!isLoading) {
-        if (!isAuthenticated) {
-          // Try to validate session
-          const isValid = await validateSession();
-          if (!isValid) {
-            // No valid session, redirect to login
-            router.push('/auth/signin');
-            return;
-          }
-        }
-      }
-    };
+    // Validate session on mount
+    validateSession();
 
-    checkAuth();
+    // Redirect if not authenticated after loading
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push('/auth/signin');
+      }
+    }
   }, [isAuthenticated, isLoading, validateSession, router]);
 
   // Show loading while checking authentication
@@ -56,11 +36,9 @@ export default function DashboardLayout({ children }) {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '100vh',
-        fontSize: '18px',
-        color: '#666'
+        minHeight: '100vh'
       }}>
-        Loading...
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -71,21 +49,27 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <Suspense fallback={
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        fontSize: '18px',
-        color: '#666'
-      }}>
-        Loading...
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
+      <SideBar />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <header style={{
+          padding: '1rem 2rem',
+          borderBottom: '1px solid #e0e0e0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <h1 style={{ margin: 0 }}>Dashboard</h1>
+          <Suspense fallback={<div style={{ width: '40px', height: '40px' }} />}>
+            <NotificationBell />
+          </Suspense>
+        </header>
+        <main style={{ flex: 1, padding: '2rem' }}>
+          <Suspense fallback={<DashboardSkeleton />}>
+            {children}
+          </Suspense>
+        </main>
       </div>
-    }>
-      <Dashboard>
-        {children}
-      </Dashboard>
-    </Suspense>
+    </div>
   );
 }

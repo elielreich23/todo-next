@@ -204,15 +204,11 @@ def logout(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_users(request):
-    """List users for assignment (exclude the requester by default)."""
-    from rest_framework.pagination import PageNumberPagination
-
-    class UserPagination(PageNumberPagination):
-        page_size = 50
-        page_size_query_param = "page_size"
-        max_page_size = 100
+    """List users for assignment (exclude the requester by default) with pagination."""
+    from projects.pagination import UserPagination
 
     paginator = UserPagination()
+    # No need for select_related here as User model doesn't have foreign keys in this context
     qs = type(request.user).objects.exclude(id=request.user.id).order_by("full_name", "username")
     paginated_users = paginator.paginate_queryset(qs, request)
     serializer = UserSerializer(paginated_users, many=True)
@@ -222,21 +218,32 @@ def list_users(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def search_users(request):
-    """Search users by name, username, or email (minimum 3 characters)."""
+    """Search users by name, username, or email (minimum 3 characters) with pagination."""
+    from projects.pagination import UserPagination
+
     query = request.GET.get("q", "").strip()
 
     if len(query) < 3:
         return Response({"success": True, "users": [], "message": "Please enter at least 3 characters to search"})
 
-    # Search in full_name, username, and email
+    # Search in full_name, username, and email with pagination
     qs = (
         type(request.user)
         .objects.exclude(id=request.user.id)
         .filter(models.Q(full_name__icontains=query) | models.Q(username__icontains=query) | models.Q(email__icontains=query))
-        .order_by("full_name", "username")[:20]
-    )  # Limit to 20 results
+        .order_by("full_name", "username")
+    )
 
-    data = UserSerializer(qs, many=True).data
+    paginator = UserPagination()
+    paginated_users = paginator.paginate_queryset(qs, request)
+    serializer = UserSerializer(paginated_users, many=True)
+
+    # Return paginated response if page parameter is provided
+    if request.query_params.get("page"):
+        return paginator.get_paginated_response(serializer.data)
+
+    # Limit to 20 results if no pagination
+    data = serializer.data[:20]
     return Response({"success": True, "users": data})
 
 

@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { api } from '../../lib/api';
 import { API_ENDPOINTS } from '../../constants';
 import { formatDate } from '../../utils/formatters';
+import { NotificationListSkeleton } from '../SkeletonLoader';
 import styles from './NotificationBell.module.scss';
 
-export default function NotificationBell() {
+const NotificationBell = memo(function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -168,7 +169,7 @@ export default function NotificationBell() {
 
           <div className={styles.notificationsList}>
             {isLoading ? (
-              <div className={styles.loading}>Loading notifications...</div>
+              <NotificationListSkeleton count={3} />
             ) : notifications.length === 0 ? (
               <div className={styles.emptyState}>No notifications</div>
             ) : (
@@ -216,4 +217,6 @@ export default function NotificationBell() {
       )}
     </div>
   );
-}
+});
+
+export default NotificationBell;

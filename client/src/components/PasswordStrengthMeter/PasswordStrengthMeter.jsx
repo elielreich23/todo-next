@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { API_ENDPOINTS } from '../../constants';
 import { api } from '../../lib/api';
 import styles from './PasswordStrengthMeter.module.scss';
@@ -11,7 +11,7 @@ import styles from './PasswordStrengthMeter.module.scss';
  * Displays real-time password strength feedback with visual indicators.
  * Uses zxcvbn algorithm via backend API for accurate strength assessment.
  */
-export default function PasswordStrengthMeter({
+const PasswordStrengthMeter = memo(function PasswordStrengthMeter({
   password,
   userInputs = [],
   onStrengthChange,
@@ -259,4 +259,6 @@ export default function PasswordStrengthMeter({
       )}
     </div>
   );
-}
+});
+
+export default PasswordStrengthMeter;

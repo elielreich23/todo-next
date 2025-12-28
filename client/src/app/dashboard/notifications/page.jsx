@@ -8,6 +8,7 @@ import LazyImage from '../../../components/LazyImage';
 import { api } from '../../../lib/api';
 import { API_ENDPOINTS } from '../../../constants';
 import { formatDate } from '../../../utils/formatters';
+import { NotificationListSkeleton } from '../../../components/SkeletonLoader';
 import styles from './notifications.module.scss';
 
 function NotificationsContent() {
@@ -164,7 +165,7 @@ function NotificationsContent() {
       <div className={styles.content}>
         <div className={styles.notificationsList}>
           {isLoading ? (
-            <div className={styles.loading}>Loading notifications...</div>
+            <NotificationListSkeleton count={5} />
           ) : notifications.length === 0 ? (
             <div className={styles.emptyState}>
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
