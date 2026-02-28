@@ -3,8 +3,16 @@
  */
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+
+// -------------------- CONSTANTS --------------------
+
+const PLACEHOLDER_BG_COLOR = '#f0f0f0';
+const PLACEHOLDER_TEXT_COLOR = '#999';
+
+// -------------------- TYPES --------------------
 
 interface LazyImageProps {
   src: string;
@@ -22,6 +30,8 @@ interface LazyImageProps {
   onError?: () => void;
 }
 
+// -------------------- COMPONENT --------------------
+
 export default function LazyImage({
   src,
   alt,
@@ -37,59 +47,50 @@ export default function LazyImage({
   onLoad,
   onError,
 }: LazyImageProps) {
-  const [isInView, setIsInView] = useState(priority);
   const [isLoaded, setIsLoaded] = useState(false);
-  const imgRef = useRef<HTMLDivElement>(null);
+  const [imgRef, isInView] = useIntersectionObserver({
+    enabled: !priority,
+  });
 
-  useEffect(() => {
-    if (priority || isInView) return;
+  const shouldLoad = priority || isInView;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px', // Start loading 50px before image enters viewport
-        threshold: 0.01,
-      }
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [priority, isInView]);
-
+  /**
+   * Handles image load event
+   */
   const handleLoad = () => {
     setIsLoaded(true);
     onLoad?.();
   };
 
+  /**
+   * Handles image error event
+   */
   const handleError = () => {
     onError?.();
   };
 
+  const containerStyle: React.CSSProperties = {
+    position: fill ? 'relative' : 'static',
+    width: fill ? '100%' : width,
+    height: fill ? '100%' : height,
+    backgroundColor: isLoaded ? 'transparent' : PLACEHOLDER_BG_COLOR,
+    transition: 'background-color 0.3s ease',
+  };
+
+  const placeholderStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    backgroundColor: PLACEHOLDER_BG_COLOR,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: PLACEHOLDER_TEXT_COLOR,
+    fontSize: '14px',
+  };
+
   return (
-    <div
-      ref={imgRef}
-      className={className}
-      style={{
-        position: fill ? 'relative' : 'static',
-        width: fill ? '100%' : width,
-        height: fill ? '100%' : height,
-        backgroundColor: isLoaded ? 'transparent' : '#f0f0f0',
-        transition: 'background-color 0.3s ease',
-      }}
-    >
-      {isInView && (
+    <div ref={imgRef} className={className} style={containerStyle}>
+      {shouldLoad ? (
         <Image
           src={src}
           alt={alt}
@@ -103,24 +104,10 @@ export default function LazyImage({
           blurDataURL={blurDataURL}
           onLoad={handleLoad}
           onError={handleError}
-          style={{
-            objectFit,
-          }}
+          style={{ objectFit }}
         />
-      )}
-      {!isInView && (
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#f0f0f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#999',
-            fontSize: '14px',
-          }}
-        >
+      ) : (
+        <div style={placeholderStyle} aria-label="Loading image...">
           Loading...
         </div>
       )}

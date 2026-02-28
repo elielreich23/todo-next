@@ -1,6 +1,6 @@
 "use client";
 //this should stay intact if merged
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import './style/landing.scss';
@@ -9,6 +9,26 @@ import { useUser } from '../../contexts/UserContext';
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated } = useUser();
+
+  // Carousel state
+  const [vmvIndex, setVmvIndex] = useState(0);
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [pricingIndex, setPricingIndex] = useState(0);
+
+  const vmvLength = 3;
+  const testimonialLength = 3;
+  const pricingLength = 3;
+
+  // Auto-advance carousels every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVmvIndex((prev) => (prev + 1) % vmvLength);
+      setTestimonialIndex((prev) => (prev + 1) % testimonialLength);
+      setPricingIndex((prev) => (prev + 1) % pricingLength);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogin = () => {
     router.push('../../auth/signin');
@@ -127,113 +147,204 @@ export default function Home() {
 
       {/* VISION MISSION VALUES SECTION */}
       <section id="vision-mission" className="vision-mission">
-        <div className="vmv-container">
-          <div className="vmv-card">
-            <h3>Our Vision</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <div className="carousel">
+          <button
+            className="carousel-btn prev"
+            type="button"
+            aria-label="Previous"
+            onClick={() => setVmvIndex((prev) => (prev - 1 + vmvLength) % vmvLength)}
+          >
+            ‹
+          </button>
+          <div className="carousel-window">
+            <div
+              className="vmv-container carousel-track"
+              style={{ transform: `translateX(-${vmvIndex * 100}%)` }}
+            >
+              <div className="vmv-card">
+                <h3>Our Vision</h3>
+                <p>
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua.
+                </p>
+              </div>
+              <div className="vmv-card">
+                <h3>Our Mission</h3>
+                <p>
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua.
+                </p>
+              </div>
+              <div className="vmv-card">
+                <h3>Our Core Values</h3>
+                <p>
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua.
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="vmv-card">
-            <h3>Our Mission</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-          </div>
-          <div className="vmv-card">
-            <h3>Our Core Values</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-          </div>
+          <button
+            className="carousel-btn next"
+            type="button"
+            aria-label="Next"
+            onClick={() => setVmvIndex((prev) => (prev + 1) % vmvLength)}
+          >
+            ›
+          </button>
         </div>
       </section>
 
       {/* TESTIMONIALS SECTION */}
       <section id="testimonials" className="testimonials">
         <h2>Testimonials</h2>
-        <div className="testimonials-grid">
-          <div className="testimonial-card">
-            <div className="testimonial-avatar">
-              <Image src="/api/placeholder/60/60" alt="Alina Delvi" width={60} height={60} />
+        <div className="carousel">
+          <button
+            className="carousel-btn prev"
+            type="button"
+            aria-label="Previous testimonial"
+            onClick={() =>
+              setTestimonialIndex((prev) => (prev - 1 + testimonialLength) % testimonialLength)
+            }
+          >
+            ‹
+          </button>
+          <div className="carousel-window">
+            <div
+              className="testimonials-grid carousel-track"
+              style={{ transform: `translateX(-${testimonialIndex * 100}%)` }}
+            >
+              <div className="testimonial-card">
+                <div className="testimonial-avatar">
+                  <Image src="/api/placeholder/60/60" alt="Alina Delvi" width={60} height={60} />
+                </div>
+                <h4>Alina Delvi</h4>
+                <p className="testimonial-role">CEO, Delvi HR</p>
+                <div className="rating">⭐⭐⭐⭐⭐</div>
+                <p className="testimonial-text">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua.
+                </p>
+              </div>
+              <div className="testimonial-card">
+                <div className="testimonial-avatar">
+                  <Image src="/api/placeholder/60/60" alt="John Smith" width={60} height={60} />
+                </div>
+                <h4>John Smith</h4>
+                <p className="testimonial-role">Product Manager, TechCorp</p>
+                <div className="rating">⭐⭐⭐⭐⭐</div>
+                <p className="testimonial-text">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua.
+                </p>
+              </div>
+              <div className="testimonial-card">
+                <div className="testimonial-avatar">
+                  <Image src="/api/placeholder/60/60" alt="Sarah Johnson" width={60} height={60} />
+                </div>
+                <h4>Sarah Johnson</h4>
+                <p className="testimonial-role">Developer, StartupXYZ</p>
+                <div className="rating">⭐⭐⭐⭐⭐</div>
+                <p className="testimonial-text">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua.
+                </p>
+              </div>
             </div>
-            <h4>Alina Delvi</h4>
-            <p className="testimonial-role">CEO, Delvi HR</p>
-            <div className="rating">
-              ⭐⭐⭐⭐⭐
-            </div>
-            <p className="testimonial-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
           </div>
-          <div className="testimonial-card">
-            <div className="testimonial-avatar">
-              <Image src="/api/placeholder/60/60" alt="John Smith" width={60} height={60} />
-            </div>
-            <h4>John Smith</h4>
-            <p className="testimonial-role">Product Manager, TechCorp</p>
-            <div className="rating">
-              ⭐⭐⭐⭐⭐
-            </div>
-            <p className="testimonial-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-          </div>
-          <div className="testimonial-card">
-            <div className="testimonial-avatar">
-              <Image src="/api/placeholder/60/60" alt="Sarah Johnson" width={60} height={60} />
-            </div>
-            <h4>Sarah Johnson</h4>
-            <p className="testimonial-role">Developer, StartupXYZ</p>
-            <div className="rating">
-              ⭐⭐⭐⭐⭐
-            </div>
-            <p className="testimonial-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-          </div>
+          <button
+            className="carousel-btn next"
+            type="button"
+            aria-label="Next testimonial"
+            onClick={() => setTestimonialIndex((prev) => (prev + 1) % testimonialLength)}
+          >
+            ›
+          </button>
         </div>
       </section>
 
       {/* PRICING SECTION */}
       <section id="pricing" className="pricing">
         <h2>We have something for you</h2>
-        <div className="pricing-cards">
-                     <div className="pricing-card basic">
-             <h3>Basic Plan</h3>
-             <div className="price">
-               <span className="amount">$99.99</span>
-               <span className="period">/30days</span>
-             </div>
-             <p className="billing">(billed yearly)</p>
-             <div className="features">
-               <h4>Features</h4>
-               <div className="feature-item">+21 new message</div>
-               <div className="feature-item">+21 new message</div>
-               <div className="feature-item">+21 new message</div>
-             </div>
-             <button className="subscribe-btn" onClick={handleGetStarted}>Subscribe now</button>
-           </div>
+        <div className="carousel">
+          <button
+            className="carousel-btn prev"
+            type="button"
+            aria-label="Previous plan"
+            onClick={() =>
+              setPricingIndex((prev) => (prev - 1 + pricingLength) % pricingLength)
+            }
+          >
+            ‹
+          </button>
+          <div className="carousel-window">
+            <div
+              className="pricing-cards carousel-track"
+              style={{ transform: `translateX(-${pricingIndex * 100}%)` }}
+            >
+              <div className="pricing-card basic">
+                <h3>Basic Plan</h3>
+                <div className="price">
+                  <span className="amount">$99.99</span>
+                  <span className="period">/30days</span>
+                </div>
+                <p className="billing">(billed yearly)</p>
+                <div className="features">
+                  <h4>Features</h4>
+                  <div className="feature-item">+21 new message</div>
+                  <div className="feature-item">+21 new message</div>
+                  <div className="feature-item">+21 new message</div>
+                </div>
+                <button className="subscribe-btn" onClick={handleGetStarted}>
+                  Subscribe now
+                </button>
+              </div>
 
-          <div className="pricing-card enterprise featured">
-            <h3>Enterprise</h3>
-            <div className="price">
-              <span className="amount">$99.99</span>
-              <span className="period">/30days</span>
-            </div>
-            <p className="billing">(billed yearly)</p>
-            <div className="features">
-              <h4>Features</h4>
-              <div className="feature-item">+21 new message</div>
-              <div className="feature-item">+21 new message</div>
-              <div className="feature-item">+21 new message</div>
-            </div>
-                         <button className="subscribe-btn featured" onClick={handleGetStarted}>Subscribe now</button>
-          </div>
+              <div className="pricing-card enterprise featured">
+                <h3>Enterprise</h3>
+                <div className="price">
+                  <span className="amount">$99.99</span>
+                  <span className="period">/30days</span>
+                </div>
+                <p className="billing">(billed yearly)</p>
+                <div className="features">
+                  <h4>Features</h4>
+                  <div className="feature-item">+21 new message</div>
+                  <div className="feature-item">+21 new message</div>
+                  <div className="feature-item">+21 new message</div>
+                </div>
+                <button className="subscribe-btn featured" onClick={handleGetStarted}>
+                  Subscribe now
+                </button>
+              </div>
 
-          <div className="pricing-card standard">
-            <h3>Standard</h3>
-            <div className="price">
-              <span className="amount">$99.99</span>
-              <span className="period">/30days</span>
+              <div className="pricing-card standard">
+                <h3>Standard</h3>
+                <div className="price">
+                  <span className="amount">$99.99</span>
+                  <span className="period">/30days</span>
+                </div>
+                <p className="billing">(billed yearly)</p>
+                <div className="features">
+                  <h4>Features</h4>
+                  <div className="feature-item">+21 new message</div>
+                  <div className="feature-item">+21 new message</div>
+                  <div className="feature-item">+21 new message</div>
+                </div>
+                <button className="subscribe-btn" onClick={handleGetStarted}>
+                  Subscribe now
+                </button>
+              </div>
             </div>
-            <p className="billing">(billed yearly)</p>
-            <div className="features">
-              <h4>Features</h4>
-              <div className="feature-item">+21 new message</div>
-              <div className="feature-item">+21 new message</div>
-              <div className="feature-item">+21 new message</div>
-            </div>
-                         <button className="subscribe-btn" onClick={handleGetStarted}>Subscribe now</button>
           </div>
+          <button
+            className="carousel-btn next"
+            type="button"
+            aria-label="Next plan"
+            onClick={() => setPricingIndex((prev) => (prev + 1) % pricingLength)}
+          >
+            ›
+          </button>
         </div>
 
         <div className="taskers-section">

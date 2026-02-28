@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600&display=swap');
+@import './animations.scss';
 
 html,
 body {
@@ -24,4 +25,34 @@ body.auth-page {
 a {
   color: #FEA451;
   text-decoration: none;
+}
+
+// Skip to main content (a11y) – visible when focused
+.skip-to-main {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 10000;
+  padding: 12px 20px;
+  background: #1c1d22;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+  transition: left 0.2s ease;
+
+  &:focus {
+    left: 0;
+    outline: 2px solid #FEA451;
+    outline-offset: 2px;
+  }
+}
+
+// Keyboard focus visible (a11y)
+:focus-visible {
+  outline: 2px solid #FEA451;
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
 }

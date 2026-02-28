@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect, useRef, Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjects } from '../../contexts/ProjectsContext';
 import { useUser } from '../../contexts/UserContext';
 import styles from './dashboard.module.scss';
@@ -18,6 +19,8 @@ const TaskEditModal = dynamic(() => import('../../components/todo').then(mod => 
 });
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { projects, tasks, selectedProjectId, createProject, moveTaskStatus, deleteProject, updateTask, deleteTask } = useProjects();
   const { user } = useUser();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -52,6 +55,21 @@ export default function DashboardPage() {
       document.removeEventListener('drop', handleDrop);
     };
   }, []);
+
+  // Open create task modal from command palette (Ctrl+K → "New task") or URL ?openCreate=1
+  useEffect(() => {
+    const handler = () => setIsCreateOpen(true);
+    window.addEventListener('command-palette:new-task', handler);
+    return () => window.removeEventListener('command-palette:new-task', handler);
+  }, []);
+  useEffect(() => {
+    if (searchParams.get('openCreate') === '1') {
+      setIsCreateOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('openCreate');
+      router.replace(url.pathname + (url.search || ''), { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleDropdownToggle = (taskId) => {
     setOpenDropdown(openDropdown === taskId ? null : taskId);

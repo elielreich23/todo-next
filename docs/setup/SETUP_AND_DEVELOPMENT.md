@@ -85,8 +85,17 @@ The frontend will start at: **http://localhost:3000**
    ```
 
 2. **If you see "ModuleNotFoundError: No module named 'django'"**:
-   - Make sure the virtual environment is activated (you should see `(venv)` in your prompt)
-   - If not activated, run: `.\venv\Scripts\Activate.ps1`
+   - You need to install backend dependencies into the Python environment you're using.
+   - **If using a venv inside backend** (e.g. after `.\setup_local.ps1`): activate it with `.\venv\Scripts\Activate.ps1` from the `backend` folder, then run `pip install -r requirements.txt` (from `backend`).
+   - **If using the repo-root `.venv`** (e.g. you activated from project root): install backend deps into that venv:
+     ```powershell
+     # From project root with .venv already activated:
+     pip install -r backend/requirements.txt
+     # Then from backend:
+     cd backend
+     python manage.py runserver
+     ```
+   - In all cases, ensure the virtual environment is activated (you should see `(venv)` or `(.venv)` in your prompt) before running `python manage.py runserver`.
 
 3. **psycopg2-binary** is not installed (not needed for local SQLite development)
    - Only needed for PostgreSQL (production)

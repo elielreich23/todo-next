@@ -4,41 +4,43 @@
  */
 
 /**
- * Generate optimized image URL with WebP format
- * Falls back to original format if WebP is not supported
+ * Note: Next.js Image component handles optimization automatically.
+ * This utility is kept for potential future custom optimization needs.
+ *
+ * @deprecated Use Next.js Image component directly for optimization
  */
-export function getOptimizedImageUrl(
-  src: string,
-  width?: number,
-  height?: number,
-  quality: number = 80
-): string {
-  // If using Next.js Image component, it handles WebP automatically
-  // This is for external images or custom optimization
-  if (src.startsWith('http') || src.startsWith('//')) {
-    // For external images, return as-is (Next.js Image will optimize)
-    return src;
-  }
-
-  // For local images, Next.js Image component handles optimization
+export function getOptimizedImageUrl(src: string): string {
   return src;
 }
 
+// -------------------- CONSTANTS --------------------
+
+const DEFAULT_BLUR_WIDTH = 10;
+const DEFAULT_BLUR_HEIGHT = 10;
+const PLACEHOLDER_COLOR = '#f0f0f0';
+const FALLBACK_BLUR_DATA_URL = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+';
+
 /**
- * Generate blur placeholder data URL
+ * Generates a blur placeholder data URL for images
  */
-export function generateBlurDataURL(width: number = 10, height: number = 10): string {
+export function generateBlurDataURL(
+  width: number = DEFAULT_BLUR_WIDTH,
+  height: number = DEFAULT_BLUR_HEIGHT
+): string {
+  if (typeof document === 'undefined') {
+    return FALLBACK_BLUR_DATA_URL;
+  }
+
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjBmMGYwIi8+PC9zdmc+';
+    return FALLBACK_BLUR_DATA_URL;
   }
 
-  // Create a simple gray placeholder
-  ctx.fillStyle = '#f0f0f0';
+  ctx.fillStyle = PLACEHOLDER_COLOR;
   ctx.fillRect(0, 0, width, height);
 
   return canvas.toDataURL();
@@ -57,18 +59,42 @@ export function isWebPSupported(): Promise<boolean> {
   });
 }
 
-/**
- * Get responsive image sizes for Next.js Image component
- */
-export function getResponsiveSizes(breakpoints: {
+// -------------------- TYPES --------------------
+
+interface ResponsiveBreakpoints {
   mobile?: string;
   tablet?: string;
   desktop?: string;
   large?: string;
-}): string {
-  const { mobile = '100vw', tablet = '768px', desktop = '1024px', large = '1920px' } = breakpoints;
+}
 
-  return `(max-width: 768px) ${mobile}, (max-width: 1024px) ${tablet}, (max-width: 1920px) ${desktop}, ${large}`;
+// -------------------- CONSTANTS --------------------
+
+const DEFAULT_BREAKPOINTS = {
+  mobile: '100vw',
+  tablet: '768px',
+  desktop: '1024px',
+  large: '1920px',
+} as const;
+
+const BREAKPOINT_VALUES = {
+  tablet: 768,
+  desktop: 1024,
+  large: 1920,
+} as const;
+
+/**
+ * Generates responsive image sizes string for Next.js Image component
+ */
+export function getResponsiveSizes(breakpoints: ResponsiveBreakpoints = {}): string {
+  const {
+    mobile = DEFAULT_BREAKPOINTS.mobile,
+    tablet = DEFAULT_BREAKPOINTS.tablet,
+    desktop = DEFAULT_BREAKPOINTS.desktop,
+    large = DEFAULT_BREAKPOINTS.large,
+  } = breakpoints;
+
+  return `(max-width: ${BREAKPOINT_VALUES.tablet}px) ${mobile}, (max-width: ${BREAKPOINT_VALUES.desktop}px) ${tablet}, (max-width: ${BREAKPOINT_VALUES.large}px) ${desktop}, ${large}`;
 }
 
 /**

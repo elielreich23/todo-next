@@ -4,7 +4,24 @@ import { CUSTOM_EVENTS } from '../constants';
 import { rateLimiter, getRateLimitConfig, formatTimeRemaining } from '../utils/rateLimiter';
 import { apiCache, generateCacheKey, getCacheConfig } from '../utils/cache';
 
-// Helper function to get auth headers
+// -------------------- CONSTANTS --------------------
+
+const SIGNIN_PATH = '/auth/signin';
+const HTTP_STATUS_UNAUTHORIZED = 401;
+const HTTP_STATUS_TOO_MANY_REQUESTS = 429;
+const HTTP_STATUS_NO_CONTENT = 204;
+
+// -------------------- STATE --------------------
+
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+const pendingRequests = new Map<string, Promise<any>>();
+
+// -------------------- HELPER FUNCTIONS --------------------
+
+/**
+ * Gets authentication headers for API requests
+ */
 const getAuthHeaders = (): HeadersInit => {
   const token = getAccessToken();
   const headers: HeadersInit = {
@@ -18,19 +35,198 @@ const getAuthHeaders = (): HeadersInit => {
   return headers;
 };
 
-// Track if we're currently refreshing to prevent infinite loops
-let isRefreshing = false;
-let refreshPromise: Promise<string | null> | null = null;
-
-// Track pending requests to prevent duplicate API calls
-const pendingRequests = new Map<string, Promise<any>>();
-
-// Generate a unique key for request deduplication
-function getRequestKey(path: string, init?: RequestInit): string {
+/**
+ * Generates a unique key for request deduplication
+ */
+const getRequestKey = (path: string, init?: RequestInit): string => {
   const method = init?.method || 'GET';
   const body = init?.body ? JSON.stringify(JSON.parse(init.body as string)) : '';
   return `${method}:${path}:${body}`;
-}
+};
+
+/**
+ * Checks if current path is signin page
+ */
+const isSigninPage = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return window.location.pathname.includes(SIGNIN_PATH);
+};
+
+/**
+ * Handles session expiration errors
+ */
+const handleSessionExpiration = async (response: Response): Promise<never> => {
+  try {
+    const errorData = await response.json().catch(() => null);
+    const isSessionExpired = errorData?.message?.includes('Session expired') ||
+      errorData?.message?.includes('No active session');
+
+    if (isSessionExpired) {
+      clearAuthTokens();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
+      }
+      throw new Error('Session expired. Please log in again.');
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Session expired')) {
+      throw error;
+    }
+  }
+  throw new Error('Session expired. Please log in again.');
+};
+
+/**
+ * Handles rate limit errors
+ */
+const handleRateLimitError = async (response: Response, rateLimitKey: string): Promise<never> => {
+  rateLimiter.reset(rateLimitKey);
+  try {
+    const errorData = await response.json().catch(() => null);
+    const message = errorData?.message || errorData?.detail || 'Too many requests. Please try again later.';
+    throw new Error(message);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Too many requests. Please try again later.');
+  }
+};
+
+/**
+ * Redirects to signin page
+ */
+const redirectToSignin = (): void => {
+  if (typeof window !== 'undefined' && !isSigninPage()) {
+    window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
+    window.location.href = SIGNIN_PATH;
+  }
+};
+
+/**
+ * Handles token refresh and retries request
+ */
+const handleTokenRefreshAndRetry = async <T>(
+  path: string,
+  init: RequestInit | undefined,
+  isGetRequest: boolean,
+  useCache: boolean
+): Promise<T> => {
+  const refreshTokenValue = getRefreshToken();
+  if (!refreshTokenValue) {
+    redirectToSignin();
+    const message = 'Authentication failed. Please log in.';
+    throw new Error(message);
+  }
+
+  isRefreshing = true;
+  refreshPromise = refreshToken();
+
+  try {
+    const newToken = await refreshPromise;
+    if (!newToken) {
+      isRefreshing = false;
+      refreshPromise = null;
+      redirectToSignin();
+      throw new Error('Authentication failed. Please log in again.');
+    }
+
+    const retryResponse = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        ...getAuthHeaders(),
+        ...(init?.headers || {}),
+      },
+      cache: 'no-store',
+    });
+
+    isRefreshing = false;
+    refreshPromise = null;
+
+    if (!retryResponse.ok) {
+      if (retryResponse.status === HTTP_STATUS_UNAUTHORIZED) {
+        redirectToSignin();
+      }
+      const message = await retryResponse.text().catch(() => retryResponse.statusText);
+      throw new Error(message || `Request failed: ${retryResponse.status}`);
+    }
+
+    if (retryResponse.status === HTTP_STATUS_NO_CONTENT) {
+      return undefined as unknown as T;
+    }
+
+    const retryData = await retryResponse.json() as T;
+
+    if (isGetRequest && useCache && retryResponse.ok) {
+      const cacheKey = generateCacheKey(path, init?.body ? JSON.parse(init.body as string) : undefined);
+      const cacheConfig = getCacheConfig(path);
+      apiCache.set(cacheKey, retryData, cacheConfig);
+    }
+
+    return retryData;
+  } catch (error) {
+    isRefreshing = false;
+    refreshPromise = null;
+    throw error;
+  }
+};
+
+/**
+ * Handles authentication errors (401)
+ */
+const handleAuthenticationError = async <T>(
+  response: Response,
+  path: string,
+  init: RequestInit | undefined,
+  isGetRequest: boolean,
+  useCache: boolean
+): Promise<T> => {
+  if (isSigninPage()) {
+    const message = await response.text().catch(() => response.statusText);
+    throw new Error(message || 'Authentication failed.');
+  }
+
+  if (isRefreshing && refreshPromise) {
+    const newToken = await refreshPromise;
+    if (!newToken) {
+      redirectToSignin();
+      throw new Error('Authentication failed. Please log in again.');
+    }
+  } else if (!isRefreshing) {
+    return handleTokenRefreshAndRetry(path, init, isGetRequest, useCache);
+  }
+
+  throw new Error('Authentication failed. Please log in again.');
+};
+
+/**
+ * Parses error response from API
+ */
+const parseErrorResponse = async (response: Response): Promise<never> => {
+  try {
+    const errorData = await response.json();
+    if (errorData.errors) {
+      const errorMessages = Object.entries(errorData.errors)
+        .map(([field, messages]: [string, any]) => {
+          if (Array.isArray(messages)) {
+            return `${field}: ${messages.join(', ')}`;
+          }
+          return `${field}: ${messages}`;
+        })
+        .join('; ');
+      throw new Error(errorMessages || errorData.message || 'Validation failed');
+    }
+    throw new Error(errorData.message || errorData.detail || `Request failed: ${response.status}`);
+  } catch (parseError) {
+    if (parseError instanceof Error && parseError.message.includes('JSON')) {
+      const message = await response.text().catch(() => response.statusText);
+      throw new Error(message || `Request failed: ${response.status}`);
+    }
+    throw parseError;
+  }
+};
 
 export async function api<T>(path: string, init?: RequestInit, useCache: boolean = true): Promise<T> {
   // For POST/PUT/PATCH requests, check for duplicate pending requests
@@ -95,173 +291,22 @@ export async function api<T>(path: string, init?: RequestInit, useCache: boolean
   }
 
   if (!res.ok) {
-    // Handle session expiration (401)
-    if (res.status === 401) {
-      // Check if it's a session expiration error
+    if (res.status === HTTP_STATUS_UNAUTHORIZED) {
       try {
-        const errorData = await res.json().catch(() => null);
-        if (errorData?.message?.includes('Session expired') || errorData?.message?.includes('No active session')) {
-          // Clear tokens and redirect to login
-          clearAuthTokens();
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
-            // Don't redirect here - let the component handle it
-          }
-          throw new Error('Session expired. Please log in again.');
-        }
+        await handleSessionExpiration(res);
       } catch (error) {
         if (error instanceof Error && error.message.includes('Session expired')) {
           throw error;
         }
       }
+      return handleAuthenticationError(res, path, init, isGetRequest, useCache);
     }
 
-    // Handle rate limit errors (429)
-    if (res.status === 429) {
-      // Reset client-side rate limit to sync with server
-      rateLimiter.reset(rateLimitKey);
-      try {
-        const errorData = await res.json().catch(() => null);
-        const message = errorData?.message || errorData?.detail || 'Too many requests. Please try again later.';
-        throw new Error(message);
-      } catch (error) {
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error('Too many requests. Please try again later.');
-      }
+    if (res.status === HTTP_STATUS_TOO_MANY_REQUESTS) {
+      return handleRateLimitError(res, rateLimitKey);
     }
 
-    // Handle authentication errors
-    if (res.status === 401) {
-      // Check if we're already on signin page to prevent redirect loops
-      const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-      if (currentPath.includes('/auth/signin')) {
-        // Already on signin page, don't redirect again
-        const message = await res.text().catch(() => res.statusText);
-        throw new Error(message || 'Authentication failed.');
-      }
-
-      // Prevent infinite refresh loops
-      if (isRefreshing && refreshPromise) {
-        // Wait for ongoing refresh to complete
-        const newToken = await refreshPromise;
-        if (!newToken) {
-          // Refresh failed, only redirect if not already on signin
-          if (!currentPath.includes('/auth/signin')) {
-            window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
-            if (typeof window !== 'undefined') {
-              window.location.href = '/auth/signin';
-            }
-          }
-          throw new Error('Authentication failed. Please log in again.');
-        }
-      } else if (!isRefreshing) {
-        // Check if we have a refresh token
-        const refreshTokenValue = getRefreshToken();
-        if (!refreshTokenValue) {
-          // No refresh token, redirect to login
-          window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth/signin';
-          }
-          const message = await res.text().catch(() => res.statusText);
-          throw new Error(message || 'Authentication failed. Please log in.');
-        }
-
-        // Start new refresh
-        isRefreshing = true;
-        refreshPromise = refreshToken();
-
-        try {
-          const newToken = await refreshPromise;
-          if (!newToken) {
-            // Refresh failed, redirect to login
-            isRefreshing = false;
-            refreshPromise = null;
-            if (!currentPath.includes('/auth/signin')) {
-              window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
-              if (typeof window !== 'undefined') {
-                window.location.href = '/auth/signin';
-              }
-            }
-            throw new Error('Authentication failed. Please log in again.');
-          }
-
-          // Retry the request with new token
-          const retryRes = await fetch(`${API_BASE_URL}${path}`, {
-            ...init,
-            headers: {
-              ...getAuthHeaders(),
-              ...(init?.headers || {}),
-            },
-            cache: 'no-store',
-          });
-
-          isRefreshing = false;
-          refreshPromise = null;
-
-          if (!retryRes.ok) {
-            // If retry still fails with 401, redirect to login
-            if (retryRes.status === 401) {
-              if (!currentPath.includes('/auth/signin')) {
-                window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/auth/signin';
-                }
-              }
-            }
-            const message = await retryRes.text().catch(() => retryRes.statusText);
-            throw new Error(message || `Request failed: ${retryRes.status}`);
-          }
-
-          if (retryRes.status === 204) return undefined as unknown as T;
-          const retryData = await retryRes.json() as T;
-
-          // Cache successful GET responses
-          if (isGetRequest && useCache && retryRes.ok) {
-            const cacheKey = generateCacheKey(path, init?.body ? JSON.parse(init.body as string) : undefined);
-            const cacheConfig = getCacheConfig(path);
-            apiCache.set(cacheKey, retryData, cacheConfig);
-          }
-
-          return retryData;
-        } catch (error) {
-          isRefreshing = false;
-          refreshPromise = null;
-          throw error;
-        }
-      } else {
-        // Shouldn't happen, but handle it
-        throw new Error('Authentication failed. Please log in again.');
-      }
-    }
-
-    // Try to parse JSON error response first
-    try {
-      const errorData = await res.json();
-      // Backend returns errors in format: {success: false, errors: {...}} or {success: false, message: "..."}
-      if (errorData.errors) {
-        // Format validation errors
-        const errorMessages = Object.entries(errorData.errors)
-          .map(([field, messages]: [string, any]) => {
-            if (Array.isArray(messages)) {
-              return `${field}: ${messages.join(', ')}`;
-            }
-            return `${field}: ${messages}`;
-          })
-          .join('; ');
-        throw new Error(errorMessages || errorData.message || 'Validation failed');
-      }
-      throw new Error(errorData.message || errorData.detail || `Request failed: ${res.status}`);
-    } catch (parseError) {
-      // If JSON parsing fails, try text
-      if (parseError instanceof Error && parseError.message.includes('JSON')) {
-        const message = await res.text().catch(() => res.statusText);
-        throw new Error(message || `Request failed: ${res.status}`);
-      }
-      throw parseError;
-    }
+    return parseErrorResponse(res);
   }
 
   if (res.status === 204) return undefined as unknown as T;

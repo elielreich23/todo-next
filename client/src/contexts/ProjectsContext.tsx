@@ -1,15 +1,17 @@
- "use client";
+"use client";
 
 import React, {
   createContext,
   useContext,
   useMemo,
   useState,
+  useCallback,
   ReactNode,
   useEffect,
 } from "react";
 import { api } from "../lib/api";
 import { useUser } from "./UserContext";
+import { CUSTOM_EVENTS } from "../constants";
 
 // -------------------- TYPES --------------------
 
@@ -102,103 +104,136 @@ export const useProjects = (): ProjectsContextType => {
 
 // -------------------- PROVIDER --------------------
 
+// -------------------- HELPER FUNCTIONS --------------------
+
+/**
+ * Maps assignees (user objects) to contributors (string array)
+ */
+const mapAssigneesToContributors = (assignees: any[] | undefined): string[] => {
+  if (!Array.isArray(assignees) || assignees.length === 0) {
+    return [];
+  }
+
+  return assignees.map((assignee: any) => {
+    if (typeof assignee === 'string') {
+      return assignee;
+    }
+    return assignee.full_name || assignee.username || assignee.email || String(assignee.id);
+  });
+};
+
+/**
+ * Extracts contributor IDs from contributors array
+ */
+const extractContributorIds = (contributors: any[]): number[] => {
+  if (!Array.isArray(contributors) || contributors.length === 0) {
+    return [];
+  }
+
+  return contributors
+    .filter((contributor): contributor is { id: number } =>
+      typeof contributor === 'object' &&
+      contributor !== null &&
+      'id' in contributor &&
+      typeof contributor.id === 'number'
+    )
+    .map((contributor) => contributor.id);
+};
+
+/**
+ * Maps server status to client status
+ */
+const mapServerToClientStatus = (status?: string): Task["status"] => {
+  if (status === "in_progress") return "in-progress";
+  if (status === "completed") return "done";
+  return (status as Task["status"]) || "todo";
+};
+
+/**
+ * Maps client status to server status
+ */
+const mapClientToServerStatus = (status?: Task["status"]): string | undefined => {
+  if (!status) return undefined;
+  if (status === "in-progress") return "in_progress";
+  if (status === "done") return "completed";
+  return status;
+};
+
+/**
+ * Normalizes due date for server (converts YYYY-MM-DD to ISO format)
+ */
+const normalizeDueDateForServer = (dueDate?: string): string | undefined => {
+  if (!dueDate) return undefined;
+  if (dueDate.includes("T")) return dueDate;
+  return `${dueDate}T00:00:00Z`;
+};
+
+/**
+ * Normalizes server project to client Project shape
+ */
+const normalizeProject = (serverProject: any): Project => {
+  const contributors = serverProject.assignees
+    ? mapAssigneesToContributors(serverProject.assignees)
+    : serverProject.contributors
+    ? mapAssigneesToContributors(serverProject.contributors)
+    : [];
+
+  return {
+    id: serverProject.id,
+    name: serverProject.name,
+    description: serverProject.description,
+    color: serverProject.color || "#6366f1",
+    category: serverProject.category,
+    contributors,
+    duration: serverProject.duration,
+  };
+};
+
+/**
+ * Normalizes server task to client Task shape
+ */
+const normalizeTask = (serverTask: any): Task => {
+  const contributors = serverTask.assignees
+    ? mapAssigneesToContributors(serverTask.assignees)
+    : serverTask.contributors
+    ? mapAssigneesToContributors(serverTask.contributors)
+    : [];
+
+  return {
+    id: serverTask.id,
+    projectId: Number(serverTask.project ?? serverTask.projectId),
+    title: serverTask.title,
+    dueDate: serverTask.due_date ?? serverTask.dueDate,
+    status: mapServerToClientStatus(serverTask.status),
+    description: serverTask.description,
+    project: serverTask.project_name ?? serverTask.project ?? undefined,
+    progress: serverTask.progress ?? 0,
+    totalSteps: serverTask.totalSteps ?? 0,
+    attachments: serverTask.attachments ?? [],
+    comments: serverTask.comments ?? [],
+    category: serverTask.category,
+    contributors,
+    duration: serverTask.duration,
+    notes: serverTask.notes,
+  };
+};
+
+// -------------------- PROVIDER --------------------
+
 export function ProjectsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: userLoading } = useUser();
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-    null
-  );
-
-  // Normalize server project to client Project shape
-  const normalizeProject = (serverProject: any): Project => {
-    // Map assignees (user objects) to contributors (string array)
-    let contributors: string[] = [];
-    if (serverProject.assignees && Array.isArray(serverProject.assignees)) {
-      contributors = serverProject.assignees.map((assignee: any) =>
-        assignee.full_name || assignee.username || assignee.email || String(assignee.id)
-      );
-    } else if (serverProject.contributors && Array.isArray(serverProject.contributors)) {
-      // Fallback to contributors if assignees not present
-      contributors = serverProject.contributors;
-    }
-
-    return {
-      id: serverProject.id,
-      name: serverProject.name,
-      description: serverProject.description,
-      color: serverProject.color || "#6366f1",
-      category: serverProject.category,
-      contributors: contributors,
-      duration: serverProject.duration,
-    } as Project;
-  };
-
-  // Normalize server task to client Task shape
-  const normalizeTask = (serverTask: any): Task => {
-    const mapServerToClientStatus = (s?: string): Task["status"] => {
-      if (s === "in_progress") return "in-progress";
-      if (s === "completed") return "done";
-      return (s as Task["status"]) || "todo";
-    };
-
-    // Map assignees (user objects) to contributors (string array)
-    let contributors: string[] = [];
-    if (serverTask.assignees && Array.isArray(serverTask.assignees)) {
-      contributors = serverTask.assignees.map((assignee: any) =>
-        assignee.full_name || assignee.username || assignee.email || String(assignee.id)
-      );
-    } else if (serverTask.contributors && Array.isArray(serverTask.contributors)) {
-      // Fallback to contributors if assignees not present
-      contributors = serverTask.contributors;
-    }
-
-    const normalized = {
-      id: serverTask.id,
-      projectId: Number(serverTask.project ?? serverTask.projectId),
-      title: serverTask.title,
-      dueDate: serverTask.due_date ?? serverTask.dueDate,
-      status: mapServerToClientStatus(serverTask.status),
-      description: serverTask.description,
-      project: serverTask.project_name ?? serverTask.project ?? undefined,
-      progress: serverTask.progress ?? 0,
-      totalSteps: serverTask.totalSteps ?? 0,
-      attachments: serverTask.attachments ?? [],
-      comments: serverTask.comments ?? [],
-      category: serverTask.category,
-      contributors: contributors,
-      duration: serverTask.duration,
-      notes: serverTask.notes,
-    } as Task;
-    console.log('Normalized task:', normalized);
-    return normalized;
-  };
-
-  const mapClientToServerStatus = (s?: Task["status"]): string | undefined => {
-    if (!s) return undefined;
-    if (s === "in-progress") return "in_progress";
-    if (s === "done") return "completed";
-    return s;
-  };
-
-  const normalizeDueDateForServer = (d?: string): string | undefined => {
-    if (!d) return undefined;
-    // If already ISO-like, pass through
-    if (d.includes("T")) return d;
-    // Convert YYYY-MM-DD to ISO start of day UTC
-    return `${d}T00:00:00Z`;
-  };
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   // Listen for logout events to clear data
   useEffect(() => {
     const handleLogout = () => {
-      // Don't clear projects and tasks on logout - they should persist
-      // Only clear the selected project
       setSelectedProjectId(null);
     };
 
-    window.addEventListener('userLogout', handleLogout);
-    return () => window.removeEventListener('userLogout', handleLogout);
+    window.addEventListener(CUSTOM_EVENTS.USER_LOGOUT, handleLogout);
+    return () => window.removeEventListener(CUSTOM_EVENTS.USER_LOGOUT, handleLogout);
   }, []);
 
   // Load projects and tasks when user changes
@@ -364,42 +399,43 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
   // -------------------- ACTIONS --------------------
 
-  const selectProject = (id: number | null) => setSelectedProjectId(id);
+  //const selectProject = (id: number | null) => setSelectedProjectId(id);
 
-  const createProject = (data: Partial<Project>): Project => {
-    // Extract assignee IDs from contributors if provided
-    let assignee_ids: number[] = [];
-    if (data.contributors && Array.isArray(data.contributors)) {
-      // If contributors are user objects with IDs, extract IDs
-      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0] !== null && 'id' in data.contributors[0]) {
-        assignee_ids = (data.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
-      }
-    }
+  // -------------------- ACTIONS --------------------
+
+  const selectProject = useCallback((id: number | null) => {
+    setSelectedProjectId(id);
+  }, []);
+
+  /**
+   * Creates a project with optimistic update
+   */
+  const createProject = useCallback((data: Partial<Project>): Project => {
+    const assigneeIds = Array.isArray(data.contributors)
+      ? extractContributorIds(data.contributors)
+      : [];
 
     const payload = {
       name: data.name,
       description: data.description,
       color: data.color || "#6366f1",
-      assignee_ids: assignee_ids,
+      assignee_ids: assigneeIds,
     };
 
-    // Map contributors to strings for optimistic update
-    const contributorsStrings = data.contributors && Array.isArray(data.contributors)
-      ? data.contributors.map((c: any) =>
-          typeof c === 'string' ? c : (c.full_name || c.username || c.email || String(c.id))
-        )
+    const contributorsStrings = Array.isArray(data.contributors)
+      ? mapAssigneesToContributors(data.contributors)
       : [];
 
-    const temp: Project = {
+    const tempProject: Project = {
       id: Date.now(),
       name: payload.name || "Untitled project",
       description: payload.description,
       color: payload.color,
       contributors: contributorsStrings,
     };
-    setProjects((prev) => [temp, ...prev]);
-    // Immediately select the newly created project for better UX
-    setSelectedProjectId(temp.id);
+
+    setProjects((prev) => [tempProject, ...prev]);
+    setSelectedProjectId(tempProject.id);
 
     api<{ success: boolean; project: any }>("/api/projects/", {
       method: "POST",
@@ -410,28 +446,25 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           const normalizedProject = normalizeProject(response.project);
           setProjects((prev) => [
             normalizedProject,
-            ...prev.filter((p) => p.id !== temp.id),
+            ...prev.filter((p) => p.id !== tempProject.id),
           ]);
           setSelectedProjectId(normalizedProject.id);
         }
       })
       .catch(() => {
-        // Keep the optimistic project even if the server request fails
-        // Optionally, you could set a flag here to indicate unsynced state
+        // Keep optimistic project on error
       });
 
-    return temp;
-  };
+    return tempProject;
+  }, []);
 
-  const createProjectAndWait = async (data: Partial<Project>): Promise<Project> => {
-    // Extract assignee IDs from contributors if provided
-    let assignee_ids: number[] = [];
-    if (data.contributors && Array.isArray(data.contributors)) {
-      // If contributors are user objects with IDs, extract IDs
-      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0] !== null && 'id' in data.contributors[0]) {
-        assignee_ids = (data.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
-      }
-    }
+  /**
+   * Creates a project and waits for server response
+   */
+  const createProjectAndWait = useCallback(async (data: Partial<Project>): Promise<Project> => {
+    const assigneeIds = Array.isArray(data.contributors)
+      ? extractContributorIds(data.contributors)
+      : [];
 
     try {
       const response = await api<{ success: boolean; project: any }>("/api/projects/", {
@@ -440,49 +473,41 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
           name: data.name,
           description: data.description,
           color: data.color || "#6366f1",
-          assignee_ids: assignee_ids,
+          assignee_ids: assigneeIds,
         }),
       });
+
       if (response.success) {
         const normalizedProject = normalizeProject(response.project);
         setProjects((prev) => [normalizedProject, ...prev]);
         setSelectedProjectId(normalizedProject.id);
         return normalizedProject;
       }
-      // Fallback to optimistic create if server did not return success
+
       return createProject(data);
     } catch {
-      // Fallback to optimistic create on error
       return createProject(data);
     }
-  };
+  }, [createProject]);
 
-  const updateProject = (id: number, updates: Partial<Project>) => {
+  /**
+   * Updates a project
+   */
+  const updateProject = useCallback((id: number, updates: Partial<Project>) => {
     setProjects((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
 
-    // Extract assignee IDs from contributors if provided
-    let assignee_ids: number[] | undefined = undefined;
-    if (updates.contributors !== undefined) {
-      if (Array.isArray(updates.contributors)) {
-        // If contributors are user objects with IDs, extract IDs
-        if (updates.contributors.length > 0 && typeof updates.contributors[0] === 'object' && updates.contributors[0] !== null && 'id' in updates.contributors[0]) {
-          assignee_ids = (updates.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
-        } else {
-          // If contributors are strings, we can't extract IDs - need to match by name
-          // For now, set to empty array to clear assignees
-          assignee_ids = [];
-        }
-      } else {
-        assignee_ids = [];
-      }
-    }
+    const assigneeIds = updates.contributors !== undefined
+      ? Array.isArray(updates.contributors)
+        ? extractContributorIds(updates.contributors)
+        : []
+      : undefined;
 
     const payload: any = { ...updates };
-    if (assignee_ids !== undefined) {
-      payload.assignee_ids = assignee_ids;
-      delete payload.contributors; // Remove contributors from payload, server uses assignee_ids
+    if (assigneeIds !== undefined) {
+      payload.assignee_ids = assigneeIds;
+      delete payload.contributors;
     }
 
     api<{ success: boolean; project: any }>(`/api/projects/${id}/`, {
@@ -498,16 +523,19 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {});
-  };
+  }, []);
 
-  const createTask = (projectId: number, data: Partial<Task>): Task => {
-    // Check if this is a real project ID (not optimistic)
-    const isRealProject = projects.some(p => p.id === projectId && p.id < 1000000); // Real IDs are usually smaller
+  /**
+   * Creates a task with optimistic update
+   */
+  const createTask = useCallback((projectId: number, data: Partial<Task>): Task => {
+    const OPTIMISTIC_ID_THRESHOLD = 1000000;
+    const isRealProject = projects.some(
+      (p) => p.id === projectId && p.id < OPTIMISTIC_ID_THRESHOLD
+    );
 
-    if (!isRealProject) {
-      console.warn('Attempting to create task with optimistic project ID:', projectId);
-      // Don't create the task on server yet, just return optimistic
-      const temp: Task = {
+    const createOptimisticTask = (): Task => {
+      const tempTask: Task = {
         id: Date.now(),
         projectId,
         title: data.title || "New Task",
@@ -524,18 +552,18 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         duration: data.duration,
         notes: data.notes,
       };
-      setTasks((prev) => [temp, ...prev]);
-      return temp;
+      setTasks((prev) => [tempTask, ...prev]);
+      return tempTask;
+    };
+
+    if (!isRealProject) {
+      console.warn('Attempting to create task with optimistic project ID:', projectId);
+      return createOptimisticTask();
     }
 
-    // Extract assignee IDs from contributors if provided
-    let assignee_ids: number[] = [];
-    if (data.contributors && Array.isArray(data.contributors)) {
-      // If contributors are user objects with IDs, extract IDs
-      if (data.contributors.length > 0 && typeof data.contributors[0] === 'object' && data.contributors[0] !== null && 'id' in data.contributors[0]) {
-        assignee_ids = (data.contributors as any[]).map((c: any) => c.id).filter((id: any): id is number => typeof id === 'number');
-      }
-    }
+    const assigneeIds = Array.isArray(data.contributors)
+      ? extractContributorIds(data.contributors)
+      : [];
 
     const payload = {
       project: projectId,
@@ -543,29 +571,10 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       description: data.description,
       status: mapClientToServerStatus(data.status) || "todo",
       due_date: normalizeDueDateForServer(data.dueDate),
-      assignee_ids: assignee_ids,
+      assignee_ids: assigneeIds,
     };
-    console.log('Creating task with payload:', payload);
-    console.log('Current projects:', projects.map(p => ({ id: p.id, name: p.name })));
 
-    const temp: Task = {
-      id: Date.now(),
-      projectId,
-      title: data.title || "New Task",
-      dueDate: data.dueDate,
-      status: data.status || "todo",
-      description: data.description,
-      project: data.project,
-      progress: data.progress || 0,
-      totalSteps: data.totalSteps || 0,
-      attachments: data.attachments || [],
-      comments: data.comments || [],
-      category: data.category,
-      contributors: data.contributors,
-      duration: data.duration,
-      notes: data.notes,
-    };
-    setTasks((prev) => [temp, ...prev]);
+    const tempTask = createOptimisticTask();
 
     api<{ success: boolean; task: Task }>("/api/tasks/", {
       method: "POST",
@@ -573,54 +582,65 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     })
       .then((response) => {
         if (response.success) {
-          console.log('Task creation response:', response.task);
           setTasks((prev) => [
             normalizeTask(response.task),
-            ...prev.filter((t) => t.id !== temp.id),
+            ...prev.filter((t) => t.id !== tempTask.id),
           ]);
         }
       })
       .catch((error) => {
         console.error('Task creation failed:', error);
-        // Keep the optimistic task even if server creation fails
-        // setTasks((prev) => prev.filter((t) => t.id !== temp.id));
       });
 
-    return temp;
-  };
+    return tempTask;
+  }, [projects]);
 
-  const updateTask = (id: number, updates: Partial<Task>) => {
+  /**
+   * Updates a task
+   */
+  const updateTask = useCallback((id: number, updates: Partial<Task>) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
     );
+
     api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
       method: "PUT",
       body: JSON.stringify(updates),
     }).catch(() => {});
-  };
+  }, []);
 
-  const moveTaskStatus = (id: number, status: Task["status"]) => {
+  /**
+   * Moves a task to a different status
+   */
+  const moveTaskStatus = useCallback((id: number, status: Task["status"]) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status } : t))
     );
+
     const serverStatus = mapClientToServerStatus(status);
     api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
       method: "PUT",
       body: JSON.stringify({ status: serverStatus }),
     }).catch(() => {});
-  };
+  }, []);
 
-  const deleteProject = (id: number) => {
+  /**
+   * Deletes a project
+   */
+  const deleteProject = useCallback((id: number) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
     setTasks((prev) => prev.filter((t) => t.projectId !== id));
     setSelectedProjectId((prev) => (prev === id ? null : prev));
     api<void>(`/api/projects/${id}/`, { method: "DELETE" }).catch(() => {});
-  };
+  }, []);
 
-  const deleteTask = (id: number) => {
+  /**
+   * Deletes a task
+   */
+  const deleteTask = useCallback((id: number) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
     api<void>(`/api/tasks/${id}/`, { method: "DELETE" }).catch(() => {});
-  };
+  }, []);
 
   const deleteTasksByStatus = (
     projectId: number,
