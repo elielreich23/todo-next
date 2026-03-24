@@ -49,7 +49,9 @@ export default function ForgotPassword() {
         // In development, if token is provided, redirect to reset page
         if (data.token && data.uid) {
           setTimeout(() => {
-            router.push(`/auth/forgetPwd_1?token=${data.token}&uid=${data.uid}`);
+            const safeToken = encodeURIComponent(data.token);
+            const safeUid = encodeURIComponent(data.uid);
+            router.push(`/auth/forgetPwd_1?token=${safeToken}&uid=${safeUid}`);
           }, 2000);
         } else {
           // Redirect to confirmation page

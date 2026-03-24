@@ -215,6 +215,8 @@ This document provides a comprehensive feature enhancement checklist with implem
 3. [AI & LLM Features](#-ai--llm-features)
 4. [Implementation Priority Guide](#-implementation-priority-guide)
 5. [Feature Dependencies](#-feature-dependencies)
+6. [Frontend Test Roadmap](#-frontend-test-roadmap-high-value-next)
+7. [Backend Implementation Backlog](#-backend-implementation-backlog-organized)
 
 ---
 
@@ -951,6 +953,120 @@ This document provides a comprehensive feature enhancement checklist with implem
 ### Low Impact, High Effort (Defer)
 - RTL Language Support (unless targeting specific markets)
 - Advanced video processing
+
+---
+
+## 🧪 Frontend Test Roadmap (High Value Next)
+
+### Priority Test Sets to Add
+
+- [ ] **🔐 API Client Security Tests (`src/lib/api.ts`)**
+  - Verify 401 refresh flow and retry behavior
+  - Verify auth header behavior when token is missing/expired
+  - Verify duplicate mutation request deduplication and safe error handling
+  - **Estimated Effort:** 2-3 days
+
+- [ ] **🧭 Navigation & Routing Safety Tests**
+  - Verify command palette blocks unsafe links (`javascript:`, protocol-relative, external URLs)
+  - Verify only internal routes are accepted for app navigation
+  - **Estimated Effort:** 1-2 days
+
+- [ ] **🧾 Auth Flow Error/State Tests**
+  - Signin/signup invalid input and backend error surface tests
+  - Logout event + token cleanup + redirect behavior tests
+  - Password reset token URL encoding/decoding and failure state tests
+  - **Estimated Effort:** 2-3 days
+
+- [ ] **📎 File Upload Validation Tests (Client-side)**
+  - Reject unsupported MIME types and oversized files
+  - Ensure accepted files pass and FormData payload is correct
+  - **Estimated Effort:** 1-2 days
+
+- [ ] **♿ Accessibility Regression Tests**
+  - Keyboard trap/focus management tests for modal/dialog components
+  - ARIA role/label checks for interactive components
+  - **Estimated Effort:** 2 days
+
+### Current Frontend Test Baseline
+- ✅ Session management UI tests
+- ✅ Shortcut help modal behavior tests
+- ✅ Command palette security navigation tests
+
+---
+
+## 🛠️ Backend Implementation Backlog (Organized)
+
+### 1) Security / Authentication
+
+- [ ] **🔐 Two-Factor Authentication (TOTP)**
+  - Endpoints: enable/verify/disable, QR provisioning, recovery codes
+  - Secure secret storage and recovery code lifecycle
+- [ ] **🔒 Session & Device Management Hardening (Policy Layer)**
+  - Add stricter policy controls (concurrency limits, risk-based revoke, geo/IP anomaly rules)
+  - Add admin controls and session security events
+- [ ] **🌐 OAuth2/Social Expansion**
+  - Add providers beyond Google (GitHub, Microsoft)
+  - Account linking/unlinking and conflict handling
+- [ ] **🔑 API Key Management**
+  - Scoped API keys, rotation, expiry/revocation, usage tracking
+- [ ] **🛡️ Strong CSP/CORS Hardening**
+  - Strict origin allowlists and production-safe security headers
+  - Validate deployment-specific rules (Railway/Vercel)
+
+### 2) Data Protection / Compliance
+
+- [~] **🔒 Field-Level Encryption at Rest**
+  - Current: encrypted sensitive session telemetry fields
+  - Next: key versioning + rotation + re-encryption workflow
+- [~] **🛡️ SQL Injection Audit + Dedicated Tests**
+  - Current: audit completed and regression tests added for auth/search/task filters
+  - Next: extend fuzz tests to all filter/sort/query endpoints
+- [ ] **📎 File Upload Security Pipeline**
+  - Strict backend MIME/type whitelist, size limits, filename sanitization
+  - Antivirus scanning (e.g., ClamAV) + quarantine flow
+- [ ] **🧾 Audit Logging Model + Endpoints**
+  - Capture login attempts, password/session/security config changes, data exports
+  - Searchable/filterable audit APIs for admin/security review
+- [ ] **🗑️ Data Retention / Deletion Automation**
+  - GDPR-style retention policies, scheduled cleanup, deletion workflows, export support
+
+### 3) Performance / Backend Scalability
+
+- [ ] **⚡ Broader Query Optimization**
+  - Continue optimizing high-traffic endpoints with `select_related/prefetch_related`
+  - Eliminate N+1 patterns and add query-count checks in tests
+- [ ] **🧠 Redis Caching Strategy for Hot Endpoints**
+  - Formalize cache key policy, TTLs, invalidation rules, cache metrics
+- [ ] **📄 Consistent Pagination**
+  - Apply uniform pagination contract across all large-list APIs
+- [ ] **⏱️ Background Jobs**
+  - Jobs for cleanup, retention policies, async notifications, and periodic maintenance
+
+### 4) Search / Collaboration Backend
+
+- [ ] **🔎 Full-Text / Advanced Search**
+  - Indexed search with filtering, ranking, operators, and saved views support
+- [ ] **🔄 Real-Time Infrastructure**
+  - Django Channels + Redis + broadcast/event model for live collaboration
+- [ ] **💬 Rich Commenting Backend**
+  - Mentions parsing, threading/replies, reactions, and notification hooks
+
+### 5) AI Backend (Not Yet Built)
+
+- [ ] **🧠 AI Task Prioritization + Confidence**
+- [ ] **📝 AI Description Enhancement Pipeline**
+- [ ] **🎯 Smart Assignment Suggestions**
+- [ ] **💬 Natural Language Task Parsing**
+- [ ] **🔍 Semantic Search (Embeddings + Vector Store)**
+- [ ] **📊 Predictive Analytics + Dependency Detection**
+
+### 6) Enterprise / Integration
+
+- [ ] **🏢 Team Workspace Model + Permissions**
+- [ ] **📧 Email Integration Platform**
+  - Notification templates, digest jobs, unsubscribe flows
+- [ ] **🔌 External Integrations**
+  - Calendar, email, meeting providers and sync architecture
 
 ---
 

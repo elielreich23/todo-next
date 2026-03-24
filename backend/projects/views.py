@@ -60,8 +60,10 @@ def _task_queryset_for_user(user):
         .select_related("owner", "project", "project__owner")
         .prefetch_related(
             "assignees",
-            Prefetch("comments", queryset=TaskComment.objects.select_related("author").order_by("-created_at")),
-            Prefetch("attachments", queryset=TaskAttachment.objects.select_related("uploaded_by").order_by("-uploaded_at")),
+            Prefetch("task_comments", queryset=TaskComment.objects.select_related("author").order_by("-created_at")),
+            Prefetch(
+                "task_attachments", queryset=TaskAttachment.objects.select_related("uploaded_by").order_by("-created_at")
+            ),
         )
         .distinct()
     )
@@ -202,9 +204,18 @@ def task_list_create(request):
 
         tasks = _task_queryset_for_user(request.user)
 
+        project_id_int = None
         if project_id:
             try:
-                project = _get_project_or_404_for_user(project_id, request.user)
+                project_id_int = int(project_id)
+            except (TypeError, ValueError):
+                return Response(
+                    {"success": False, "message": "Invalid projectId parameter"}, status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if project_id_int is not None:
+            try:
+                project = _get_project_or_404_for_user(project_id_int, request.user)
                 tasks = tasks.filter(project=project)
             except Project.DoesNotExist:
                 return Response({"success": False, "message": "Project not found"}, status=status.HTTP_404_NOT_FOUND)

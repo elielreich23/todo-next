@@ -10,8 +10,10 @@ import React, {
   useEffect,
 } from "react";
 import { api } from "../lib/api";
+import { API_BASE_URL } from "../constants";
 import { useUser } from "./UserContext";
 import { CUSTOM_EVENTS } from "../constants";
+import { getAccessToken } from "../utils/storage";
 
 // -------------------- TYPES --------------------
 
@@ -167,6 +169,17 @@ const normalizeDueDateForServer = (dueDate?: string): string | undefined => {
   if (dueDate.includes("T")) return dueDate;
   return `${dueDate}T00:00:00Z`;
 };
+
+const MAX_ATTACHMENT_SIZE_BYTES = 200 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
 
 /**
  * Normalizes server project to client Project shape
@@ -663,14 +676,21 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     tasks.filter((t) => t.projectId === projectId);
 
   const addTaskAttachment = async (taskId: number, file: File, uploadedBy: string) => {
+    if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      throw new Error("File size exceeds 200 MB limit");
+    }
+    if (file.type && !ALLOWED_ATTACHMENT_MIME_TYPES.includes(file.type)) {
+      throw new Error("Unsupported file type");
+    }
+
     // Create FormData for file upload
     const formData = new FormData();
     formData.append('file', file);
     formData.append('name', file.name);
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/tasks/${taskId}/attachments/`, {
+      const token = getAccessToken();
+      const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/attachments/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

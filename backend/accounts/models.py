@@ -4,6 +4,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
+from .encrypted_fields import EncryptedTextField
+
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
@@ -25,9 +27,10 @@ class UserSession(models.Model):
     device_name = models.CharField(max_length=255, blank=True)
     browser = models.CharField(max_length=100, blank=True)
     os = models.CharField(max_length=100, blank=True)
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    location = models.CharField(max_length=255, blank=True)  # City, Country
-    user_agent = models.TextField(blank=True)
+    # Store sensitive device telemetry encrypted at rest.
+    ip_address = EncryptedTextField(null=True, blank=True)
+    location = EncryptedTextField(blank=True)  # City, Country
+    user_agent = EncryptedTextField(blank=True)
     is_current = models.BooleanField(default=False)  # Current session
     last_activity = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)

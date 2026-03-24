@@ -13,6 +13,11 @@ export type CommandItem = {
   keywords?: string[];
 };
 
+function isSafeInternalPath(path: string): boolean {
+  // Only allow app-internal absolute paths like "/dashboard".
+  return typeof path === 'string' && path.startsWith('/') && !path.startsWith('//');
+}
+
 const DEFAULT_ITEMS: CommandItem[] = [
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard', keywords: ['home', 'main'] },
   { id: 'profile', label: 'Profile', href: '/dashboard/profile', keywords: ['user', 'account'] },
@@ -84,7 +89,7 @@ export default function CommandPalette({ isOpen, onClose, items = DEFAULT_ITEMS 
       onClose();
       return;
     }
-    if (item.href) {
+    if (item.href && isSafeInternalPath(item.href)) {
       router.push(item.href);
       onClose();
     }
