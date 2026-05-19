@@ -3,9 +3,9 @@
  * Handles profile data caching and retrieval
  */
 
-import { getCachedUserData } from './storage';
+import { getCachedUserData, getStorageItem, setStorageItem } from './storage';
 import { parseFullName } from './formatters';
-import { DEFAULTS } from '../constants';
+import { DEFAULTS, STORAGE_KEYS } from '../constants';
 
 export interface ProfileData {
   firstName: string;
@@ -42,34 +42,67 @@ export const getInitialProfileData = (): ProfileData => ({
   location: '',
 });
 
+const getProfileFromUserCache = (): ProfileData => {
+  const cachedUser = getCachedUserData<CachedUser>();
+  if (!cachedUser) {
+    return getInitialProfileData();
+  }
+
+  const { firstName, lastName } = parseFullName(cachedUser.full_name);
+  return {
+    firstName,
+    lastName,
+    username: cachedUser.username || '',
+    email: cachedUser.email || '',
+    phone: '',
+    phoneCode: DEFAULTS.PHONE_CODE,
+    city: '',
+    country: '',
+    role: '',
+    location: '',
+  };
+};
+
 /**
- * Load profile data from cache
+ * Load profile data from cache (extended fields + auth user fields)
  */
 export const loadProfileFromCache = (): ProfileData => {
   try {
-    const cachedUser = getCachedUserData<CachedUser>();
+    const userBased = getProfileFromUserCache();
+    const stored = getStorageItem(STORAGE_KEYS.CACHED_PROFILE_DATA);
 
-    if (cachedUser) {
-      const { firstName, lastName } = parseFullName(cachedUser.full_name);
-
+    if (stored) {
+      const parsed = JSON.parse(stored) as ProfileData;
       return {
-        firstName,
-        lastName,
-        username: cachedUser.username || '',
-        email: cachedUser.email || '',
-        phone: '',
-        phoneCode: DEFAULTS.PHONE_CODE,
-        city: '',
-        country: '',
-        role: '',
-        location: '',
+        ...userBased,
+        ...parsed,
+        username: parsed.username || userBased.username,
+        email: parsed.email || userBased.email,
+        firstName: parsed.firstName || userBased.firstName,
+        lastName: parsed.lastName || userBased.lastName,
       };
+    }
+
+    if (hasProfileData(userBased)) {
+      return userBased;
     }
   } catch (error) {
     console.error('Error loading profile from cache:', error);
   }
 
   return getInitialProfileData();
+};
+
+/**
+ * Persist full profile form data locally (phone, city, country, etc.)
+ */
+export const saveProfileToCache = (data: ProfileData): boolean => {
+  try {
+    return setStorageItem(STORAGE_KEYS.CACHED_PROFILE_DATA, JSON.stringify(data));
+  } catch (error) {
+    console.error('Error saving profile to cache:', error);
+    return false;
+  }
 };
 
 /**

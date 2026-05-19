@@ -127,4 +127,5 @@ export const setCachedUserData = <T>(data: T): boolean => {
 export const clearCachedUserData = (): void => {
   removeStorageItem(STORAGE_KEYS.CACHED_USER_DATA);
   removeStorageItem(STORAGE_KEYS.CACHED_USER_TIMESTAMP);
+  removeStorageItem(STORAGE_KEYS.CACHED_PROFILE_DATA);
 };

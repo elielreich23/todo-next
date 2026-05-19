@@ -10,28 +10,14 @@ interface PageTransitionProps {
 }
 
 const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 20,
-    scale: 0.98,
-  },
+  initial: { opacity: 0 },
   animate: {
     opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.3,
-      ease: [0.4, 0, 0.2, 1], // ease-out
-    },
+    transition: { duration: 0.15, ease: 'easeOut' },
   },
   exit: {
     opacity: 0,
-    y: -20,
-    scale: 0.98,
-    transition: {
-      duration: 0.2,
-      ease: [0.4, 0, 1, 1], // ease-in
-    },
+    transition: { duration: 0.1, ease: 'easeIn' },
   },
 };
 
@@ -39,7 +25,7 @@ export default function PageTransition({ children, className = '' }: PageTransit
   const pathname = usePathname();
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="sync" initial={false}>
       <motion.div
         key={pathname}
         initial="initial"
@@ -47,6 +33,7 @@ export default function PageTransition({ children, className = '' }: PageTransit
         exit="exit"
         variants={pageVariants}
         className={className}
+        style={{ minHeight: '100%' }}
       >
         {children}
       </motion.div>

@@ -66,6 +66,7 @@ export type Project = {
 type ProjectsContextType = {
   projects: Project[];
   tasks: Task[];
+  isLoading: boolean;
   selectedProjectId: number | null;
   selectProject: (id: number | null) => void;
   createProject: (data: Partial<Project>) => Project;
@@ -233,10 +234,14 @@ const normalizeTask = (serverTask: any): Task => {
 
 // -------------------- PROVIDER --------------------
 
+const mapTasksFromApi = (rawTasks: Task[]): Task[] =>
+  rawTasks.map((t) => normalizeTask(t));
+
 export function ProjectsProvider({ children }: { children: ReactNode }) {
   const { user, isLoading: userLoading } = useUser();
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   // Listen for logout events to clear data
@@ -253,86 +258,54 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Wait for user context to finish loading
     if (userLoading) {
-      console.log('User context still loading...');
       return;
     }
 
     if (!user) {
-      // Clear data when no user
-      console.log('No user, clearing data');
       setProjects([]);
       setTasks([]);
       setSelectedProjectId(null);
+      setIsLoading(false);
       return;
     }
 
-    // Check if we have an access token before making API calls
     const accessToken = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     if (!accessToken) {
-      console.log('No access token, skipping API call');
+      setIsLoading(false);
       return;
     }
 
     let isCancelled = false;
+    setIsLoading(true);
 
     (async () => {
       try {
-        console.log('Loading projects for user:', user.username);
-        console.log('Access token exists:', !!accessToken);
-
         const response = await api<{ success: boolean; projects: any[] }>(
           "/api/projects/"
         );
 
-        // Check if component unmounted or user changed
         if (isCancelled) return;
 
-        console.log('Projects API response:', response);
-
         if (response.success) {
-          console.log('Loaded projects:', response.projects);
           const normalizedProjects = response.projects.map(normalizeProject);
           setProjects(normalizedProjects);
           const initialProjectId = normalizedProjects[0]?.id ?? null;
           setSelectedProjectId(initialProjectId);
-          if (initialProjectId) {
-            const tasksResponse = await api<{
-              success: boolean;
-              tasks: Task[];
-            }>(`/api/tasks/?projectId=${initialProjectId}`);
-
-            // Check again if cancelled
-            if (isCancelled) return;
-
-            console.log('Tasks API response:', tasksResponse);
-            if (tasksResponse.success) {
-              console.log('Loaded tasks:', tasksResponse.tasks);
-              const normalizedTasks = await Promise.all(
-                tasksResponse.tasks.map(async (t) => {
-                  const normalized = normalizeTask(t);
-                  const details = await loadTaskDetails(t.id);
-                  return {
-                    ...normalized,
-                    comments: details.comments,
-                    attachments: details.attachments,
-                  };
-                })
-              );
-              if (!isCancelled) {
-                setTasks(normalizedTasks);
-              }
-            }
+          if (!initialProjectId) {
+            setTasks([]);
+            setIsLoading(false);
           }
-        } else {
-          console.error('Projects API returned success: false');
+        } else if (!isCancelled) {
+          setIsLoading(false);
         }
       } catch (error: any) {
-        // Don't log errors if we're being redirected to login
         if (error?.message?.includes('Not authenticated') || error?.message?.includes('Please log in')) {
-          console.log('Authentication required, redirecting...');
           return;
         }
         console.error("Failed to load projects:", error);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     })();
 
@@ -381,34 +354,35 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
   // When selected project changes, load its tasks
   useEffect(() => {
-    if (!selectedProjectId) {
-      setTasks([]);
+    if (!selectedProjectId || userLoading || !user) {
+      if (!selectedProjectId) setTasks([]);
       return;
     }
+
+    let isCancelled = false;
+    setIsLoading(true);
+
     (async () => {
       try {
         const response = await api<{ success: boolean; tasks: Task[] }>(
           `/api/tasks/?projectId=${selectedProjectId}`
         );
-        if (response.success) {
-          const normalizedTasks = await Promise.all(
-            response.tasks.map(async (t) => {
-              const normalized = normalizeTask(t);
-              const details = await loadTaskDetails(t.id);
-              return {
-                ...normalized,
-                comments: details.comments,
-                attachments: details.attachments,
-              };
-            })
-          );
-          setTasks(normalizedTasks);
+        if (!isCancelled && response.success) {
+          setTasks(mapTasksFromApi(response.tasks));
         }
       } catch (error) {
         console.error("Failed to load tasks:", error);
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     })();
-  }, [selectedProjectId]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedProjectId, user, userLoading]);
 
   // -------------------- ACTIONS --------------------
 
@@ -887,6 +861,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     () => ({
       projects,
       tasks,
+      isLoading,
       selectedProjectId,
       selectProject,
       createProject,
@@ -906,7 +881,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       deleteTaskComment,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projects, tasks, selectedProjectId]
+    [projects, tasks, isLoading, selectedProjectId]
   );
 
   return (

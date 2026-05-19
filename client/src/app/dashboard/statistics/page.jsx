@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
 import { useUser } from '../../../contexts/UserContext';
 import styles from '../style/statistics.module.scss';
+import { DashboardSkeleton } from '../../../components/SkeletonLoader';
 
 export default function StatisticsPage() {
   const [stats, setStats] = useState(null);
@@ -66,14 +67,7 @@ export default function StatisticsPage() {
   };
 
   if (loading) {
-    return (
-      <div className={styles.statisticsPage}>
-        <div className={styles.header}>
-          <h1>Statistics</h1>
-          <p>Loading your statistics...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error || !stats) {

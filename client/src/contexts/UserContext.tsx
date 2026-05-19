@@ -143,9 +143,14 @@ export const useUser = (): UserContextType => {
 
 // -------------------- PROVIDER --------------------
 
+const hasPersistedSession = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return !!(getAccessToken() && getRefreshToken() && getUserFromCache());
+};
+
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUserState] = useState<User | null>(() => getUserFromCache());
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !hasPersistedSession());
 
   /**
    * Updates user state and cache

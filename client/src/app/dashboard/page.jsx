@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProjects } from '../../contexts/ProjectsContext';
 import { useUser } from '../../contexts/UserContext';
+import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import styles from './dashboard.module.scss';
 
 // Lazy load heavy modal components
@@ -18,10 +19,10 @@ const TaskEditModal = dynamic(() => import('../../components/todo').then(mod => 
   ssr: false,
 });
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { projects, tasks, selectedProjectId, createProject, moveTaskStatus, deleteProject, updateTask, deleteTask } = useProjects();
+  const { projects, tasks, isLoading: projectsLoading, selectedProjectId, createProject, moveTaskStatus, deleteProject, updateTask, deleteTask } = useProjects();
   const { user } = useUser();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
@@ -38,23 +39,16 @@ export default function DashboardPage() {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-
-    // Debug drag and drop events
-    const handleDragStart = (e) => console.log('Global drag start:', e.target);
-    const handleDragEnd = (e) => console.log('Global drag end:', e.target);
-    const handleDrop = (e) => console.log('Global drop:', e.target);
-
-    document.addEventListener('dragstart', handleDragStart);
-    document.addEventListener('dragend', handleDragEnd);
-    document.addEventListener('drop', handleDrop);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('dragstart', handleDragStart);
-      document.removeEventListener('dragend', handleDragEnd);
-      document.removeEventListener('drop', handleDrop);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const taskToEdit = editingTaskId ? tasks.find((t) => t.id === editingTaskId) : null;
+
+  useEffect(() => {
+    if (editingTaskId && !taskToEdit) {
+      setEditingTaskId(null);
+    }
+  }, [editingTaskId, taskToEdit]);
 
   // Open create task modal from command palette (Ctrl+K → "New task") or URL ?openCreate=1
   useEffect(() => {
@@ -135,9 +129,7 @@ export default function DashboardPage() {
 
   const projectTasks = useMemo(() => {
     if (!selectedProjectId) return [];
-    const filtered = tasks.filter(t => t.projectId === selectedProjectId);
-    console.log('Project tasks for', selectedProjectId, ':', filtered);
-    return filtered;
+    return tasks.filter((t) => t.projectId === selectedProjectId);
   }, [tasks, selectedProjectId]);
 
   const columns = [
@@ -148,6 +140,10 @@ export default function DashboardPage() {
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
+  if (projectsLoading && projects.length === 0) {
+    return <DashboardSkeleton />;
+  }
+
   if (!selectedProject) {
     return (
       <div className={styles.dashboardPage}>
@@ -157,10 +153,7 @@ export default function DashboardPage() {
             <p>Select a project to get started</p>
           </div>
           <div className={styles.headerRight}>
-            <button className={styles.addProjectBtn} onClick={() => {
-              console.log('Creating project, current projects:', projects);
-              createProject({ name: 'New Project' });
-            }}>
+            <button className={styles.addProjectBtn} onClick={() => createProject({ name: 'New Project' })}>
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
@@ -201,20 +194,12 @@ export default function DashboardPage() {
             onDrop={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('Drop on column container:', col.title);
-
-              // Try multiple data formats
-              let taskId = parseInt(e.dataTransfer.getData('taskId'));
+              let taskId = parseInt(e.dataTransfer.getData('taskId'), 10);
               if (!taskId) {
-                taskId = parseInt(e.dataTransfer.getData('text/plain'));
+                taskId = parseInt(e.dataTransfer.getData('text/plain'), 10);
               }
-
               if (taskId) {
-                console.log('Moving task:', taskId, 'to status:', col.key);
                 moveTaskStatus(taskId, col.key);
-                console.log(`Task moved to ${col.title}`);
-              } else {
-                console.log('No taskId found in column drop event');
               }
             }}
           >
@@ -234,7 +219,6 @@ export default function DashboardPage() {
               onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Drag over on column:', col.title);
                 e.currentTarget.classList.add(styles.dragOver);
               }}
               onDragLeave={(e) => {
@@ -244,57 +228,29 @@ export default function DashboardPage() {
                 e.preventDefault();
                 e.stopPropagation();
                 e.currentTarget.classList.remove(styles.dragOver);
-
-                // Try multiple data formats
-                let taskId = parseInt(e.dataTransfer.getData('taskId'));
+                let taskId = parseInt(e.dataTransfer.getData('taskId'), 10);
                 if (!taskId) {
-                  taskId = parseInt(e.dataTransfer.getData('text/plain'));
+                  taskId = parseInt(e.dataTransfer.getData('text/plain'), 10);
                 }
-
-                console.log('Drop event triggered:', {
-                  taskId,
-                  targetStatus: col.key,
-                  targetColumn: col.title,
-                  dataTransfer: e.dataTransfer,
-                  types: e.dataTransfer.types
-                });
-
                 if (taskId) {
-                  console.log('Moving task:', taskId, 'to status:', col.key);
                   moveTaskStatus(taskId, col.key);
-                  // Show a brief success message
-                  console.log(`Task moved to ${col.title}`);
-                } else {
-                  console.log('No taskId found in drop event');
-                  console.log('Available data types:', e.dataTransfer.types);
-                  console.log('taskId data:', e.dataTransfer.getData('taskId'));
-                  console.log('text/plain data:', e.dataTransfer.getData('text/plain'));
                 }
               }}
               role="region"
               aria-label={`${col.title} column - drop tasks here`}
               data-column={col.key}
             >
-              {projectTasks.filter(t=>{
-                const matches = t.status === col.key;
-                console.log(`Task ${t.id} (${t.title}) status: ${t.status}, column: ${col.key}, matches: ${matches}`);
-                return matches;
-              }).map(t => (
+              {projectTasks.filter((t) => t.status === col.key).map((t) => (
                 <div
                   key={t.id}
                   className={styles.taskCard}
                   draggable={true}
-                  onDragStart={(e)=>{
-                    console.log('Drag start for task:', t.id, 'with status:', t.status);
+                  onDragStart={(e) => {
                     e.dataTransfer.setData('taskId', String(t.id));
                     e.dataTransfer.setData('text/plain', String(t.id));
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.dropEffect = 'move';
                     e.currentTarget.classList.add(styles.dragging);
-
-                    // Verify data was set
-                    console.log('DataTransfer types:', e.dataTransfer.types);
-                    console.log('DataTransfer taskId:', e.dataTransfer.getData('taskId'));
                   }}
                   onDragEnd={(e) => {
                     e.currentTarget.classList.remove(styles.dragging);
@@ -549,23 +505,22 @@ export default function DashboardPage() {
         defaultStatus="todo"
       />
 
-      {/* Task Edit Modal */}
-      {editingTaskId && (() => {
-        const taskToEdit = tasks.find(t => t.id === editingTaskId);
-        if (!taskToEdit) {
-          // If task is not found, close the modal
-          setEditingTaskId(null);
-          return null;
-        }
-        return (
-          <TaskEditModal
-            isOpen={!!editingTaskId}
-            onClose={() => setEditingTaskId(null)}
-            task={taskToEdit}
-            projectId={selectedProjectId}
-          />
-        );
-      })()}
+      {taskToEdit && (
+        <TaskEditModal
+          isOpen={!!editingTaskId}
+          onClose={() => setEditingTaskId(null)}
+          task={taskToEdit}
+          projectId={selectedProjectId}
+        />
+      )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }

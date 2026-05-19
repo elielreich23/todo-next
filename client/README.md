@@ -65,13 +65,13 @@ client/
 
 ## 📚 Documentation
 
-All frontend-specific documentation is available in this directory:
+Frontend and auth guides live under [`docs/setup/`](../docs/setup/):
 
-- **[AUTHENTICATION_SETUP.md](./AUTHENTICATION_SETUP.md)** - Complete guide for Google OAuth and Password Reset setup
-- **[GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md)** - Detailed Google OAuth configuration guide
-- **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Summary of implemented features
+- **[AUTHENTICATION_SETUP.md](../docs/setup/AUTHENTICATION_SETUP.md)** - Google OAuth and password reset setup
+- **[GOOGLE_OAUTH_SETUP.md](../docs/setup/GOOGLE_OAUTH_SETUP.md)** - Google OAuth configuration
+- **[AUTH_IMPLEMENTATION_SUMMARY.md](../docs/setup/AUTH_IMPLEMENTATION_SUMMARY.md)** - Auth feature implementation summary
 
-For project-wide documentation, see the root `README.md`.
+For project-wide documentation, see the root [`README.md`](../README.md) and [`docs/README.md`](../docs/README.md).
 
 ---
 
@@ -117,7 +117,7 @@ npm run type-check   # TypeScript type checking
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [React Documentation](https://react.dev)
-- [Authentication Setup Guide](./AUTHENTICATION_SETUP.md)
+- [Authentication Setup Guide](../docs/setup/AUTHENTICATION_SETUP.md)
 
 ---
 

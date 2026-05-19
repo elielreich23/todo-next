@@ -20,7 +20,15 @@ export default function Dashboard({ children }) {
   const [isWhiteSidebarOpen, setIsWhiteSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isProjectWizardOpen, setIsProjectWizardOpen] = useState(false);
-  const { projects, tasks, selectedProjectId, selectProject, createProject } = useProjects();
+  const {
+    projects,
+    tasks,
+    selectedProjectId,
+    selectProject,
+    createProject,
+    deleteProject,
+    deleteTasksByStatus,
+  } = useProjects();
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [isTasksOpen, setIsTasksOpen] = useState(true);
   const [doubleClickFeedback, setDoubleClickFeedback] = useState(null);
@@ -106,31 +114,18 @@ export default function Dashboard({ children }) {
   };
 
   const navigateTo = (page) => {
-    switch (page) {
-      case 'dashboard':
-        router.push('/dashboard');
-        break;
-      case 'profile':
-        router.push('/dashboard/profile');
-        break;
-      case 'settings':
-        router.push('/dashboard/settings');
-        break;
-      case 'statistics':
-        router.push('/dashboard/statistics');
-        break;
-      case 'calendar':
-        router.push('/dashboard/calendar');
-        break;
-      case 'uploads':
-        router.push('/dashboard/uploads');
-        break;
-      case 'notifications':
-        router.push('/dashboard/notifications');
-        break;
-      default:
-        router.push('/dashboard');
-    }
+    const routes = {
+      dashboard: '/dashboard',
+      profile: '/dashboard/profile',
+      settings: '/dashboard/settings',
+      statistics: '/dashboard/statistics',
+      calendar: '/dashboard/calendar',
+      uploads: '/dashboard/uploads',
+      notifications: '/dashboard/notifications',
+    };
+    const href = routes[page] || routes.dashboard;
+    router.prefetch(href);
+    router.push(href);
   };
 
   const handleLogoClick = () => {

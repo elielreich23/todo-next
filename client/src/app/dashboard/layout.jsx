@@ -4,27 +4,22 @@ import { Suspense, useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../../contexts/UserContext';
-import SideBarMod from '../../components/sideBar/sideBar';
-const SideBar = typeof SideBarMod === 'function' ? SideBarMod : (SideBarMod?.default ?? SideBarMod);
+import DashboardShell from './dashboard';
 import { DashboardSkeleton } from '../../components/SkeletonLoader';
-import PageTransitionMod from '../../components/PageTransition/PageTransition';
-const PageTransition = typeof PageTransitionMod === 'function' ? PageTransitionMod : (PageTransitionMod?.default ?? PageTransitionMod);
+import PageTransition from '../../components/PageTransition/PageTransition';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
-// Use .default when present so layout works with both direct and barrel resolution
-import CommandPaletteMod from '../../components/CommandPalette/CommandPalette';
-import ShortcutHelpModalMod from '../../components/ShortcutHelpModal/ShortcutHelpModal';
-const CommandPalette = typeof CommandPaletteMod === 'function' ? CommandPaletteMod : (CommandPaletteMod?.default ?? CommandPaletteMod);
-const ShortcutHelpModal = typeof ShortcutHelpModalMod === 'function' ? ShortcutHelpModalMod : (ShortcutHelpModalMod?.default ?? ShortcutHelpModalMod);
+import CommandPalette from '../../components/CommandPalette/CommandPalette';
+import ShortcutHelpModal from '../../components/ShortcutHelpModal/ShortcutHelpModal';
+import { getAccessToken } from '../../utils/storage';
 
-// Lazy load heavy components (explicit default for reliable resolution)
 const NotificationBell = dynamic(
   () => import('../../components/NotificationBell/NotificationBell').then((mod) => ({ default: mod.default })),
-  { ssr: false, loading: () => <div style={{ width: '40px', height: '40px' }} /> }
+  { ssr: false, loading: () => <div className="dashboard-toolbar-placeholder" aria-hidden /> }
 );
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading, validateSession } = useUser();
+  const { isAuthenticated, isLoading } = useUser();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
@@ -40,65 +35,45 @@ export default function DashboardLayout({ children }) {
   });
 
   useEffect(() => {
-    // Validate session on mount
-    validateSession();
-
-    // Redirect if not authenticated after loading
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push('/auth/signin');
-      }
+    if (!isLoading && !isAuthenticated) {
+      router.replace('/auth/signin');
     }
-  }, [isAuthenticated, isLoading, validateSession, router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  // Show loading while checking authentication
-  if (isLoading) {
+  const mayHaveSession = isAuthenticated || (typeof window !== 'undefined' && !!getAccessToken());
+
+  if (isLoading && !mayHaveSession) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh'
-      }}>
+      <div className="dashboard-auth-loading">
         <DashboardSkeleton />
       </div>
     );
   }
 
-  // If not authenticated after loading, show nothing (redirect will happen)
-  if (!isAuthenticated) {
+  if (!isLoading && !isAuthenticated) {
     return null;
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <a href="#main-content" className="skip-to-main">
-        Skip to main content
-      </a>
-      {typeof SideBar === 'function' && <SideBar />}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <header style={{
-          padding: '1rem 2rem',
-          borderBottom: '1px solid #e0e0e0',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <h1 style={{ margin: 0 }}>Dashboard</h1>
-          <Suspense fallback={<div style={{ width: '40px', height: '40px' }} />}>
-            <NotificationBell />
-          </Suspense>
-        </header>
-        <main id="main-content" style={{ flex: 1, padding: '2rem' }} tabIndex={-1}>
-          <Suspense fallback={<DashboardSkeleton />}>
-            <PageTransition>
-              {children}
-            </PageTransition>
-          </Suspense>
-        </main>
-      </div>
-      {typeof CommandPalette === 'function' && <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />}
-      {typeof ShortcutHelpModal === 'function' && <ShortcutHelpModal isOpen={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />}
-    </div>
+    <>
+      <DashboardShell>
+        <div className="dashboard-layout-inner">
+          <div className="dashboard-layout-toolbar">
+            <Suspense fallback={<div className="dashboard-toolbar-placeholder" aria-hidden />}>
+              <NotificationBell />
+            </Suspense>
+          </div>
+          <main id="main-content" tabIndex={-1}>
+            {isLoading ? (
+              <DashboardSkeleton />
+            ) : (
+              <PageTransition>{children}</PageTransition>
+            )}
+          </main>
+        </div>
+      </DashboardShell>
+      <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+      <ShortcutHelpModal isOpen={shortcutHelpOpen} onClose={() => setShortcutHelpOpen(false)} />
+    </>
   );
 }

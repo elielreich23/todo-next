@@ -12,17 +12,21 @@ import {
   createProfileDataFromUser,
 } from '../../../utils/profileCache';
 import { getUserDisplayName } from '../../../utils/formatters';
+import { api } from '../../../lib/api';
 import { API_ENDPOINTS, API_BASE_URL, DEFAULTS, CUSTOM_EVENTS, STORAGE_KEYS } from '../../../constants';
 import { getAccessToken } from '../../../utils/storage';
-import NotificationBell from '../../../components/NotificationBell/NotificationBell';
+import { saveProfileToCache } from '../../../utils/profileCache';
 
 export default function ProfilePage() {
-  const { user, isLoading: userLoading } = useUser();
+  const { user, setUser, isLoading: userLoading } = useUser();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('details');
   const [activeSubTab, setActiveSubTab] = useState('overview');
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveMessage, setSaveMessage] = useState(null);
 
   const [profileData, setProfileData] = useState(() => loadProfileFromCache());
   const [tempData, setTempData] = useState(() => loadProfileFromCache());
@@ -134,39 +138,72 @@ export default function ProfilePage() {
   }, []);
 
   const handleEditProfile = async () => {
-    if (isEditing) {
-      // Save changes
-      try {
-        // Build partial payload only with valid, non-empty values
-        const fullName = `${(tempData.firstName || '').trim()} ${(tempData.lastName || '').trim()}`.trim();
-        const payload = {};
-        if (fullName) payload.full_name = fullName;
-        if (tempData.username && tempData.username.trim()) payload.username = tempData.username.trim();
-        if (tempData.email && tempData.email.trim()) payload.email = tempData.email.trim();
-
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.PROFILE_UPDATE}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAccessToken()}`
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-          setProfileData({ ...tempData });
-          setIsEditing(false);
-          console.log('Profile updated successfully');
-        } else {
-          console.error('Failed to update profile');
-        }
-      } catch (error) {
-        console.error('Error updating profile:', error);
-      }
-    } else {
-      // Enter edit mode
+    if (!isEditing) {
       setTempData({ ...profileData });
       setIsEditing(true);
+      setSaveError(null);
+      setSaveMessage(null);
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveMessage(null);
+
+    try {
+      const fullName = `${(tempData.firstName || '').trim()} ${(tempData.lastName || '').trim()}`.trim();
+      const payload = {};
+
+      if (fullName) payload.full_name = fullName;
+      if (tempData.email?.trim()) payload.email = tempData.email.trim();
+      if (tempData.username?.trim()) payload.username = tempData.username.trim();
+
+      const hasLocalOnlyChanges =
+        tempData.phone !== profileData.phone ||
+        tempData.phoneCode !== profileData.phoneCode ||
+        tempData.city !== profileData.city ||
+        tempData.country !== profileData.country;
+
+      if (Object.keys(payload).length === 0 && !hasLocalOnlyChanges) {
+        setSaveError('No changes to save.');
+        return;
+      }
+
+      if (!user) {
+        throw new Error('You must be signed in to save your profile.');
+      }
+
+      let apiUser = user;
+
+      if (Object.keys(payload).length > 0) {
+        const response = await api(API_ENDPOINTS.AUTH.PROFILE_UPDATE, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+
+        if (!response?.success || !response?.user) {
+          throw new Error(response?.message || 'Failed to update profile');
+        }
+
+        apiUser = response.user;
+        setUser(response.user);
+      }
+
+      const location = [tempData.city, tempData.country].filter(Boolean).join(', ');
+      const updatedProfile = createProfileDataFromUser(apiUser, {
+        ...tempData,
+        location: location || tempData.location,
+      });
+
+      setProfileData(updatedProfile);
+      setTempData(updatedProfile);
+      saveProfileToCache(updatedProfile);
+      setIsEditing(false);
+      setSaveMessage('Profile saved successfully.');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save profile');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -180,6 +217,8 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setTempData({ ...profileData });
     setIsEditing(false);
+    setSaveError(null);
+    setSaveMessage(null);
   };
 
   useEffect(() => {
@@ -216,7 +255,6 @@ export default function ProfilePage() {
               <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/>
             </svg>
           </button>
-          <NotificationBell />
           <div className={styles.dateInfo}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" fill="currentColor"/>
@@ -421,25 +459,36 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {(saveError || saveMessage) && (
+              <p className={saveError ? styles.saveError : styles.saveSuccess} role="alert">
+                {saveError || saveMessage}
+              </p>
+            )}
+
             {/* Action Buttons */}
             <div className={styles.actionButtons}>
               {isEditing ? (
                 <>
                   <button
+                    type="button"
                     className={styles.cancelButton}
                     onClick={handleCancel}
+                    disabled={isSaving}
                   >
                     Cancel
                   </button>
                   <button
+                    type="button"
                     className={styles.saveButton}
                     onClick={handleEditProfile}
+                    disabled={isSaving}
                   >
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </>
               ) : (
                 <button
+                  type="button"
                   className={styles.editButton}
                   onClick={handleEditProfile}
                 >

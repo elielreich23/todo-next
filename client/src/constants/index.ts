@@ -40,6 +40,7 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refresh_token',
   CACHED_USER_DATA: 'cached_user_data',
   CACHED_USER_TIMESTAMP: 'cached_user_timestamp',
+  CACHED_PROFILE_DATA: 'cached_profile_data',
 } as const;
 
 // Cache Configuration
