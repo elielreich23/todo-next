@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../../contexts/UserContext";
-import styles from "./styles.module.css";
-import "../../../styles/global.scss";
-import Link from "next/link";
-import { API_BASE_URL, API_ENDPOINTS } from "../../../constants";
+import { api } from "../../../lib/api";
+import { API_ENDPOINTS } from "../../../constants";
+import AuthShell from "../../../components/auth/AuthShell";
+import styles from "../auth.module.css";
 
-function ForgotPasswordContent() {
+function ResetPasswordContent() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState("");
@@ -20,19 +21,14 @@ function ForgotPasswordContent() {
 
   const token = searchParams.get("token");
   const uid = searchParams.get("uid");
-  const hasToken = token && uid;
+  const hasToken = Boolean(token && uid);
+  const passwordsMatch = password.length > 0 && password === passwordConfirm;
 
   useEffect(() => {
-    // Redirect if already authenticated
     if (isAuthenticated) {
-      router.push("/dashboard");
-      return;
+      router.replace("/dashboard");
     }
-    // If no token/uid, show confirmation message
-    if (!hasToken) {
-      setSuccess(true);
-    }
-  }, [hasToken, isAuthenticated, router]);
+  }, [isAuthenticated, router]);
 
   if (isAuthenticated) {
     return null;
@@ -42,169 +38,173 @@ function ForgotPasswordContent() {
     e.preventDefault();
     setError("");
 
-    // Validate passwords match
-    if (password !== passwordConfirm) {
-      setError("Passwords don't match");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
       return;
     }
 
-    // Validate password length
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long");
+    if (!passwordsMatch) {
+      setError("Passwords do not match.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.AUTH.PASSWORD_RESET}`, {
+      const data = await api(API_ENDPOINTS.AUTH.PASSWORD_RESET, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
-          token: token,
-          uid: uid,
-          password: password,
+          token,
+          uid,
+          password,
           password_confirm: passwordConfirm,
         }),
       });
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setSuccess(true);
-        // Redirect to signin page after successful reset
-        setTimeout(() => {
-          router.push("/auth/signin");
-        }, 2000);
-      } else {
-        // Check for rate limit error
-        if (response.status === 429 || data.error === 'rate_limit_exceeded') {
-          setError(data.message || data.detail || "Too many password reset attempts. Please wait a moment before trying again.");
-        } else {
-          setError(data.message || data.errors?.password?.[0] || "Failed to reset password. Please try again.");
-        }
+      if (!data?.success) {
+        throw new Error(
+          data?.message || data?.errors?.password?.[0] || "Failed to reset password. Please try again."
+        );
       }
-    } catch (err) {
-      console.error("Password reset error:", err);
-      const errorMessage = err.message || err.toString();
 
-      if (errorMessage.includes('Too many requests') || errorMessage.includes('rate limit')) {
-        setError(`Too many password reset attempts. ${errorMessage.includes('wait') ? errorMessage.split('Too many requests. ')[1] || 'Please wait a moment before trying again.' : 'Please wait a moment before trying again.'}`);
-      } else if (errorMessage.includes("Network") || err.code === "ERR_NETWORK") {
-        setError("Network error: Cannot connect to server. Please check if the backend is running.");
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/auth/signin");
+      }, 2200);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "An error occurred. Please try again.";
+      if (message.includes("Too many requests") || message.includes("rate limit")) {
+        setError("Too many attempts. Please wait a few minutes and try again.");
+      } else if (message.includes("Invalid") || message.includes("expired")) {
+        setError("This reset link is invalid or expired. Request a new link from the forgot password page.");
+      } else if (message.includes("connect") || message.includes("Network")) {
+        setError("Cannot reach the server. Make sure the backend is running.");
       } else {
-        setError(errorMessage || "An error occurred. Please try again.");
+        setError(message);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Show confirmation message if no token
   if (!hasToken) {
     return (
-      <div className={styles.container}>
-        <div className={styles.confirmationContent}>
-          <h1 className={styles.title}>Check Your Email</h1>
-          <p className={styles.subtitle}>
-            An email was sent to you with instructions to reset your password.
-          </p>
-          <p className={styles.subtitleSmall}>
-            Please check your inbox and click on the reset link provided.
-          </p>
+      <AuthShell
+        headline="Check your email"
+        paragraph="Did not receive it?"
+        paragraphLink
+        paragraphLinkHref="/auth/forgetPwd"
+        paragraphLinkLabel="Try again"
+        formTitle="Almost there"
+        formSubtitle="We sent password reset instructions to your email if an account exists."
+        showTerms={false}
+      >
+        <div className={styles.iconSuccess} aria-hidden>
+          ✓
         </div>
-        <Link href="/auth/signin" className={styles.backLink}>
-          Back to Login
+        <p className={styles.hint}>
+          Open the link in the email to choose a new password. Links expire after 24 hours.
+        </p>
+        <Link href="/auth/signin" className={styles.primaryButton} style={{ display: "block", textAlign: "center", textDecoration: "none" }}>
+          Back to sign in
         </Link>
-      </div>
+      </AuthShell>
     );
   }
 
-  // Show reset password form if token is present
   return (
-    <div className={styles.container}>
-      <div className={styles.content}>
-        <h1 className={styles.formTitle}>Reset Password</h1>
-        <p className={styles.formSubtitle}>
-          Enter your new password below
-        </p>
-
-        {success && (
-          <div className={styles.success}>
-            Password reset successfully! Redirecting to login...
-          </div>
-        )}
-
-        {error && (
-          <div className={styles.error}>
-            {error}
-          </div>
-        )}
-
-        <form className={styles.form} onSubmit={handleResetPassword}>
-          <div className={styles.inputGroup}>
-            <label htmlFor="password" className={styles.label}>
-              New Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              className={styles.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter new password"
-              required
-              disabled={isLoading || success}
-            />
-          </div>
-
-          <div className={styles.inputGroup}>
-            <label htmlFor="passwordConfirm" className={styles.label}>
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="passwordConfirm"
-              className={styles.input}
-              value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
-              placeholder="Confirm new password"
-              required
-              disabled={isLoading || success}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className={styles.resetButton}
-            disabled={isLoading || success}
-          >
-            {isLoading ? "Resetting..." : success ? "Reset!" : "Reset Password"}
-          </button>
-        </form>
-
-        <div className={styles.footer}>
-          <Link href="/auth/signin" className={styles.footerLink}>
-            Back to Login
-          </Link>
+    <AuthShell
+      headline="New password"
+      paragraph="Back to"
+      paragraphLink
+      paragraphLinkHref="/auth/signin"
+      paragraphLinkLabel="Sign in"
+      formTitle="Create new password"
+      formSubtitle="Choose a strong password you have not used on Taskero before."
+      showTerms={false}
+    >
+      {error && <div className={styles.error} role="alert">{error}</div>}
+      {success && (
+        <div className={styles.success} role="status">
+          Password updated successfully. Redirecting you to sign in...
         </div>
-      </div>
-    </div>
+      )}
+
+      <form className={styles.form} onSubmit={handleResetPassword} noValidate>
+        <div className={styles.inputGroup}>
+          <label htmlFor="new-password" className={styles.inputLabel}>
+            New password
+          </label>
+          <input
+            id="new-password"
+            type="password"
+            className={styles.input}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 8 characters"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            disabled={isLoading || success}
+          />
+        </div>
+
+        <div className={styles.inputGroup}>
+          <label htmlFor="confirm-password" className={styles.inputLabel}>
+            Confirm password
+          </label>
+          <input
+            id="confirm-password"
+            type="password"
+            className={styles.input}
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
+            placeholder="Re-enter your password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            disabled={isLoading || success}
+          />
+        </div>
+
+        <div
+          className={`${styles.matchRow} ${passwordsMatch ? styles.matchRowValid : ""}`}
+          aria-live="polite"
+        >
+          <span className={`${styles.matchDot} ${passwordsMatch ? styles.matchDotValid : ""}`} />
+          {passwordsMatch ? "Passwords match" : "Passwords must match"}
+        </div>
+
+        <button
+          type="submit"
+          className={styles.primaryButton}
+          disabled={isLoading || success || !passwordsMatch || password.length < 8}
+        >
+          {isLoading ? "Saving..." : success ? "Saved" : "Update password"}
+        </button>
+      </form>
+
+      <p className={styles.formFooter}>
+        Link expired?
+        <Link href="/auth/forgetPwd" className={styles.formFooterLink}>
+          {" "}
+          Request a new one
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
 
-export default function ForgotPassword() {
+export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className={styles.container}>
-          <div className={styles.loading}>Loading...</div>
+        <div className={styles.container} style={{ alignItems: "center", justifyContent: "center", color: "#fff" }}>
+          Loading...
         </div>
       }
     >
-      <ForgotPasswordContent />
+      <ResetPasswordContent />
     </Suspense>
   );
 }

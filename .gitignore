@@ -17,6 +17,13 @@ client/node_modules/
 # Misc
 .DS_Store
 *.pem
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+backend/db.sqlite3
 
 # Debug
 npm-debug.log*

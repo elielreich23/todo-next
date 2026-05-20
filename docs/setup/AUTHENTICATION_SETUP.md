@@ -66,15 +66,17 @@ By default, password reset emails are printed to the console. No additional setu
 3. Add to backend `.env`:
 
 ```bash
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your-email@gmail.com
 EMAIL_HOST_PASSWORD=your-16-char-app-password
-DEFAULT_FROM_EMAIL=noreply@taskero.com
+DEFAULT_FROM_EMAIL=your-email@gmail.com
 FRONTEND_URL=https://your-production-domain.com
+PASSWORD_RESET_DEBUG_TOKENS=False
 ```
+
+When `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` are set, the backend uses Django's SMTP email backend automatically. Without those credentials, local development still prints reset emails to the Django console.
 
 #### Other Email Providers
 

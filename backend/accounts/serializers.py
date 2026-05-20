@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
+from .email_utils import normalize_account_email
 from .models import User, UserSession
 
 
@@ -20,8 +21,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         fields = ["username", "email", "full_name", "password", "password_confirm"]
 
     def validate(self, attrs):
+        attrs["email"] = normalize_account_email(attrs["email"])
         if attrs["password"] != attrs["password_confirm"]:
             raise serializers.ValidationError("Passwords don't match")
+        if User.objects.filter(email=attrs["email"]).exists():
+            raise serializers.ValidationError({"email": "An account with this email already exists"})
         return attrs
 
     def create(self, validated_data):
@@ -50,7 +54,7 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField()
 
     def validate(self, attrs):
-        email = attrs.get("email")
+        email = normalize_account_email(attrs.get("email"))
         password = attrs.get("password")
 
         if email and password:
@@ -67,6 +71,9 @@ class UserLoginSerializer(serializers.Serializer):
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+    def validate_email(self, value):
+        return normalize_account_email(value)
 
 
 class PasswordResetSerializer(serializers.Serializer):

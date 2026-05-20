@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .email_utils import normalize_account_email
 from .google_auth import verify_google_token
 from .models import User, UserSession
 from .serializers import (
@@ -309,9 +310,8 @@ Tasker Team
         {
             "success": True,
             "message": "If an account with this email exists, a password reset link has been sent.",
-            # Include token in response for development (remove in production or use email only)
-            "token": token if settings.DEBUG else None,
-            "uid": uid if settings.DEBUG else None,
+            "token": token if getattr(settings, "PASSWORD_RESET_DEBUG_TOKENS", False) else None,
+            "uid": uid if getattr(settings, "PASSWORD_RESET_DEBUG_TOKENS", False) else None,
         },
         status=status.HTTP_200_OK,
     )
@@ -371,7 +371,7 @@ def google_auth(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    email = google_user_info.get("email")
+    email = normalize_account_email(google_user_info.get("email"))
     if not email or not google_user_info.get("email_verified"):
         return Response(
             {"success": False, "message": "Email not verified by Google"},
