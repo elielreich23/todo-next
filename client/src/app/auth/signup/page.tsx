@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '../../../contexts/UserContext';
 import GoogleSignIn from '../../../components/GoogleSignIn/GoogleSignIn';
+import { signInWithGoogle } from '../../../lib/supabase';
 
 const USER_REGEX = /^[A-z][A-z0-9-_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
@@ -24,7 +25,7 @@ export default function Signup() {
   const [passwordError, setPasswordError] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const router = useRouter();
-  const { remoteSignup, googleAuth, isAuthenticated, isLoading: userLoading, user } = useUser();
+  const { remoteSignup, isAuthenticated, isLoading: userLoading, user } = useUser();
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -224,7 +225,7 @@ export default function Signup() {
           <form className={styles.form} onSubmit={handleSignup} noValidate>
             {/* Google Signup Button */}
             <GoogleSignIn
-                onSuccess={async (credential: string) => {
+                onClick={async () => {
                   // Prevent duplicate Google signup attempts
                   if (isSubmittingRef.current || isSigningUp || isGoogleLoading) {
                     console.log('Google signup already in progress, ignoring duplicate');
@@ -236,8 +237,11 @@ export default function Signup() {
                   setError('');
                   try {
                     setIsSigningUp(true);
-                    await googleAuth(credential);
-                    // UserContext and useEffect will handle redirect
+                    const { error: supabaseError } = await signInWithGoogle({ flow: 'signup' });
+
+                    if (supabaseError) {
+                      throw supabaseError;
+                    }
                   } catch (err: any) {
                     setIsSigningUp(false);
                     isSubmittingRef.current = false;

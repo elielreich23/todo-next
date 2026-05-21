@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '../../../contexts/UserContext';
 import GoogleSignIn from '../../../components/GoogleSignIn/GoogleSignIn';
+import { signInWithGoogle } from '../../../lib/supabase';
 import styles from './styles.module.css';
 
 export default function SignInPage() {
@@ -13,8 +14,15 @@ export default function SignInPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { remoteLogin, googleAuth, isAuthenticated } = useUser();
+  const searchParams = useSearchParams();
+  const { remoteLogin, isAuthenticated } = useUser();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('reason') === 'account-exists') {
+      setError('An account already exists for that Google email. Please sign in instead.');
+    }
+  }, [searchParams]);
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -62,12 +70,15 @@ export default function SignInPage() {
     }
   };
 
-  const handleGoogleSignIn = async (credential) => {
+  const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     setError('');
     try {
-      await googleAuth(credential);
-      router.push('/dashboard');
+      const { error: supabaseError } = await signInWithGoogle({ flow: 'signin' });
+
+      if (supabaseError) {
+        throw supabaseError;
+      }
     } catch (err) {
       console.error('Google signin error:', err);
       const errorMessage = err.message || err.toString();
@@ -130,7 +141,7 @@ export default function SignInPage() {
           <form className={styles.form} onSubmit={handleSubmit}>
             {/* Google Signin Button */}
             <GoogleSignIn
-                onSuccess={handleGoogleSignIn}
+                onClick={handleGoogleSignIn}
                 onError={(errorMessage) => {
                   setError(errorMessage);
                   setIsGoogleLoading(false);

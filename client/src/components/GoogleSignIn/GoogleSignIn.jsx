@@ -1,19 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './GoogleSignIn.module.scss';
 
 /**
  * Google Sign-In Button Component
  * Custom styled button that integrates with Google Identity Services
+ *
+ * @param {{
+ *   onSuccess?: ((credential: string) => Promise<void> | void) | null,
+ *   onError?: ((message: string) => void) | null,
+ *   onClick?: (() => Promise<void> | void) | null,
+ *   disabled?: boolean
+ * }} props
  */
-export default function GoogleSignIn({ onSuccess, onError, disabled = false }) {
+export default function GoogleSignIn({
+  onSuccess = null,
+  onError = null,
+  onClick = null,
+  disabled = false,
+}) {
   const containerRef = useRef(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+  const usesCustomClick = typeof onClick === 'function';
 
-  const handleCredentialResponse = async (response) => {
+  const handleCredentialResponse = useCallback(async (response) => {
     setIsLoading(true);
     try {
       if (onSuccess) {
@@ -27,9 +40,14 @@ export default function GoogleSignIn({ onSuccess, onError, disabled = false }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [onError, onSuccess]);
 
   useEffect(() => {
+    if (usesCustomClick) {
+      setIsInitialized(true);
+      return;
+    }
+
     if (!GOOGLE_CLIENT_ID) {
       return;
     }
@@ -110,7 +128,32 @@ export default function GoogleSignIn({ onSuccess, onError, disabled = false }) {
     };
 
     loadGoogleScript();
-  }, [GOOGLE_CLIENT_ID]);
+  }, [GOOGLE_CLIENT_ID, handleCredentialResponse, onError, usesCustomClick]);
+
+  const handleButtonClick = async () => {
+    if (usesCustomClick) {
+      setIsLoading(true);
+      try {
+        await onClick();
+      } catch (error) {
+        console.error('Google Sign-In click error:', error);
+        if (onError) {
+          onError(error.message || 'Google Sign-In failed. Please try again.');
+        }
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    const googleButton = containerRef.current?.querySelector('div[role="button"]');
+    if (googleButton) {
+      googleButton.click();
+    }
+  };
+
+  const isReady = usesCustomClick || isInitialized;
+  const isDisabled = disabled || isLoading || !isReady || (!usesCustomClick && !GOOGLE_CLIENT_ID);
 
   return (
     <div className={styles.wrapper}>
@@ -127,15 +170,10 @@ export default function GoogleSignIn({ onSuccess, onError, disabled = false }) {
         {/* Custom styled overlay button */}
         <button
           type="button"
-          className={`${styles.customButton} ${disabled || isLoading || !isInitialized ? styles.disabled : ''}`}
-          disabled={disabled || isLoading || !GOOGLE_CLIENT_ID || !isInitialized}
+          className={`${styles.customButton} ${isDisabled ? styles.disabled : ''}`}
+          disabled={isDisabled}
           aria-label="Continue with Google"
-          onClick={() => {
-            const googleButton = containerRef.current?.querySelector('div[role="button"]');
-            if (googleButton) {
-              googleButton.click();
-            }
-          }}
+          onClick={handleButtonClick}
         >
           {isLoading ? (
             <>
@@ -156,7 +194,7 @@ export default function GoogleSignIn({ onSuccess, onError, disabled = false }) {
         </button>
       </div>
 
-      {!GOOGLE_CLIENT_ID && (
+      {!usesCustomClick && !GOOGLE_CLIENT_ID && (
         <p className={styles.configWarning}>
 
         </p>

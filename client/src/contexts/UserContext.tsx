@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { api, refreshToken } from '../lib/api';
+import { supabase } from '../lib/supabase';
 import { getCachedUserData, setCachedUserData, clearCachedUserData, getStorageItem } from '../utils/storage';
 import { CACHE_DURATION, CUSTOM_EVENTS, STORAGE_KEYS, API_ENDPOINTS } from '../constants';
 import { setAccessToken, setRefreshToken, clearAuthTokens, getAccessToken, getRefreshToken } from '../utils/storage';
@@ -9,7 +10,7 @@ import { setAccessToken, setRefreshToken, clearAuthTokens, getAccessToken, getRe
 // -------------------- TYPES --------------------
 
 interface User {
-  id: number;
+  id: number | string;
   username: string;
   email: string;
   full_name: string;
@@ -81,6 +82,25 @@ const saveUserToCache = (userData: User | null): void => {
   if (userData) {
     setCachedUserData(userData);
   }
+};
+
+const mapSupabaseUser = (supabaseUser: any): User | null => {
+  if (!supabaseUser) {
+    return null;
+  }
+
+  const displayName =
+    supabaseUser.user_metadata?.full_name ||
+    supabaseUser.user_metadata?.name ||
+    supabaseUser.email?.split('@')[0] ||
+    'User';
+
+  return {
+    id: supabaseUser.id,
+    username: supabaseUser.email?.split('@')[0] || supabaseUser.id,
+    email: supabaseUser.email || '',
+    full_name: displayName,
+  };
 };
 
 /**
@@ -194,6 +214,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         } else if (cachedUser) {
           setUserState(prev => prev || cachedUser);
         } else if (!accessToken) {
+          const { data } = await supabase.auth.getSession();
+          const supabaseUser = mapSupabaseUser(data.session?.user);
+
+          if (supabaseUser) {
+            setUserState(supabaseUser);
+            saveUserToCache(supabaseUser);
+            return;
+          }
+
           clearAuthTokens();
         }
       } catch (error) {
@@ -281,6 +310,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
+      await supabase.auth.signOut();
       clearAuthTokens();
       sessionStorage.clear();
       localStorage.removeItem('session_id');
@@ -301,6 +331,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const refreshTokenValue = getRefreshToken();
 
       if (!accessToken || !refreshTokenValue) {
+        const { data } = await supabase.auth.getSession();
+        const supabaseUser = mapSupabaseUser(data.session?.user);
+
+        if (supabaseUser) {
+          setUserState(supabaseUser);
+          saveUserToCache(supabaseUser);
+          return true;
+        }
+
         return false;
       }
 
