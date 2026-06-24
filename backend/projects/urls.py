@@ -17,6 +17,12 @@ urlpatterns = [
     path("tasks/<int:task_id>/attachments/<int:attachment_id>/", views.task_attachment_detail, name="task_attachment_detail"),
     # Statistics URLs
     path("statistics/", views.statistics_overview, name="statistics_overview"),
+    # Standalone upload URLs
+    path("uploads/", views.upload_list_create, name="upload_list_create"),
+    path("uploads/<int:upload_id>/", views.upload_detail, name="upload_detail"),
+    # Calendar URLs
+    path("calendar/events/", views.calendar_event_list_create, name="calendar_event_list_create"),
+    path("calendar/events/<int:event_id>/", views.calendar_event_detail, name="calendar_event_detail"),
     # Notification URLs
     path("notifications/", notification_views.list_notifications, name="list_notifications"),
     path("notifications/unread/", notification_views.unread_notifications, name="unread_notifications"),

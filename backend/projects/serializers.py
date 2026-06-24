@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Project, Task, TaskAttachment, TaskComment
+from .models import CalendarEvent, Project, Task, TaskAttachment, TaskComment, UserUpload
 
 
 class UserLiteSerializer(serializers.ModelSerializer):
@@ -131,3 +131,40 @@ class TaskAttachmentSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.file.url)
             return obj.file.url
         return None
+
+
+class UserUploadSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserUpload
+        fields = ["id", "file", "file_url", "name", "file_size", "file_type", "preview", "created_at"]
+        read_only_fields = ["id", "file_url", "file_size", "file_type", "preview", "created_at"]
+
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+
+class CalendarEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CalendarEvent
+        fields = [
+            "id",
+            "title",
+            "start",
+            "end",
+            "link",
+            "guests",
+            "description",
+            "color",
+            "external_provider",
+            "external_id",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "external_provider", "external_id", "created_at", "updated_at"]

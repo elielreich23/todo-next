@@ -22,7 +22,7 @@ from .cache import (
     invalidate_project_cache,
     invalidate_task_cache,
 )
-from .models import Project, Task, TaskAttachment, TaskComment
+from .models import CalendarEvent, Project, Task, TaskAttachment, TaskComment, UserUpload
 from .notifications import (
     create_task_completed_notifications,
     create_task_update_notifications,
@@ -31,12 +31,14 @@ from .notifications import (
 )
 from .pagination import AttachmentPagination, CommentPagination, ProjectPagination, TaskPagination
 from .serializers import (
+    CalendarEventSerializer,
     ProjectCreateUpdateSerializer,
     ProjectSerializer,
     TaskAttachmentSerializer,
     TaskCommentSerializer,
     TaskCreateUpdateSerializer,
     TaskSerializer,
+    UserUploadSerializer,
 )
 
 
@@ -437,7 +439,7 @@ def task_attachments_list_create(request, task_id):
 
     if request.method == "GET":
         # Use optimized queryset with select_related
-        attachments = TaskAttachment.objects.filter(task=task).select_related("uploaded_by", "task").order_by("-uploaded_at")
+        attachments = TaskAttachment.objects.filter(task=task).select_related("uploaded_by", "task").order_by("-created_at")
 
         # Apply pagination
         paginator = AttachmentPagination()
@@ -610,3 +612,116 @@ def statistics_overview(request):
     cache_statistics(user.id, stats_data)
 
     return Response({"success": True, "statistics": stats_data})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def upload_list_create(request):
+    """List standalone user uploads or persist a new upload."""
+    if request.method == "GET":
+        uploads = UserUpload.objects.filter(owner=request.user).order_by("-created_at")
+        serializer = UserUploadSerializer(uploads, many=True, context={"request": request})
+        return Response({"success": True, "uploads": serializer.data})
+
+    if "file" not in request.FILES:
+        return Response({"success": False, "message": "No file provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+    file = request.FILES["file"]
+    name = request.data.get("name", file.name)
+
+    if file.size > 50 * 1024 * 1024:
+        return Response({"success": False, "message": "File size exceeds 50 MB limit"}, status=status.HTTP_400_BAD_REQUEST)
+
+    allowed_types = {"text/csv", "application/vnd.ms-excel", "text/plain"}
+    if file.content_type and file.content_type not in allowed_types:
+        return Response(
+            {"success": False, "message": "Only CSV or plain text uploads are supported"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    preview = ""
+    try:
+        chunks = []
+        for chunk in file.chunks():
+            chunks.append(chunk)
+            if sum(len(item) for item in chunks) >= 8192:
+                break
+        preview = b"".join(chunks).decode("utf-8", errors="replace").splitlines()[:10]
+        preview = "\n".join(preview)
+        file.seek(0)
+    except Exception:
+        preview = ""
+
+    upload = UserUpload.objects.create(
+        owner=request.user,
+        file=file,
+        name=name,
+        file_size=file.size,
+        file_type=file.content_type or "",
+        preview=preview,
+    )
+
+    serializer = UserUploadSerializer(upload, context={"request": request})
+    return Response({"success": True, "upload": serializer.data}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "DELETE"])
+@permission_classes([IsAuthenticated])
+def upload_detail(request, upload_id):
+    """Download or delete a standalone user upload."""
+    try:
+        upload = UserUpload.objects.get(pk=upload_id, owner=request.user)
+    except UserUpload.DoesNotExist:
+        return Response({"success": False, "message": "Upload not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        try:
+            return FileResponse(upload.file.open(), as_attachment=True, filename=upload.name)
+        except FileNotFoundError:
+            return Response({"success": False, "message": "File not found on server"}, status=status.HTTP_404_NOT_FOUND)
+
+    upload.file.delete()
+    upload.delete()
+    return Response({"success": True, "message": "Upload deleted successfully"})
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def calendar_event_list_create(request):
+    """List or create custom calendar events for the authenticated user."""
+    if request.method == "GET":
+        events = CalendarEvent.objects.filter(owner=request.user).order_by("start", "created_at")
+        serializer = CalendarEventSerializer(events, many=True)
+        return Response({"success": True, "events": serializer.data})
+
+    serializer = CalendarEventSerializer(data=request.data)
+    if serializer.is_valid():
+        event = serializer.save(owner=request.user)
+        return Response(
+            {"success": True, "message": "Calendar event created successfully", "event": CalendarEventSerializer(event).data},
+            status=status.HTTP_201_CREATED,
+        )
+
+    return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAuthenticated])
+def calendar_event_detail(request, event_id):
+    """Retrieve, update, or delete a custom calendar event."""
+    try:
+        event = CalendarEvent.objects.get(pk=event_id, owner=request.user)
+    except CalendarEvent.DoesNotExist:
+        return Response({"success": False, "message": "Calendar event not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        return Response({"success": True, "event": CalendarEventSerializer(event).data})
+
+    if request.method == "PUT":
+        serializer = CalendarEventSerializer(event, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"success": True, "message": "Calendar event updated successfully", "event": serializer.data})
+        return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    event.delete()
+    return Response({"success": True, "message": "Calendar event deleted successfully"})

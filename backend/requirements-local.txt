@@ -8,6 +8,8 @@ whitenoise==6.6.0
 dj-database-url==2.1.0
 zxcvbn==4.4.28
 google-auth==2.23.4
+cryptography>=42.0.0
+django-ratelimit==4.1.0
 # Note: psycopg2-binary and gunicorn are excluded for local development
 # psycopg2-binary is only needed for PostgreSQL (production)
 # gunicorn is only needed for production server deployment

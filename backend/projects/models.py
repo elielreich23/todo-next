@@ -119,3 +119,51 @@ class TaskAttachment(models.Model):
 
     def __str__(self):
         return f"{self.name} - Task {self.task.id}"
+
+
+class UserUpload(models.Model):
+    """Standalone files imported by a user from the uploads page."""
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="uploads")
+    file = models.FileField(upload_to="user_uploads/%Y/%m/%d/")
+    name = models.CharField(max_length=255)
+    file_size = models.BigIntegerField()
+    file_type = models.CharField(max_length=100, blank=True)
+    preview = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["owner", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.owner.email}"
+
+
+class CalendarEvent(models.Model):
+    """User-owned calendar events that are not backed by tasks."""
+
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="calendar_events")
+    title = models.CharField(max_length=255)
+    start = models.DateTimeField()
+    end = models.DateTimeField(blank=True, null=True)
+    link = models.URLField(blank=True)
+    guests = models.TextField(blank=True)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=7, default="#DBEAFE")
+    external_provider = models.CharField(max_length=40, blank=True)
+    external_id = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["start", "created_at"]
+        indexes = [
+            models.Index(fields=["owner", "start"]),
+            models.Index(fields=["external_provider", "external_id"]),
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.owner.email}"

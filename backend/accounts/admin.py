@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User, UserSession
+from .models import Team, TeamInvitation, TeamMembership, User, UserSession
 
 
 @admin.register(User)
@@ -53,3 +53,24 @@ class UserSessionAdmin(admin.ModelAdmin):
         ("Status", {"fields": ("is_current", "revoked", "revoked_at")}),
         ("Timestamps", {"fields": ("created_at", "last_activity", "expires_at")}),
     )
+
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ("name", "owner", "created_at", "updated_at")
+    search_fields = ("name", "owner__email", "owner__username")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(TeamMembership)
+class TeamMembershipAdmin(admin.ModelAdmin):
+    list_display = ("team", "user", "role", "created_at")
+    list_filter = ("role", "created_at")
+    search_fields = ("team__name", "user__email", "user__username")
+
+
+@admin.register(TeamInvitation)
+class TeamInvitationAdmin(admin.ModelAdmin):
+    list_display = ("email", "team", "role", "status", "invited_by", "created_at")
+    list_filter = ("role", "status", "created_at")
+    search_fields = ("email", "team__name", "invited_by__email")

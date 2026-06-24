@@ -26,3 +26,9 @@ class PasswordResetThrottle(AnonRateThrottle):
     """Stricter rate limit for password reset endpoint"""
 
     rate = "3/minute"
+
+
+class ContactThrottle(AnonRateThrottle):
+    """Rate limit for public landing-page contact submissions"""
+
+    rate = "5/hour"

@@ -221,8 +221,13 @@ default_email_backend = (
     if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
     else "django.core.mail.backends.console.EmailBackend"
 )
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", default_email_backend)
+# In DEBUG, default to console email so contact forms do not block on SMTP timeouts.
+if DEBUG and not os.getenv("EMAIL_BACKEND"):
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", default_email_backend)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@taskero.com")
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", DEFAULT_FROM_EMAIL)
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 PASSWORD_RESET_DEBUG_TOKENS = os.getenv("PASSWORD_RESET_DEBUG_TOKENS", "False").lower() == "true"
 

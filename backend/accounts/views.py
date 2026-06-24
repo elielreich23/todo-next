@@ -2,7 +2,9 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from django.core.exceptions import ValidationError
+from django.core.mail import get_connection, send_mail
+from django.core.validators import validate_email
 from django.db import models
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -17,19 +19,128 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .email_utils import normalize_account_email
 from .google_auth import verify_google_token
-from .models import User, UserSession
+from .models import Team, TeamInvitation, TeamMembership, User, UserSession
 from .serializers import (
     PasswordResetRequestSerializer,
     PasswordResetSerializer,
+    TeamInvitationSerializer,
+    TeamInviteSerializer,
+    TeamMembershipSerializer,
+    TeamRoleUpdateSerializer,
+    TeamSerializer,
     UserLoginSerializer,
     UserRegistrationSerializer,
     UserSerializer,
     UserSessionSerializer,
 )
 from .session_utils import create_user_session, revoke_all_sessions, revoke_user_session
-from .throttles import PasswordResetThrottle, SigninThrottle, SignupThrottle
+from .throttles import ContactThrottle, PasswordResetThrottle, SigninThrottle, SignupThrottle
 
 logger = logging.getLogger(__name__)
+
+
+def get_or_create_default_team(user):
+    """Return the user's first team, creating a personal workspace when needed."""
+    membership = TeamMembership.objects.filter(user=user).select_related("team").order_by("team__created_at").first()
+    if membership:
+        return membership.team
+
+    team = Team.objects.create(owner=user, name=f"{user.full_name or user.username}'s Team")
+    TeamMembership.objects.create(team=team, user=user, role=TeamMembership.ROLE_OWNER)
+    return team
+
+
+def get_membership(team, user):
+    return TeamMembership.objects.filter(team=team, user=user).first()
+
+
+def can_manage_team(team, user):
+    membership = get_membership(team, user)
+    return bool(membership and membership.role in [TeamMembership.ROLE_OWNER, TeamMembership.ROLE_ADMIN])
+
+
+def team_payload(team, user):
+    memberships = (
+        TeamMembership.objects.filter(team=team).select_related("user").order_by("role", "user__full_name", "user__email")
+    )
+    invitations = (
+        TeamInvitation.objects.filter(team=team, status=TeamInvitation.STATUS_PENDING)
+        .select_related("invited_by")
+        .order_by("-created_at")
+    )
+    current_membership = get_membership(team, user)
+    return {
+        "success": True,
+        "team": TeamSerializer(team).data,
+        "current_role": current_membership.role if current_membership else None,
+        "members": TeamMembershipSerializer(memberships, many=True).data,
+        "invitations": TeamInvitationSerializer(invitations, many=True).data,
+    }
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([ContactThrottle])
+def contact_message(request):
+    """Receive landing-page contact form submissions."""
+    full_name = str(request.data.get("full_name", "")).strip()
+    email = normalize_account_email(str(request.data.get("email", "")).strip())
+    organization = str(request.data.get("organization", "")).strip()
+    message = str(request.data.get("message", "")).strip()
+
+    errors = {}
+    if not full_name:
+        errors["full_name"] = ["Full name is required."]
+    if not email:
+        errors["email"] = ["Email address is required."]
+    else:
+        try:
+            validate_email(email)
+        except ValidationError:
+            errors["email"] = ["Enter a valid email address."]
+    if not message:
+        errors["message"] = ["Message is required."]
+
+    if errors:
+        return Response({"success": False, "errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    subject = f"New Tasker contact message from {full_name}"
+    body = f"""
+Name: {full_name}
+Email: {email}
+Organization: {organization or "Not provided"}
+
+Message:
+{message}
+"""
+
+    mail_connection = None
+    if settings.DEBUG:
+        mail_connection = get_connection(backend="django.core.mail.backends.console.EmailBackend")
+
+    try:
+        send_mail(
+            subject,
+            body,
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@tasker.com"),
+            recipient_list=[
+                getattr(
+                    settings,
+                    "CONTACT_EMAIL",
+                    getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@tasker.com"),
+                )
+            ],
+            fail_silently=False,
+            connection=mail_connection,
+        )
+    except Exception as e:
+        logger.error(f"Error sending contact message: {e}", exc_info=True)
+        return Response(
+            {"success": False, "message": "We could not send your message. Please try again later."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return Response({"success": True, "message": "Message sent successfully."}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -137,6 +248,139 @@ def update_profile(request):
         return Response({"success": True, "message": "Profile updated successfully", "user": serializer.data})
 
     return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def team_overview(request):
+    """Read or update the current user's default team."""
+    team = get_or_create_default_team(request.user)
+
+    if request.method == "GET":
+        return Response(team_payload(team, request.user))
+
+    if not can_manage_team(team, request.user):
+        return Response(
+            {"success": False, "message": "Only team owners and admins can update the team"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    serializer = TeamSerializer(team, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        team.refresh_from_db()
+        return Response(team_payload(team, request.user))
+
+    return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def invite_team_member(request):
+    """Create or refresh a pending team invitation."""
+    team = get_or_create_default_team(request.user)
+
+    if not can_manage_team(team, request.user):
+        return Response(
+            {"success": False, "message": "Only team owners and admins can invite members"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    serializer = TeamInviteSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    email = serializer.validated_data["email"]
+    role = serializer.validated_data["role"]
+
+    existing_user = User.objects.filter(email=email).first()
+    if existing_user and TeamMembership.objects.filter(team=team, user=existing_user).exists():
+        return Response(
+            {"success": False, "message": "That user is already a member of this team"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    invitation, _created = TeamInvitation.objects.update_or_create(
+        team=team,
+        email=email,
+        status=TeamInvitation.STATUS_PENDING,
+        defaults={"role": role, "invited_by": request.user},
+    )
+
+    try:
+        send_mail(
+            f"You've been invited to {team.name}",
+            f"{request.user.full_name or request.user.email} invited you to join {team.name} as {role}.",
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@tasker.com"),
+            recipient_list=[email],
+            fail_silently=True,
+        )
+    except Exception as e:
+        logger.info(f"Team invite email could not be sent: {e}")
+
+    return Response(
+        {"success": True, "invitation": TeamInvitationSerializer(invitation).data},
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def revoke_team_invitation(request, invitation_id):
+    """Revoke a pending invitation."""
+    team = get_or_create_default_team(request.user)
+
+    if not can_manage_team(team, request.user):
+        return Response(
+            {"success": False, "message": "Only team owners and admins can revoke invitations"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        invitation = TeamInvitation.objects.get(id=invitation_id, team=team, status=TeamInvitation.STATUS_PENDING)
+    except TeamInvitation.DoesNotExist:
+        return Response({"success": False, "message": "Invitation not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    invitation.status = TeamInvitation.STATUS_REVOKED
+    invitation.save(update_fields=["status", "updated_at"])
+    return Response({"success": True, "message": "Invitation revoked"})
+
+
+@api_view(["PUT", "DELETE"])
+@permission_classes([IsAuthenticated])
+def team_member_detail(request, membership_id):
+    """Change a member role or remove a member."""
+    team = get_or_create_default_team(request.user)
+    current_membership = get_membership(team, request.user)
+
+    if not current_membership or current_membership.role != TeamMembership.ROLE_OWNER:
+        return Response(
+            {"success": False, "message": "Only the team owner can manage member roles"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    try:
+        membership = TeamMembership.objects.select_related("user").get(id=membership_id, team=team)
+    except TeamMembership.DoesNotExist:
+        return Response({"success": False, "message": "Team member not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if membership.role == TeamMembership.ROLE_OWNER:
+        return Response(
+            {"success": False, "message": "The team owner cannot be modified here"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if request.method == "DELETE":
+        membership.delete()
+        return Response({"success": True, "message": "Team member removed"})
+
+    serializer = TeamRoleUpdateSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+    membership.role = serializer.validated_data["role"]
+    membership.save(update_fields=["role", "updated_at"])
+    return Response({"success": True, "member": TeamMembershipSerializer(membership).data})
 
 
 @api_view(["GET"])

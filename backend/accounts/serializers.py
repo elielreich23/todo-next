@@ -2,13 +2,13 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 
 from .email_utils import normalize_account_email
-from .models import User, UserSession
+from .models import Team, TeamInvitation, TeamMembership, User, UserSession
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "full_name"]
+        fields = ["id", "username", "email", "full_name", "phone_number", "bio", "notification_preferences"]
         read_only_fields = ["id"]
 
 
@@ -112,3 +112,43 @@ class UserSessionSerializer(serializers.ModelSerializer):
     def get_is_active(self, obj):
         """Check if session is still active"""
         return obj.is_active()
+
+
+class TeamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Team
+        fields = ["id", "name", "owner", "created_at", "updated_at"]
+        read_only_fields = ["id", "owner", "created_at", "updated_at"]
+
+
+class TeamMembershipSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = TeamMembership
+        fields = ["id", "user", "role", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "created_at", "updated_at"]
+
+
+class TeamInvitationSerializer(serializers.ModelSerializer):
+    invited_by = UserSerializer(read_only=True)
+
+    class Meta:
+        model = TeamInvitation
+        fields = ["id", "email", "role", "status", "invited_by", "created_at", "updated_at"]
+        read_only_fields = ["id", "status", "invited_by", "created_at", "updated_at"]
+
+
+class TeamInviteSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    role = serializers.ChoiceField(
+        choices=[TeamMembership.ROLE_ADMIN, TeamMembership.ROLE_MEMBER],
+        default=TeamMembership.ROLE_MEMBER,
+    )
+
+    def validate_email(self, value):
+        return normalize_account_email(value)
+
+
+class TeamRoleUpdateSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=[TeamMembership.ROLE_ADMIN, TeamMembership.ROLE_MEMBER])

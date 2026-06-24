@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Project, Task, TaskAttachment, TaskComment
+from .models import CalendarEvent, Project, Task, TaskAttachment, TaskComment, UserUpload
 
 
 @admin.register(Project)
@@ -53,3 +53,23 @@ class TaskAttachmentAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "file_size", "file_type")
     list_per_page = 25
     date_hierarchy = "created_at"
+
+
+@admin.register(UserUpload)
+class UserUploadAdmin(admin.ModelAdmin):
+    list_display = ("name", "owner", "file_size", "file_type", "created_at")
+    list_filter = ("created_at", "file_type")
+    search_fields = ("name", "owner__username", "owner__email")
+    readonly_fields = ("created_at", "file_size", "file_type", "preview")
+    list_per_page = 25
+    date_hierarchy = "created_at"
+
+
+@admin.register(CalendarEvent)
+class CalendarEventAdmin(admin.ModelAdmin):
+    list_display = ("title", "owner", "start", "end", "external_provider", "created_at")
+    list_filter = ("created_at", "updated_at", "external_provider")
+    search_fields = ("title", "description", "owner__username", "owner__email", "external_id")
+    readonly_fields = ("created_at", "updated_at")
+    list_per_page = 25
+    date_hierarchy = "start"
