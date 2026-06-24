@@ -23,6 +23,7 @@ export type Task = {
   title: string;
   dueDate?: string;
   status?: "todo" | "in-progress" | "done";
+  priority?: "high" | "medium" | "low";
   description?: string;
   project?: string;
   progress?: number;
@@ -34,6 +35,8 @@ export type Task = {
   duration?: string;
   notes?: string;
 };
+
+export type TaskPendingOperation = "creating" | "updating" | "deleting" | "moving";
 
 export type FileAttachment = {
   id: string;
@@ -67,21 +70,24 @@ type ProjectsContextType = {
   projects: Project[];
   tasks: Task[];
   isLoading: boolean;
+  pendingTaskOperations: Record<number, TaskPendingOperation>;
   selectedProjectId: number | null;
   selectProject: (id: number | null) => void;
   createProject: (data: Partial<Project>) => Project;
   createProjectAndWait: (data: Partial<Project>) => Promise<Project>;
   updateProject: (id: number, updates: Partial<Project>) => void;
-  createTask: (projectId: number, data: Partial<Task>) => Task;
-  updateTask: (id: number, updates: Partial<Task>) => void;
-  moveTaskStatus: (id: number, status: Task["status"]) => void;
+  createTask: (projectId: number, data: Partial<Task>) => Promise<Task>;
+  updateTask: (id: number, updates: Partial<Task>) => Promise<void>;
+  moveTaskStatus: (id: number, status: Task["status"]) => Promise<void>;
   deleteProject: (id: number) => void;
-  deleteTask: (id: number) => void;
+  deleteTask: (id: number) => Promise<void>;
   deleteTasksByStatus: (
     projectId: number,
     status: "all" | Task["status"]
   ) => void;
   getProjectTasks: (projectId: number) => Task[];
+  isTaskPending: (taskId: number) => boolean;
+  getTaskPendingOperation: (taskId: number) => TaskPendingOperation | undefined;
   addTaskAttachment: (taskId: number, file: File, uploadedBy: string) => void;
   removeTaskAttachment: (taskId: number, attachmentId: string) => void;
   addTaskComment: (taskId: number, text: string, author: string) => void;
@@ -219,6 +225,7 @@ const normalizeTask = (serverTask: any): Task => {
     title: serverTask.title,
     dueDate: serverTask.due_date ?? serverTask.dueDate,
     status: mapServerToClientStatus(serverTask.status),
+    priority: serverTask.priority || "medium",
     description: serverTask.description,
     project: serverTask.project_name ?? serverTask.project ?? undefined,
     progress: serverTask.progress ?? 0,
@@ -242,7 +249,34 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingTaskOperations, setPendingTaskOperations] = useState<
+    Record<number, TaskPendingOperation>
+  >({});
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+
+  const setTaskPending = useCallback(
+    (taskId: number, operation: TaskPendingOperation | null) => {
+      setPendingTaskOperations((prev) => {
+        if (!operation) {
+          const next = { ...prev };
+          delete next[taskId];
+          return next;
+        }
+        return { ...prev, [taskId]: operation };
+      });
+    },
+    []
+  );
+
+  const isTaskPending = useCallback(
+    (taskId: number) => taskId in pendingTaskOperations,
+    [pendingTaskOperations]
+  );
+
+  const getTaskPendingOperation = useCallback(
+    (taskId: number) => pendingTaskOperations[taskId],
+    [pendingTaskOperations]
+  );
 
   // Listen for logout events to clear data
   useEffect(() => {
@@ -515,7 +549,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   /**
    * Creates a task with optimistic update
    */
-  const createTask = useCallback((projectId: number, data: Partial<Task>): Task => {
+  const createTask = useCallback(async (projectId: number, data: Partial<Task>): Promise<Task> => {
     const OPTIMISTIC_ID_THRESHOLD = 1000000;
     const isRealProject = projects.some(
       (p) => p.id === projectId && p.id < OPTIMISTIC_ID_THRESHOLD
@@ -528,6 +562,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         title: data.title || "New Task",
         dueDate: data.dueDate,
         status: data.status || "todo",
+        priority: data.priority || "medium",
         description: data.description,
         project: data.project,
         progress: data.progress || 0,
@@ -540,6 +575,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         notes: data.notes,
       };
       setTasks((prev) => [tempTask, ...prev]);
+      setTaskPending(tempTask.id, "creating");
       return tempTask;
     };
 
@@ -557,59 +593,123 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       title: data.title || "New Task",
       description: data.description,
       status: mapClientToServerStatus(data.status) || "todo",
+      priority: data.priority || "medium",
       due_date: normalizeDueDateForServer(data.dueDate),
       assignee_ids: assigneeIds,
     };
 
     const tempTask = createOptimisticTask();
 
-    api<{ success: boolean; task: Task }>("/api/tasks/", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    })
-      .then((response) => {
-        if (response.success) {
-          setTasks((prev) => [
-            normalizeTask(response.task),
-            ...prev.filter((t) => t.id !== tempTask.id),
-          ]);
-        }
-      })
-      .catch((error) => {
-        console.error('Task creation failed:', error);
+    try {
+      const response = await api<{ success: boolean; task: Task }>("/api/tasks/", {
+        method: "POST",
+        body: JSON.stringify(payload),
       });
 
-    return tempTask;
-  }, [projects]);
+      if (response.success) {
+        setTasks((prev) => [
+          normalizeTask(response.task),
+          ...prev.filter((t) => t.id !== tempTask.id),
+        ]);
+        setTaskPending(tempTask.id, null);
+        return normalizeTask(response.task);
+      }
+
+      setTasks((prev) => prev.filter((t) => t.id !== tempTask.id));
+      setTaskPending(tempTask.id, null);
+      throw new Error('Failed to create task.');
+    } catch (error) {
+      console.error('Task creation failed:', error);
+      setTasks((prev) => prev.filter((t) => t.id !== tempTask.id));
+      setTaskPending(tempTask.id, null);
+      throw error;
+    }
+  }, [projects, setTaskPending]);
 
   /**
    * Updates a task
    */
-  const updateTask = useCallback((id: number, updates: Partial<Task>) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
-    );
+  const updateTask = useCallback(async (id: number, updates: Partial<Task>): Promise<void> => {
+    let previousTask: Task | undefined;
+    setTasks((prev) => {
+      previousTask = prev.find((t) => t.id === id);
+      return prev.map((t) => (t.id === id ? { ...t, ...updates } : t));
+    });
 
-    api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
-      method: "PUT",
-      body: JSON.stringify(updates),
-    }).catch(() => {});
-  }, []);
+    setTaskPending(id, "updating");
+
+    const serverPayload: Record<string, unknown> = { ...updates };
+    if (updates.status) {
+      serverPayload.status = mapClientToServerStatus(updates.status);
+    }
+    if (updates.dueDate !== undefined) {
+      serverPayload.due_date = normalizeDueDateForServer(updates.dueDate);
+      delete serverPayload.dueDate;
+    }
+    if (updates.projectId !== undefined) {
+      serverPayload.project = updates.projectId;
+      delete serverPayload.projectId;
+    }
+
+    try {
+      const response = await api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
+        method: "PUT",
+        body: JSON.stringify(serverPayload),
+      });
+
+      if (response.success) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === id ? normalizeTask(response.task) : t))
+        );
+      }
+    } catch (error) {
+      if (previousTask) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === id ? previousTask! : t))
+        );
+      }
+      throw error;
+    } finally {
+      setTaskPending(id, null);
+    }
+  }, [setTaskPending]);
 
   /**
    * Moves a task to a different status
    */
-  const moveTaskStatus = useCallback((id: number, status: Task["status"]) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status } : t))
-    );
+  const moveTaskStatus = useCallback(async (id: number, status: Task["status"]): Promise<void> => {
+    let previousStatus: Task["status"] | undefined;
+    setTasks((prev) => {
+      previousStatus = prev.find((t) => t.id === id)?.status;
+      return prev.map((t) => (t.id === id ? { ...t, status } : t));
+    });
+
+    setTaskPending(id, "moving");
 
     const serverStatus = mapClientToServerStatus(status);
-    api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
-      method: "PUT",
-      body: JSON.stringify({ status: serverStatus }),
-    }).catch(() => {});
-  }, []);
+
+    try {
+      const response = await api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
+        method: "PUT",
+        body: JSON.stringify({ status: serverStatus }),
+      });
+
+      if (response.success) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === id ? normalizeTask(response.task) : t))
+        );
+      }
+    } catch (error) {
+      if (previousStatus) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, status: previousStatus } : t))
+        );
+      }
+      throw error;
+    } finally {
+      setTaskPending(id, null);
+    }
+  }, [setTaskPending]);
 
   /**
    * Deletes a project
@@ -624,10 +724,26 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   /**
    * Deletes a task
    */
-  const deleteTask = useCallback((id: number) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-    api<void>(`/api/tasks/${id}/`, { method: "DELETE" }).catch(() => {});
-  }, []);
+  const deleteTask = useCallback(async (id: number): Promise<void> => {
+    let deletedTask: Task | undefined;
+    setTasks((prev) => {
+      deletedTask = prev.find((t) => t.id === id);
+      return prev.filter((t) => t.id !== id);
+    });
+
+    setTaskPending(id, "deleting");
+
+    try {
+      await api<void>(`/api/tasks/${id}/`, { method: "DELETE" });
+    } catch (error) {
+      if (deletedTask) {
+        setTasks((prev) => [deletedTask!, ...prev]);
+      }
+      throw error;
+    } finally {
+      setTaskPending(id, null);
+    }
+  }, [setTaskPending]);
 
   const deleteTasksByStatus = (
     projectId: number,
@@ -862,6 +978,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       projects,
       tasks,
       isLoading,
+      pendingTaskOperations,
       selectedProjectId,
       selectProject,
       createProject,
@@ -874,6 +991,8 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       deleteTask,
       deleteTasksByStatus,
       getProjectTasks,
+      isTaskPending,
+      getTaskPendingOperation,
       addTaskAttachment,
       removeTaskAttachment,
       addTaskComment,
@@ -881,7 +1000,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       deleteTaskComment,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projects, tasks, isLoading, selectedProjectId]
+    [projects, tasks, isLoading, pendingTaskOperations, selectedProjectId]
   );
 
   return (

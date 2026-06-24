@@ -38,8 +38,6 @@ export const useSessionTimeout = () => {
 
       // Set new timeout
       timeoutRef.current = setTimeout(() => {
-        // Session expired due to inactivity
-        console.log('Session expired due to inactivity');
         logout();
         router.push('/auth/signin');
       }, SESSION_TIMEOUT_MS);

@@ -4,7 +4,6 @@
 
 export function registerServiceWorker() {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-    console.log('Service Worker not supported');
     return;
   }
 
@@ -12,17 +11,12 @@ export function registerServiceWorker() {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('Service Worker registered:', registration.scope);
-
-        // Check for updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New service worker available
-                console.log('New service worker available');
-                // You can show a notification to the user here
+                // New service worker available — page reload handled by controllerchange
               }
             });
           }

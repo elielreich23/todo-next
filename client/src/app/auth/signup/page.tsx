@@ -93,7 +93,6 @@ export default function Signup() {
 
     // Prevent multiple simultaneous signup attempts (React StrictMode protection)
     if (isSubmittingRef.current || isLoading || isSigningUp) {
-      console.log('Signup already in progress, ignoring duplicate submission');
       return;
     }
 
@@ -105,7 +104,6 @@ export default function Signup() {
       const lastSubmissionTime = parseInt(lastSubmissionRef.current.split('-')[0]);
       const timeSinceLastSubmission = Date.now() - lastSubmissionTime;
       if (timeSinceLastSubmission < 2000) {
-        console.log('Duplicate submission detected, ignoring');
         return;
       }
     }
@@ -141,9 +139,7 @@ export default function Signup() {
 
     try {
       setIsSigningUp(true);
-      console.log("Attempting to signup with:", { fullName, username, email });
 
-      // Send signup request to our Django backend
       await remoteSignup({
         username: username.trim(),
         email: email.trim(),
@@ -153,7 +149,6 @@ export default function Signup() {
       });
 
       setError("");
-      console.log("Signup successful, user data cached, waiting for context to update...");
 
       // Wait for user context to finish loading and user to be available
       // The useEffect will handle the redirect once user is ready
@@ -228,7 +223,6 @@ export default function Signup() {
                 onClick={async () => {
                   // Prevent duplicate Google signup attempts
                   if (isSubmittingRef.current || isSigningUp || isGoogleLoading) {
-                    console.log('Google signup already in progress, ignoring duplicate');
                     return;
                   }
 

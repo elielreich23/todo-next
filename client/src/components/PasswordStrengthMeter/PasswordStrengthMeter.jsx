@@ -81,9 +81,6 @@ const PasswordStrengthMeter = memo(function PasswordStrengthMeter({
         throw new Error('Invalid response format');
       }
     } catch (error) {
-      // Log the error for debugging, but don't show to user
-      console.error('Error checking password strength:', error);
-      console.log('Falling back to client-side validation for password:', pwd.substring(0, 3) + '...');
       // Fallback: use basic client-side validation
       const basicScore = calculateBasicStrength(pwd);
       const basicLabel = getStrengthLabel(basicScore);

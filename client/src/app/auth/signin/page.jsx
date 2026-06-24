@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '../../../contexts/UserContext';
@@ -8,7 +8,7 @@ import GoogleSignIn from '../../../components/GoogleSignIn/GoogleSignIn';
 import { signInWithGoogle } from '../../../lib/supabase';
 import styles from './styles.module.css';
 
-export default function SignInPage() {
+function SignInContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,7 +41,6 @@ export default function SignInPage() {
         password: password
       });
 
-      // If we get here, login was successful
       router.push('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
@@ -99,7 +98,6 @@ export default function SignInPage() {
 
   return (
     <div className={styles.container}>
-      {/* Left Section - Welcome Message */}
       <div className={styles.left}>
         <div className={styles.logo}>taskers</div>
 
@@ -112,26 +110,22 @@ export default function SignInPage() {
           </Link>
         </p>
 
-        {/* Decorative circles */}
         <div className={styles.circle1}></div>
         <div className={styles.circle2}></div>
         <div className={styles.circle3}></div>
         <div className={styles.circle4}></div>
 
-        {/* Terms and Policy */}
         <div className={styles.terms}>
           <p>By clicking sign in or continue with Google,</p>
           <p>You agree to our <Link href="/terms">Terms of use</Link> and <Link href="/policy">policy</Link></p>
         </div>
       </div>
 
-      {/* Right Section - Signin Form */}
       <div className={styles.right}>
         <div className={styles.formContainer}>
           <h2 className={styles.formTitle}>Sign in</h2>
           <p className={styles.formSubtitle}>All in one platform to get tasks done</p>
 
-          {/* Error Display */}
           {error && (
             <div className={styles.error}>
               {error}
@@ -139,7 +133,6 @@ export default function SignInPage() {
           )}
 
           <form className={styles.form} onSubmit={handleSubmit}>
-            {/* Google Signin Button */}
             <GoogleSignIn
                 onClick={handleGoogleSignIn}
                 onError={(errorMessage) => {
@@ -149,7 +142,6 @@ export default function SignInPage() {
                 disabled={isLoading || isGoogleLoading}
               />
 
-            {/* Email Input */}
             <div className={styles.inputGroup}>
               <label className={styles.inputLabel}>Email Address</label>
               <input
@@ -163,7 +155,6 @@ export default function SignInPage() {
               />
             </div>
 
-            {/* Password Input */}
             <div className={styles.inputGroup}>
               <label className={styles.inputLabel}>Password</label>
               <input
@@ -177,7 +168,6 @@ export default function SignInPage() {
               />
             </div>
 
-            {/* Forgot Password Link */}
             <div className={styles.forgotPassword}>
               <span>Forgot password? </span>
               <Link href="/auth/forgetPwd" className={styles.forgotPasswordLink}>
@@ -185,7 +175,6 @@ export default function SignInPage() {
               </Link>
             </div>
 
-            {/* Login Button */}
             <button
               type="submit"
               className={styles.loginButton}
@@ -195,7 +184,6 @@ export default function SignInPage() {
             </button>
           </form>
 
-          {/* Helpful signup guidance */}
           <div className={styles.signupGuidance}>
             <p>
               New to Taskers?
@@ -207,5 +195,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<div className={styles.container} aria-busy="true" />}>
+      <SignInContent />
+    </Suspense>
   );
 }

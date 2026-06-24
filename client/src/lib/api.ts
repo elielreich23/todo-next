@@ -238,7 +238,6 @@ export async function api<T>(path: string, init?: RequestInit, useCache: boolean
     // Check if there's already a pending request with the same key
     const pendingRequest = pendingRequests.get(requestKey);
     if (pendingRequest) {
-      console.log('Duplicate request detected, reusing pending request:', requestKey);
       return pendingRequest as Promise<T>;
     }
   }
@@ -345,7 +344,6 @@ export const refreshToken = async (): Promise<string | null> => {
   try {
     const refreshTokenValue = getRefreshToken();
     if (!refreshTokenValue) {
-      console.log('No refresh token available');
       return null;
     }
 
@@ -361,7 +359,6 @@ export const refreshToken = async (): Promise<string | null> => {
       const data = await response.json();
       if (data.access) {
         setAccessToken(data.access);
-        console.log('Token refreshed successfully');
         return data.access;
       } else {
         console.error('Token refresh response missing access token');
@@ -369,7 +366,6 @@ export const refreshToken = async (): Promise<string | null> => {
       }
     } else {
       // Refresh failed, clear tokens and trigger logout
-      console.log('Token refresh failed with status:', response.status);
       clearAuthTokens();
       sessionStorage.clear();
 

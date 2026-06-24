@@ -7,6 +7,7 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 export const API_ENDPOINTS = {
   AUTH: {
+    CONTACT: '/api/auth/contact/',
     SIGNIN: '/api/auth/signin/',
     SIGNUP: '/api/auth/signup/',
     PROFILE: '/api/auth/profile/',
@@ -26,11 +27,29 @@ export const API_ENDPOINTS = {
     LIST: '/api/tasks/',
     DETAIL: (id: number) => `/api/tasks/${id}/`,
   },
+  PROJECTS: {
+    LIST: '/api/projects/',
+    DETAIL: (id: number) => `/api/projects/${id}/`,
+  },
+  CALENDAR: {
+    EVENTS: '/api/calendar/events/',
+    EVENT_DETAIL: (id: number) => `/api/calendar/events/${id}/`,
+  },
   NOTIFICATIONS: {
     LIST: '/api/notifications/',
     UNREAD: '/api/notifications/unread/',
     MARK_READ: (id: number) => `/api/notifications/${id}/read/`,
     MARK_ALL_READ: '/api/notifications/read-all/',
+  },
+  UPLOADS: {
+    LIST: '/api/uploads/',
+    DETAIL: (id: number) => `/api/uploads/${id}/`,
+  },
+  TEAM: {
+    OVERVIEW: '/api/auth/team/',
+    INVITE: '/api/auth/team/invitations/',
+    INVITATION_DETAIL: (id: string) => `/api/auth/team/invitations/${id}/`,
+    MEMBER_DETAIL: (id: number) => `/api/auth/team/members/${id}/`,
   },
 } as const;
 
@@ -60,6 +79,15 @@ export const TASK_STATUS = {
   IN_PROGRESS: 'in-progress',
   DONE: 'done',
 } as const;
+
+// Task Priority Values
+export const TASK_PRIORITY = {
+  HIGH: 'high',
+  MEDIUM: 'medium',
+  LOW: 'low',
+} as const;
+
+export const TASK_PRIORITY_OPTIONS = ['High', 'Medium', 'Low'] as const;
 
 // Task Categories
 export const TASK_CATEGORIES = [

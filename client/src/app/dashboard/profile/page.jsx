@@ -13,16 +13,15 @@ import {
 } from '../../../utils/profileCache';
 import { getUserDisplayName } from '../../../utils/formatters';
 import { api } from '../../../lib/api';
-import { API_ENDPOINTS, API_BASE_URL, DEFAULTS, CUSTOM_EVENTS, STORAGE_KEYS } from '../../../constants';
-import { getAccessToken } from '../../../utils/storage';
+import { API_ENDPOINTS, DEFAULTS, CUSTOM_EVENTS, STORAGE_KEYS } from '../../../constants';
 import { saveProfileToCache } from '../../../utils/profileCache';
+import ProfileAssignedTasks from './ProfileAssignedTasks';
 
 export default function ProfilePage() {
   const { user, setUser, isLoading: userLoading } = useUser();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('details');
   const [activeSubTab, setActiveSubTab] = useState('overview');
-  const [assignedTasks, setAssignedTasks] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -221,28 +220,11 @@ export default function ProfilePage() {
     setSaveMessage(null);
   };
 
-  useEffect(() => {
-    if (activeTab !== 'assigned') return;
-    if (!user || userLoading) return;
-
-    const fetchAssignedTasks = async () => {
-      try {
-        // Fetch tasks assigned to the current user (or the user whose profile is being viewed)
-        const userId = user?.id;
-        const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.TASKS.LIST}?userId=${userId}`, {
-          headers: { 'Authorization': `Bearer ${getAccessToken()}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success) setAssignedTasks(data.tasks || []);
-        }
-      } catch (error) {
-        console.error('Error fetching assigned tasks:', error);
-      }
-    };
-
-    fetchAssignedTasks();
-  }, [activeTab, user, userLoading]);
+  const headerDate = new Date().toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 
   return (
     <div className={styles.profilePage}>
@@ -259,7 +241,7 @@ export default function ProfilePage() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" fill="currentColor"/>
             </svg>
-            <span>19 May 2022</span>
+            <span>{headerDate}</span>
           </div>
           <div className={styles.profilePicture}>
             <Image src="/api/placeholder/40/40" alt="Profile" width={40} height={40} />
@@ -284,52 +266,11 @@ export default function ProfilePage() {
       {/* Profile Content */}
       <div className={styles.profileContent}>
         {activeTab === 'assigned' ? (
-          <div>
-            {assignedTasks.length === 0 ? (
-              <div className={styles.emptyTasks}>
-                <p>No tasks assigned to this user.</p>
-              </div>
-            ) : (
-              <div className={styles.tasksGrid}>
-                {assignedTasks.map(t => (
-                  <div key={t.id} className={styles.taskCard}>
-                    <div className={styles.taskTitle}>{t.title}</div>
-                    {t.description && (
-                      <div className={styles.taskDescription}>{t.description}</div>
-                    )}
-                    <div className={styles.taskMeta}>
-                      <div className={styles.taskMetaItem}>
-                        <span className={styles.taskLabel}>Project:</span>
-                        <span className={styles.taskValue}>{t.project_name || t.project || 'N/A'}</span>
-                      </div>
-                      <div className={styles.taskMetaItem}>
-                        <span className={styles.taskLabel}>Status:</span>
-                        <span className={`${styles.taskStatus} ${styles[`status${t.status === 'todo' ? 'Todo' : t.status === 'in_progress' ? 'InProgress' : t.status === 'completed' ? 'Completed' : ''}`]}`}>
-                          {t.status?.replace('_', ' ') || 'N/A'}
-                        </span>
-                      </div>
-                      {t.priority && (
-                        <div className={styles.taskMetaItem}>
-                          <span className={styles.taskLabel}>Priority:</span>
-                          <span className={`${styles.taskPriority} ${styles[`priority${t.priority?.charAt(0).toUpperCase() + t.priority?.slice(1)}`]}`}>
-                            {t.priority || 'N/A'}
-                          </span>
-                        </div>
-                      )}
-                      {t.due_date && (
-                        <div className={styles.taskMetaItem}>
-                          <span className={styles.taskLabel}>Due:</span>
-                          <span className={styles.taskValue}>
-                            {new Date(t.due_date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProfileAssignedTasks
+            profileData={profileData}
+            user={user}
+            userLoading={userLoading}
+          />
         ) : (
         <>
         {/* Profile Header with Banner */}

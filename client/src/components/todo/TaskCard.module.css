@@ -1,34 +1,111 @@
 .taskCard {
   background: white;
   border: 1px solid #e9ecef;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
   position: relative;
 }
 
 .taskCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
+  border-color: #6366f1;
+}
+
+.taskCard.pending {
+  opacity: 0.85;
+}
+
+.pendingOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 5;
+  border-radius: 10px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.pendingLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .taskCardHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
+
+.taskTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.priorityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.priorityHigh { background: #ef4444; }
+.priorityMedium { background: #f59e0b; }
+.priorityLow { background: #3b82f6; }
 
 .taskTitle {
   font-weight: 600;
   color: #2c3e50;
   font-size: 14px;
   line-height: 1.4;
-  flex: 1;
-  margin-right: 8px;
 }
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.statusBadge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.statusTodo { background: #fee2e2; color: #dc2626; }
+.statusInProgress { background: #fef3c7; color: #d97706; }
+.statusDone { background: #d1fae5; color: #059669; }
 
 .taskMenu {
   position: relative;
@@ -44,6 +121,7 @@
 
 .taskMenu svg {
   color: #6c757d;
+  display: block;
 }
 
 .dropdownMenu {
@@ -52,15 +130,11 @@
   right: 0;
   background: white;
   border: 1px solid #e9ecef;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 120px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
   z-index: 1000;
-  display: none;
-}
-
-.taskMenu:hover .dropdownMenu {
-  display: block;
+  padding: 8px 0;
 }
 
 .dropdownMenu button {
@@ -102,7 +176,7 @@
 .taskProject {
   font-size: 12px;
   color: #6c757d;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-weight: 500;
 }
 
@@ -110,7 +184,7 @@
   margin-bottom: 12px;
 }
 
-.taskProgress span {
+.taskProgress > span:first-child {
   font-size: 12px;
   color: #6c757d;
   font-weight: 500;
@@ -129,9 +203,17 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #ff6b35, #f7931e);
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
   border-radius: 3px;
   transition: width 0.3s ease;
+}
+
+.progressFillOngoing {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+}
+
+.progressFillCompleted {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
 }
 
 .progressText {
@@ -145,20 +227,76 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 12px;
+  gap: 8px;
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .taskDate {
-  background: #f8f9fa;
-  color: #6c757d;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dueNormal { background: #f3f4f6; color: #4b5563; }
+.dueSoon { background: #fef3c7; color: #b45309; }
+.dueToday { background: #ffedd5; color: #c2410c; }
+.dueOverdue { background: #fee2e2; color: #b91c1c; }
+
+.assigneeAvatars {
+  display: flex;
+  align-items: center;
+}
+
+.assigneeAvatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #6366f1;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  margin-left: -6px;
+}
+
+.assigneeAvatar:first-child {
+  margin-left: 0;
+}
+
+.assigneeOverflow {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #4b5563;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  margin-left: -6px;
 }
 
 .taskMeta {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .metaItem {
@@ -174,7 +312,6 @@
   color: #9ca3af;
 }
 
-/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .taskCard {
     background: #2d3748;
@@ -203,7 +340,7 @@
     background-color: #4a5568;
   }
 
-  .taskDate {
+  .dueNormal {
     background: #4a5568;
     color: #e2e8f0;
   }

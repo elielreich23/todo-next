@@ -30,6 +30,8 @@ export default function WizardModal({
   steps, // optional Array<Array<Field>> to support any number of steps
   stepDescriptions = [], // optional Array<string> matching steps length
   ctas = {},
+  isSubmitting = false,
+  error = '',
   onClose,
   onSubmit,
 }) {
@@ -146,7 +148,10 @@ export default function WizardModal({
 
   const handleNext = () => setStep((s) => Math.min(totalSteps, s + 1));
   const handleBack = () => setStep((s) => Math.max(1, s - 1));
-  const handleSubmit = () => onSubmit?.(values);
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    await onSubmit?.(values);
+  };
 
   if (!isOpen) return null;
 
@@ -194,6 +199,12 @@ export default function WizardModal({
           ))}
         </div>
 
+        {error && (
+          <div className={styles.fileUploadError} role="alert">
+            {error}
+          </div>
+        )}
+
         {/* Footer with proper Cancel/Previous logic */}
         <div className={styles.footerRow}>
           {step === 1 ? (
@@ -202,12 +213,14 @@ export default function WizardModal({
               <button
                 className={`${styles.button} ${styles.secondary}`}
                 onClick={onClose}
+                disabled={isSubmitting}
               >
                 {cancelLabel}
               </button>
               <button
                 className={`${styles.button} ${styles.primary}`}
                 onClick={handleNext}
+                disabled={isSubmitting}
               >
                 {nextLabel}
               </button>
@@ -218,12 +231,14 @@ export default function WizardModal({
               <button
                 className={`${styles.button} ${styles.secondary}`}
                 onClick={handleBack}
+                disabled={isSubmitting}
               >
                 {backLabel}
               </button>
               <button
                 className={`${styles.button} ${styles.primary}`}
                 onClick={handleNext}
+                disabled={isSubmitting}
               >
                 {nextLabel}
               </button>
@@ -234,14 +249,17 @@ export default function WizardModal({
               <button
                 className={`${styles.button} ${styles.secondary}`}
                 onClick={handleBack}
+                disabled={isSubmitting}
               >
                 {backLabel}
               </button>
               <button
                 className={`${styles.button} ${styles.primary}`}
                 onClick={handleSubmit}
+                disabled={isSubmitting}
               >
-                {submitLabel}
+                {isSubmitting && <span className={styles.buttonSpinner} />}
+                {isSubmitting ? 'Saving...' : submitLabel}
               </button>
             </>
           )}

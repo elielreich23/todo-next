@@ -7,8 +7,9 @@ import "../styles/global.scss";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Taskero - Task Management",
-  description: "All in one platform to get tasks done",
+  title: "Tasker — Collaborative task & project management",
+  description:
+    "Real-time collaboration for tasks and projects. Built for startups and student teams who need simple, intuitive teamwork.",
 };
 
 export default function RootLayout({

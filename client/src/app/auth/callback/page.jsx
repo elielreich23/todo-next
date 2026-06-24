@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import { useUser } from "../../../contexts/UserContext";
@@ -22,7 +22,7 @@ function rememberGoogleSignupId(userId) {
   localStorage.setItem(GOOGLE_SIGNUP_IDS_KEY, JSON.stringify([...ids]));
 }
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useUser();
@@ -46,15 +46,6 @@ export default function AuthCallbackPage() {
         Boolean(supabaseUser.user_metadata?.taskero_google_signup_completed_at);
       const accountAlreadyExisted =
         hasCompletedSignupBefore || accountAgeMs > NEW_ACCOUNT_WINDOW_MS;
-
-      console.info("[auth] Supabase Google callback", {
-        flow: isSignupFlow ? "signup" : "signin",
-        email: supabaseUser.email,
-        created_at: supabaseUser.created_at,
-        accountAgeMs,
-        hasCompletedSignupBefore,
-        accountAlreadyExisted,
-      });
 
       if (isSignupFlow && accountAlreadyExisted) {
         await supabase.auth.signOut();
@@ -95,5 +86,19 @@ export default function AuthCallbackPage() {
     <div style={{ display: "grid", minHeight: "100vh", placeItems: "center" }}>
       Finishing sign in...
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ display: "grid", minHeight: "100vh", placeItems: "center" }}>
+          Finishing sign in...
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

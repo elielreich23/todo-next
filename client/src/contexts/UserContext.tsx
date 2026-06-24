@@ -14,6 +14,9 @@ interface User {
   username: string;
   email: string;
   full_name: string;
+  phone_number?: string;
+  bio?: string;
+  notification_preferences?: Record<string, boolean>;
 }
 
 interface AuthTokens {
@@ -119,7 +122,6 @@ const fetchUserProfile = async (): Promise<User | null> => {
     const response = await api<User>(API_ENDPOINTS.AUTH.PROFILE);
     return response || null;
   } catch (error) {
-    console.log('Failed to fetch user profile:', error);
     return null;
   }
 };
@@ -145,7 +147,6 @@ const loadUserProfileWithRefresh = async (): Promise<User | null> => {
     return profile;
   }
 
-  console.log('Access token expired, attempting refresh...');
   return refreshTokenAndFetchProfile();
 };
 
