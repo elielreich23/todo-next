@@ -1,6 +1,7 @@
 {
   "editor.minimap.enabled": true,
-  "editor.minimap.autohide": true,
+  "editor.minimap.autohide": "mouseover",
   "workbench.activityBar.location": "default",
-  "workbench.activityBar.orientation": "horizontal"
+  "workbench.activityBar.orientation": "horizontal",
+  "python.terminal.activateEnvironment": false
 }

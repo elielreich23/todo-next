@@ -13,6 +13,7 @@ Project documentation is organized by topic below.
 ## Deployment
 
 - **[Deployment Guide](./deployment/DEPLOYMENT.md)** - Railway, Render, Vercel, and production checklists
+- **[Deployment Readiness](./deployment/DEPLOYMENT_READINESS.md)** - Features and gaps to resolve before a safe production deploy
 - **[Railway Admin Setup](./deployment/RAILWAY_ADMIN_SETUP.md)** - Creating an admin user on Railway
 - **[Railway Start Command Fix](./deployment/RAILWAY_START_COMMAND_FIX.md)** - Fix for Railway start command errors
 - **[Vercel-Railway Connection Fix](./deployment/VERCEL_RAILWAY_CONNECTION_FIX.md)** - Fix for Vercel-Railway connection issues
@@ -32,6 +33,6 @@ Project documentation is organized by topic below.
 ## Finding information
 
 - **Need to set up locally?** → [Setup and Development Guide](./setup/SETUP_AND_DEVELOPMENT.md)
-- **Want to deploy?** → [Deployment Guide](./deployment/DEPLOYMENT.md)
+- **Want to deploy?** → [Deployment Guide](./deployment/DEPLOYMENT.md) and [Deployment Readiness](./deployment/DEPLOYMENT_READINESS.md)
 - **Having issues?** → [Troubleshooting Guide](./troubleshooting/TROUBLESHOOTING.md)
 - **Frontend setup or auth?** → [client/README.md](../client/README.md) and [Authentication Setup](./setup/AUTHENTICATION_SETUP.md)

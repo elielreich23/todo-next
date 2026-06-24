@@ -9,7 +9,9 @@ client/node_modules/
 
 # Next.js
 /.next/
+client/.next/
 /out/
+client/out/
 
 # Production
 /build
@@ -21,9 +23,16 @@ client/node_modules/
 
 # Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*$py.class
 *.sqlite3
 backend/db.sqlite3
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
 
 # Debug
 npm-debug.log*
