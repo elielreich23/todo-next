@@ -150,7 +150,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Django REST Framework
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("accounts.authentication.SessionAwareJWTAuthentication",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "accounts.authentication.SessionAwareJWTAuthentication",
+        # Uncomment below to enable Supabase JWT authentication in Strategy 2:
+        # "accounts.authentication.SupabaseJWTAuthentication",
+    ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
@@ -233,6 +237,10 @@ PASSWORD_RESET_DEBUG_TOKENS = os.getenv("PASSWORD_RESET_DEBUG_TOKENS", "False").
 
 # Google OAuth Configuration
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+
+# Supabase Configuration for Strategy 2 (future integration)
+# Uncomment to enable:
+# SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
 
 # Optional URL-safe base64 Fernet key for encrypted model fields.
 # If omitted, a deterministic key derived from SECRET_KEY is used.
