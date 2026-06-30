@@ -214,7 +214,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           }
         } else if (cachedUser) {
           setUserState(prev => prev || cachedUser);
-        } else if (!accessToken) {
+        } else if (!accessToken && supabase) {
           const { data } = await supabase.auth.getSession();
           const supabaseUser = mapSupabaseUser(data.session?.user);
 
@@ -311,7 +311,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
-      await supabase.auth.signOut();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
       clearAuthTokens();
       sessionStorage.clear();
       localStorage.removeItem('session_id');
@@ -332,6 +334,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const refreshTokenValue = getRefreshToken();
 
       if (!accessToken || !refreshTokenValue) {
+        if (!supabase) {
+          return false;
+        }
+
         const { data } = await supabase.auth.getSession();
         const supabaseUser = mapSupabaseUser(data.session?.user);
 

@@ -29,6 +29,11 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const finishSignIn = async () => {
+      if (!supabase) {
+        router.replace("/auth/signin?reason=google-not-configured");
+        return;
+      }
+
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data.session) {
