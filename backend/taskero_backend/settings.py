@@ -6,6 +6,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,23 +16,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-your-secret-key-here"
+# On Render, set the SECRET_KEY environment variable to a strong random value.
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-for-local-dev-only")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# On Render, set DEBUG=False
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"]
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
+# On Render, set ALLOWED_HOSTS=your-app.onrender.com
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+
+# CSRF trusted origins — set via environment variable on Render:
+#   CSRF_TRUSTED_ORIGINS=https://your-app.onrender.com,https://your-vercel-app.vercel.app
+_csrf_default = "http://localhost:3000,http://127.0.0.1:3000"
 CSRF_TRUSTED_ORIGINS = [
-    "https://todo-next-production.up.railway.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", _csrf_default).split(",") if origin.strip()
 ]
-
-# Override with environment variable if provided, filtering out empty values
-env_csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
-if env_csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in env_csrf_origins.split(",") if origin.strip()]
 
 
 # Application definition
@@ -53,6 +54,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise must come right after SecurityMiddleware for static file serving
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -85,12 +88,23 @@ ASGI_APPLICATION = "taskero_backend.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+#
+# Production: Supabase PostgreSQL
+#   Set DATABASE_URL on Render to your Supabase connection string, e.g.:
+#   postgresql://user:password@db.xxxx.supabase.co:5432/postgres
+#
+# Alternative: Render-managed PostgreSQL
+#   If you switch to Render's built-in database, Render automatically provides
+#   DATABASE_URL — no other change needed.
+#
+# Local fallback: SQLite (only when DATABASE_URL is not set)
+_sqlite_default = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=os.getenv("DATABASE_URL", _sqlite_default),
+        conn_max_age=600,
+        ssl_require=os.getenv("DATABASE_SSL_REQUIRE", "True").lower() == "true",
+    )
 }
 
 
@@ -133,7 +147,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+# Collected static files go here; Render's build.sh runs collectstatic automatically
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# WhiteNoise: compress and cache static files for production
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Media files (User uploads)
 MEDIA_URL = "/media/"
@@ -178,17 +196,15 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
+# On Render, set CORS_ALLOWED_ORIGINS to your Vercel (or other frontend) URL:
+#   CORS_ALLOWED_ORIGINS=https://your-app.vercel.app
+_cors_default = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001"
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",  # In case Next.js runs on different port
+    origin.strip() for origin in os.getenv("CORS_ALLOWED_ORIGINS", _cors_default).split(",") if origin.strip()
 ]
 
-# Allow all origins in development (for local testing)
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOW_ALL_ORIGINS = False
+# Allow all origins only in local development (DEBUG=True)
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 CORS_ALLOW_CREDENTIALS = True
 
