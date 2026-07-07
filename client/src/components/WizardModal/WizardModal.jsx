@@ -17,7 +17,7 @@ import styles from './wizardModal.module.scss';
  * - ctas: { cancelLabel?: string, nextLabel?: string, backLabel?: string, submitLabel?: string }
  * - onClose: () => void — called when modal is dismissed
  * - onSubmit: (formValues) => void — called when user completes last step
- *
+ *4
  * Field descriptor shape:
  * { name: string, label: string, placeholder?: string, type?: 'text'|'select'|'textarea'|'date'|'number', options?: Array<string> }
  */
@@ -171,9 +171,8 @@ export default function WizardModal({
               {Array.from({ length: totalSteps }).map((_, idx) => (
                 <span
                   key={idx}
-                  className={`${styles.dot} ${
-                    step >= idx + 1 ? styles.active : ''
-                  }`}
+                  className={`${styles.dot} ${step >= idx + 1 ? styles.active : ''
+                    }`}
                 ></span>
               ))}
             </div>
