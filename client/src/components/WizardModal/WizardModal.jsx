@@ -158,52 +158,56 @@ export default function WizardModal({
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.headerRow}>
-          <div>
-            <h2 className={styles.title}>{title}</h2>
-            <p className={styles.subtitle}>{subtitle}</p>
-          </div>
-          <div className={styles.stepInfo}>
-            <span className={styles.stepText}>
-              Step {step} of {totalSteps}
-            </span>
-            <div className={styles.dots}>
-              {Array.from({ length: totalSteps }).map((_, idx) => (
-                <span
-                  key={idx}
-                  className={`${styles.dot} ${
-                    step >= idx + 1 ? styles.active : ''
-                  }`}
-                ></span>
-              ))}
+        <div className={styles.headerSection}>
+          <div className={styles.headerRow}>
+            <div>
+              <h2 className={styles.title}>{title}</h2>
+              <p className={styles.subtitle}>{subtitle}</p>
             </div>
-            {stepDescriptions?.[step - 1] && (
-              <span className={styles.stepHint}>
-                {stepDescriptions[step - 1]}
+            <div className={styles.stepInfo}>
+              <span className={styles.stepText}>
+                Step {step} of {totalSteps}
               </span>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.formSection}>
-          {fieldsForCurrentStep.map((field) => (
-            <div className={styles.formGroup} key={field.name}>
-              <label htmlFor={field.name} className={styles.label}>
-                {field.label}
-              </label>
-              {renderField(field)}
-              {field.helpText && (
-                <small className={styles.helpText}>{field.helpText}</small>
+              <div className={styles.dots}>
+                {Array.from({ length: totalSteps }).map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`${styles.dot} ${
+                      step >= idx + 1 ? styles.active : ''
+                    }`}
+                  ></span>
+                ))}
+              </div>
+              {stepDescriptions?.[step - 1] && (
+                <span className={styles.stepHint}>
+                  {stepDescriptions[step - 1]}
+                </span>
               )}
             </div>
-          ))}
+          </div>
         </div>
 
-        {error && (
-          <div className={styles.fileUploadError} role="alert">
-            {error}
+        <div className={styles.formSectionWrapper}>
+          <div className={styles.formSection}>
+            {fieldsForCurrentStep.map((field) => (
+              <div className={styles.formGroup} key={field.name}>
+                <label htmlFor={field.name} className={styles.label}>
+                  {field.label}
+                </label>
+                {renderField(field)}
+                {field.helpText && (
+                  <small className={styles.helpText}>{field.helpText}</small>
+                )}
+              </div>
+            ))}
           </div>
-        )}
+
+          {error && (
+            <div className={styles.fileUploadError} role="alert">
+              {error}
+            </div>
+          )}
+        </div>
 
         {/* Footer with proper Cancel/Previous logic */}
         <div className={styles.footerRow}>
