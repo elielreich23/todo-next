@@ -5,7 +5,7 @@ import styles from './TaskCard.module.css';
 
 function getInitials(name) {
   if (!name) return '?';
-  return name
+  return String(name)
     .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || '')
