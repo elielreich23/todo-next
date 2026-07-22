@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { getCachedUserData, setCachedUserData, clearCachedUserData, getStorageItem } from '../utils/storage';
 import { CACHE_DURATION, CUSTOM_EVENTS, STORAGE_KEYS, API_ENDPOINTS } from '../constants';
 import { setAccessToken, setRefreshToken, clearAuthTokens, getAccessToken, getRefreshToken } from '../utils/storage';
+import { apiCache } from '../utils/cache';
 
 // -------------------- TYPES --------------------
 
@@ -189,6 +190,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       throw new Error(response.message || 'Authentication failed');
     }
 
+    // Clear any cached API responses from a previous user session before
+    // storing the new user's tokens, so stale data never leaks across accounts.
+    apiCache.clear();
+
     storeAuthTokens(response.tokens);
     setUser(response.user);
   }, [setUser]);
@@ -320,6 +325,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
       setUserState(null);
       clearCachedUserData();
+
+      // Flush the in-memory API cache so the next user can't see this
+      // user's projects/tasks from a cached response.
+      apiCache.clear();
 
       window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.USER_LOGOUT));
     }
