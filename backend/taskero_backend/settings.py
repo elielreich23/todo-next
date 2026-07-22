@@ -20,8 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-for-local-dev-only")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# On Render, set DEBUG=False
-DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+# On Render, set DEBUG=False. Locally defaults to True for development convenience.
+DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
 # On Render, set ALLOWED_HOSTS=your-app.onrender.com
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -99,11 +99,19 @@ ASGI_APPLICATION = "taskero_backend.asgi.application"
 #
 # Local fallback: SQLite (only when DATABASE_URL is not set)
 _sqlite_default = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+# Only enable SSL when DATABASE_URL is explicitly set (i.e. pointing to a real
+# PostgreSQL server). SQLite does not support 'sslmode' and will crash if it is
+# passed, so we default ssl_require to False when falling back to SQLite.
+_db_url_explicit = os.getenv("DATABASE_URL", "")
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL", _sqlite_default),
+        default=_db_url_explicit or _sqlite_default,
         conn_max_age=600,
-        ssl_require=os.getenv("DATABASE_SSL_REQUIRE", "True").lower() == "true",
+        ssl_require=os.getenv(
+            "DATABASE_SSL_REQUIRE",
+            "True" if _db_url_explicit else "False",
+        ).lower()
+        == "true",
     )
 }
 
