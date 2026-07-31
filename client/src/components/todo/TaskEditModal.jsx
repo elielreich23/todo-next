@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import WizardModal from '../WizardModal/WizardModal';
 import { useProjects } from '../../contexts/ProjectsContext';
-import { api } from '../../lib/api';
 import { useUser } from '../../contexts/UserContext';
+import UserAutocomplete from '../UserAutocomplete/UserAutocomplete';
 import TaskFileUpload from './TaskFileUpload';
 import TaskCommentsEditor from './TaskCommentsEditor';
 import styles from '../WizardModal/wizardModal.module.scss';
@@ -23,7 +23,7 @@ const formatPriorityForForm = (priority) => {
 };
 
 export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
-  const { updateTask, createProjectAndWait, projects } = useProjects();
+  const { updateTask, createProjectAndWait, refreshTaskDetails, projects } = useProjects();
   const { user } = useUser();
   const currentProject = projects.find((p) => p.id === projectId);
 
@@ -33,6 +33,13 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !task?.id) return;
+    refreshTaskDetails(task.id).catch(() => {
+      // Keep the existing task data if detail hydration fails.
+    });
+  }, [isOpen, task?.id, refreshTaskDetails]);
 
   useEffect(() => {
     (async () => {
@@ -50,7 +57,9 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
       setAttachments(task.attachments || []);
       setComments(task.comments || []);
 
-      if (task.contributors && task.contributors.length > 0 && allUsers.length > 0) {
+      if (Array.isArray(task.assignees) && task.assignees.length > 0) {
+        setSelectedAssignees(task.assignees);
+      } else if (task.contributors && task.contributors.length > 0 && allUsers.length > 0) {
         const matchedUsers = task.contributors
           .map((contributorName) =>
             allUsers.find(
@@ -151,33 +160,11 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
         label: 'Assignees',
         type: 'custom',
         renderCustom: () => (
-          <div className={styles.assigneesPicker}>
-            <select
-              className={styles.multiSelect}
-              multiple
-              value={selectedAssignees.map((u) => String(u.id))}
-              onChange={(e) => {
-                const opts = Array.from(e.target.selectedOptions).map((o) => o.value);
-                const picked = allUsers.filter((u) => opts.includes(String(u.id)));
-                setSelectedAssignees(picked);
-              }}
-            >
-              {allUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.full_name || u.username || u.email}
-                </option>
-              ))}
-            </select>
-            {selectedAssignees.length > 0 && (
-              <div className={styles.selectedPills}>
-                {selectedAssignees.map((u) => (
-                  <span key={u.id} className={styles.pill}>
-                    {u.full_name || u.username || u.email}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+          <UserAutocomplete
+            selectedUsers={selectedAssignees}
+            onUsersChange={setSelectedAssignees}
+            placeholder="Search and add assignees..."
+          />
         ),
       },
       {
@@ -253,6 +240,7 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
       stepDescriptions={stepDescriptions}
       ctas={{ submitLabel: 'UPDATE TASK' }}
       isSubmitting={isSubmitting}
+      formKey={`${task.id}:${task.updatedAt || ''}:${task.comments?.length || 0}:${task.attachments?.length || 0}`}
       onSubmit={async (vals) => {
         setIsSubmitting(true);
 
@@ -269,7 +257,7 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
             project: projectName,
             category: vals.category,
             priority: mapPriorityLabel(vals.priority) || task.priority || 'medium',
-            contributors: selectedAssignees.map((u) => u.full_name || u.username || u.email),
+            contributors: selectedAssignees,
             description: vals.description,
             duration: vals.duration,
             progress: parseInt(vals.progress, 10) || 0,
@@ -280,15 +268,6 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
             comments,
             notes: vals.notes,
           });
-
-          try {
-            await api(`/api/tasks/${task.id}/`, {
-              method: 'PUT',
-              body: JSON.stringify({ assignee_ids: selectedAssignees.map((u) => u.id) }),
-            });
-          } catch {
-            // assignee update is best-effort
-          }
 
           setNewComment('');
           onClose?.();

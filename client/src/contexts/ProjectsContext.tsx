@@ -28,10 +28,12 @@ export type Task = {
   project?: string;
   progress?: number;
   totalSteps?: number;
+  updatedAt?: Date;
   attachments?: FileAttachment[];
   comments?: TaskComment[];
   category?: string;
   contributors?: string[];
+  assignees?: Array<{ id: number; full_name?: string; username?: string; email?: string }>;
   duration?: string;
   notes?: string;
 };
@@ -97,6 +99,7 @@ type ProjectsContextType = {
     text: string
   ) => void;
   deleteTaskComment: (taskId: number, commentId: string) => void;
+  refreshTaskDetails: (taskId: number) => Promise<Task | null>;
 };
 
 // -------------------- CONTEXT --------------------
@@ -114,6 +117,31 @@ export const useProjects = (): ProjectsContextType => {
 // -------------------- PROVIDER --------------------
 
 // -------------------- HELPER FUNCTIONS --------------------
+
+/**
+ * Normalizes due date from server to YYYY-MM-DD for date inputs
+ */
+const formatDueDateForClient = (dueDate?: string): string | undefined => {
+  if (!dueDate) return undefined;
+  return dueDate.split("T")[0];
+};
+
+/**
+ * Returns true for client-generated comment IDs (not yet saved to the API)
+ */
+const isLocalCommentId = (id: string | number): boolean => {
+  if (typeof id === "number") {
+    return !Number.isInteger(id);
+  }
+  return !/^\d+$/.test(String(id));
+};
+
+/**
+ * Returns true for client-generated attachment IDs (not yet uploaded)
+ */
+const isLocalAttachment = (attachment: FileAttachment): boolean => {
+  return Boolean((attachment as FileAttachment & { file?: File }).file);
+};
 
 /**
  * Maps assignees (user objects) to contributors (string array)
@@ -213,8 +241,9 @@ const normalizeProject = (serverProject: any): Project => {
  * Normalizes server task to client Task shape
  */
 const normalizeTask = (serverTask: any): Task => {
-  const contributors = serverTask.assignees
-    ? mapAssigneesToContributors(serverTask.assignees)
+  const assigneeObjects = Array.isArray(serverTask.assignees) ? serverTask.assignees : [];
+  const contributors = assigneeObjects.length
+    ? mapAssigneesToContributors(assigneeObjects)
     : serverTask.contributors
     ? mapAssigneesToContributors(serverTask.contributors)
     : [];
@@ -223,21 +252,37 @@ const normalizeTask = (serverTask: any): Task => {
     id: serverTask.id,
     projectId: Number(serverTask.project ?? serverTask.projectId),
     title: serverTask.title,
-    dueDate: serverTask.due_date ?? serverTask.dueDate,
+    dueDate: formatDueDateForClient(serverTask.due_date ?? serverTask.dueDate),
     status: mapServerToClientStatus(serverTask.status),
     priority: serverTask.priority || "medium",
     description: serverTask.description,
     project: serverTask.project_name ?? serverTask.project ?? undefined,
     progress: serverTask.progress ?? 0,
-    totalSteps: serverTask.totalSteps ?? 0,
+    totalSteps: serverTask.total_steps ?? serverTask.totalSteps ?? 0,
+    updatedAt: serverTask.updated_at ? new Date(serverTask.updated_at) : undefined,
     attachments: serverTask.attachments ?? [],
     comments: serverTask.comments ?? [],
     category: serverTask.category,
     contributors,
+    assignees: assigneeObjects.map((assignee: any) => ({
+      id: assignee.id,
+      full_name: assignee.full_name,
+      username: assignee.username,
+      email: assignee.email,
+    })),
     duration: serverTask.duration,
     notes: serverTask.notes,
   };
 };
+
+const mergeTaskWithDetails = (
+  normalized: Task,
+  details: { comments: TaskComment[]; attachments: FileAttachment[] }
+): Task => ({
+  ...normalized,
+  comments: details.comments,
+  attachments: details.attachments,
+});
 
 // -------------------- PROVIDER --------------------
 
@@ -385,6 +430,25 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       return { comments: [], attachments: [] };
     }
   };
+
+  const refreshTaskDetails = useCallback(async (taskId: number): Promise<Task | null> => {
+    const [taskResponse, details] = await Promise.all([
+      api<{ success: boolean; task: any }>(`/api/tasks/${taskId}/`, undefined, false).catch(() => null),
+      loadTaskDetails(taskId),
+    ]);
+    let refreshedTask: Task | null = null;
+
+    setTasks((prev) =>
+      prev.map((task) => {
+        if (task.id !== taskId) return task;
+        const normalizedTask = taskResponse?.success ? normalizeTask(taskResponse.task) : task;
+        refreshedTask = mergeTaskWithDetails(normalizedTask, details);
+        return refreshedTask;
+      })
+    );
+
+    return refreshedTask;
+  }, []);
 
   // When selected project changes, load its tasks
   useEffect(() => {
@@ -596,6 +660,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       priority: data.priority || "medium",
       due_date: normalizeDueDateForServer(data.dueDate),
       assignee_ids: assigneeIds,
+      progress: data.progress,
+      total_steps: data.totalSteps,
+      category: data.category,
+      duration: data.duration,
+      notes: data.notes,
     };
 
     const tempTask = createOptimisticTask();
@@ -607,12 +676,49 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.success) {
+        const createdTask = response.task;
+
+        // Upload comments
+        if (data.comments && data.comments.length > 0) {
+          for (const comment of data.comments) {
+            try {
+              await api(`/api/tasks/${createdTask.id}/comments/`, {
+                method: 'POST',
+                body: JSON.stringify({ text: comment.text })
+              });
+            } catch (e) { console.error('Failed to upload comment', e); }
+          }
+        }
+
+        // Upload attachments
+        if (data.attachments && data.attachments.length > 0) {
+          for (const attachment of data.attachments) {
+            if ((attachment as any).file) {
+              try {
+                const formData = new FormData();
+                formData.append('file', (attachment as any).file);
+                formData.append('name', attachment.name);
+                await api(`/api/tasks/${createdTask.id}/attachments/`, {
+                  method: 'POST',
+                  body: formData as any
+                });
+              } catch (e) { console.error('Failed to upload attachment', e); }
+            }
+          }
+        }
+
         setTasks((prev) => [
-          normalizeTask(response.task),
           ...prev.filter((t) => t.id !== tempTask.id),
+          normalizeTask(createdTask),
         ]);
         setTaskPending(tempTask.id, null);
-        return normalizeTask(response.task);
+
+        const details = await loadTaskDetails(createdTask.id);
+        const merged = mergeTaskWithDetails(normalizeTask(createdTask), details);
+        setTasks((prev) =>
+          prev.map((t) => (t.id === createdTask.id ? merged : t))
+        );
+        return merged;
       }
 
       setTasks((prev) => prev.filter((t) => t.id !== tempTask.id));
@@ -638,17 +744,28 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
     setTaskPending(id, "updating");
 
-    const serverPayload: Record<string, unknown> = { ...updates };
-    if (updates.status) {
-      serverPayload.status = mapClientToServerStatus(updates.status);
-    }
-    if (updates.dueDate !== undefined) {
-      serverPayload.due_date = normalizeDueDateForServer(updates.dueDate);
-      delete serverPayload.dueDate;
-    }
-    if (updates.projectId !== undefined) {
-      serverPayload.project = updates.projectId;
-      delete serverPayload.projectId;
+    // Build a clean payload with only fields the backend serializer accepts.
+    // Never send frontend-only fields (contributors, project name string, etc.)
+    // which would cause a 400 Bad Request.
+    const serverPayload: Record<string, unknown> = {};
+
+    if (updates.title !== undefined)       serverPayload.title       = updates.title;
+    if (updates.description !== undefined) serverPayload.description = updates.description;
+    if (updates.priority !== undefined)    serverPayload.priority    = updates.priority;
+    if (updates.status !== undefined)      serverPayload.status      = mapClientToServerStatus(updates.status);
+    if (updates.dueDate !== undefined)     serverPayload.due_date    = normalizeDueDateForServer(updates.dueDate);
+    if (updates.projectId !== undefined)   serverPayload.project     = updates.projectId;
+    if (updates.progress !== undefined)    serverPayload.progress    = updates.progress;
+    if (updates.totalSteps !== undefined)  serverPayload.total_steps = updates.totalSteps;
+    if (updates.category !== undefined)    serverPayload.category    = updates.category;
+    if (updates.duration !== undefined)    serverPayload.duration    = updates.duration;
+    if (updates.notes !== undefined)       serverPayload.notes       = updates.notes;
+
+    // Map assignee user objects (or legacy contributor strings) to assignee_ids
+    if (updates.contributors !== undefined) {
+      serverPayload.assignee_ids = extractContributorIds(updates.contributors as any[]);
+    } else if (updates.assignees !== undefined) {
+      serverPayload.assignee_ids = updates.assignees.map((assignee) => assignee.id);
     }
 
     try {
@@ -658,8 +775,37 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       });
 
       if (response.success) {
+        if (updates.comments && updates.comments.length > 0) {
+          const newComments = updates.comments.filter((comment) => isLocalCommentId(comment.id));
+          for (const comment of newComments) {
+            try {
+              await api(`/api/tasks/${id}/comments/`, {
+                method: 'POST',
+                body: JSON.stringify({ text: comment.text })
+              });
+            } catch (e) { console.error('Failed to upload comment', e); }
+          }
+        }
+
+        if (updates.attachments && updates.attachments.length > 0) {
+          const newAttachments = updates.attachments.filter(isLocalAttachment);
+          for (const attachment of newAttachments) {
+            try {
+              const formData = new FormData();
+              formData.append('file', (attachment as FileAttachment & { file: File }).file);
+              formData.append('name', attachment.name);
+              await api(`/api/tasks/${id}/attachments/`, {
+                method: 'POST',
+                body: formData as any
+              });
+            } catch (e) { console.error('Failed to upload attachment', e); }
+          }
+        }
+
+        const details = await loadTaskDetails(id);
+        const merged = mergeTaskWithDetails(normalizeTask(response.task), details);
         setTasks((prev) =>
-          prev.map((t) => (t.id === id ? normalizeTask(response.task) : t))
+          prev.map((t) => (t.id === id ? merged : t))
         );
       }
     } catch (error) {
@@ -998,6 +1144,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       addTaskComment,
       updateTaskComment,
       deleteTaskComment,
+      refreshTaskDetails,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [projects, tasks, isLoading, pendingTaskOperations, selectedProjectId]
