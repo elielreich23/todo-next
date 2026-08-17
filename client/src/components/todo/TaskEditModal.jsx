@@ -257,7 +257,7 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
             project: projectName,
             category: vals.category,
             priority: mapPriorityLabel(vals.priority) || task.priority || 'medium',
-            contributors: selectedAssignees,
+            assignees: selectedAssignees,
             description: vals.description,
             duration: vals.duration,
             progress: parseInt(vals.progress, 10) || 0,

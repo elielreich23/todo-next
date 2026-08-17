@@ -72,6 +72,11 @@ class TaskSerializer(serializers.ModelSerializer):
             "project",
             "project_name",
             "assignees",
+            "progress",
+            "total_steps",
+            "category",
+            "duration",
+            "notes",
         ]
         read_only_fields = ["id", "completed_at", "created_at", "updated_at"]
 
@@ -82,7 +87,20 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
-        fields = ["title", "description", "priority", "status", "due_date", "project", "assignee_ids"]
+        fields = [
+            "title",
+            "description",
+            "priority",
+            "status",
+            "due_date",
+            "project",
+            "assignee_ids",
+            "progress",
+            "total_steps",
+            "category",
+            "duration",
+            "notes",
+        ]
 
     def create(self, validated_data):
         assignees = validated_data.pop("assignee_ids", [])

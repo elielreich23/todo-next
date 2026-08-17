@@ -41,6 +41,12 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    progress = models.IntegerField(default=0)
+    total_steps = models.IntegerField(default=0)
+    category = models.CharField(max_length=100, blank=True, null=True)
+    duration = models.CharField(max_length=50, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks")
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tasks")
     # Users assigned to work on this task (can be multiple)
