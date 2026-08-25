@@ -20,7 +20,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("title", "project", "owner", "status", "priority", "due_date", "created_at")
+    list_display = ("title", "project", "owner", "status", "priority", "due_date", "end_date", "created_at")
     list_filter = ("status", "priority", "created_at", "due_date")
     search_fields = ("title", "description", "project__name", "owner__username", "owner__email")
     readonly_fields = ("completed_at", "created_at", "updated_at")
@@ -30,7 +30,7 @@ class TaskAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Basic Information", {"fields": ("title", "description", "project", "owner")}),
-        ("Task Details", {"fields": ("status", "priority", "due_date", "assignees")}),
+        ("Task Details", {"fields": ("status", "priority", "due_date", "end_date", "assignees")}),
         ("Timestamps", {"fields": ("completed_at", "created_at", "updated_at"), "classes": ("collapse",)}),
     )
 
