@@ -27,11 +27,149 @@ const emptyDraft = {
 };
 
 const pad = (value) => String(value).padStart(2, "0");
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 const toLocalDate = (date) => {
   if (!date) return "";
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
+
+const normalizeSearch = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s/-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const levenshtein = (a, b) => {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const rows = Array.from({ length: a.length + 1 }, (_, index) => index);
+  for (let j = 1; j <= b.length; j += 1) {
+    let prev = j - 1;
+    rows[0] = j;
+    for (let i = 1; i <= a.length; i += 1) {
+      const current = rows[i];
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      rows[i] = Math.min(rows[i] + 1, rows[i - 1] + 1, prev + cost);
+      prev = current;
+    }
+  }
+  return rows[a.length];
+};
+
+const isSubsequence = (haystack, needle) => {
+  let index = 0;
+  for (const char of haystack) {
+    if (char === needle[index]) index += 1;
+    if (index === needle.length) return true;
+  }
+  return false;
+};
+
+const tokenMatches = (haystack, token) => {
+  if (!token) return true;
+  if (haystack.includes(token)) return true;
+  if (token.length >= 4 && isSubsequence(haystack.replace(/\s+/g, ""), token.replace(/\s+/g, ""))) return true;
+
+  const words = haystack.split(" ");
+  const maxDistance = token.length <= 4 ? 1 : 2;
+  return words.some((word) => {
+    if (!word) return false;
+    if (word.startsWith(token) || (token.startsWith(word) && word.length >= 3)) return true;
+    return Math.abs(word.length - token.length) <= maxDistance && levenshtein(word, token) <= maxDistance;
+  });
+};
+
+const formatEventDates = (value) => {
+  const date = value instanceof Date ? value : value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return [];
+  return [
+    toLocalDate(date),
+    new Intl.DateTimeFormat(undefined, { month: "long", day: "numeric", year: "numeric" }).format(date),
+    new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(date),
+    new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(date),
+    new Intl.DateTimeFormat(undefined, { month: "long" }).format(date),
+  ];
+};
+
+const matchesQuery = (event, query) => {
+  const tokens = normalizeSearch(query).split(" ").filter(Boolean);
+  if (!tokens.length) return true;
+  const haystack = normalizeSearch(
+    [
+      event.title,
+      event.extendedProps?.description,
+      event.extendedProps?.project,
+      event.extendedProps?.guests,
+      event.extendedProps?.status,
+      event.extendedProps?.priority,
+      event.extendedProps?.source,
+      ...formatEventDates(event.start),
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+  return tokens.every((token) => tokenMatches(haystack, token));
+};
+
+const buildMonthCells = (cursor) => {
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let index = 0; index < firstDay; index += 1) cells.push(null);
+  for (let day = 1; day <= daysInMonth; day += 1) cells.push(new Date(year, month, day));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+};
+
+function MonthPicker({ selectedDate, onSelect }) {
+  const [cursor, setCursor] = useState(() => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+  const todayKey = toLocalDate(new Date());
+  const selectedKey = toLocalDate(selectedDate);
+
+  return (
+    <div className={styles.monthPicker} role="dialog" aria-label="Choose a date">
+      <div className={styles.monthPickerHeader}>
+        <button type="button" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label="Previous month">
+          {"<"}
+        </button>
+        <span>{new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(cursor)}</span>
+        <button type="button" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} aria-label="Next month">
+          {">"}
+        </button>
+      </div>
+      <div className={styles.monthPickerWeekdays}>
+        {WEEKDAYS.map((day) => (
+          <span key={day}>{day}</span>
+        ))}
+      </div>
+      <div className={styles.monthPickerGrid}>
+        {buildMonthCells(cursor).map((date, index) => {
+          if (!date) return <span key={`empty-${index}`} className={styles.monthPickerEmpty} />;
+          const key = toLocalDate(date);
+          const className = [
+            styles.monthPickerDay,
+            key === todayKey ? styles.monthPickerToday : "",
+            key === selectedKey ? styles.monthPickerSelected : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          return (
+            <button key={key} type="button" className={className} onClick={() => onSelect(date)}>
+              {date.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const toLocalTime = (date, fallback = "09:30") => {
   if (!date) return fallback;
@@ -40,6 +178,16 @@ const toLocalTime = (date, fallback = "09:30") => {
 
 const buildDate = (date, time) => new Date(`${date}T${time || "00:00"}:00`);
 
+const withTimeRange = (startValue, endValue) => {
+  const start = startValue instanceof Date ? startValue : startValue ? new Date(startValue) : null;
+  if (!start || Number.isNaN(start.getTime())) return { start: null, end: null };
+  let end = endValue instanceof Date ? endValue : endValue ? new Date(endValue) : null;
+  if (!end || Number.isNaN(end.getTime()) || end <= start) {
+    end = new Date(start.getTime() + 60 * 60 * 1000);
+  }
+  return { start, end };
+};
+
 const taskColor = (task) => {
   if (task.status === "completed") return "#BBF7D0";
   if (task.priority === "high") return "#FECACA";
@@ -47,23 +195,26 @@ const taskColor = (task) => {
   return "#DBEAFE";
 };
 
-const mapTaskToEvent = (task) => ({
-  id: `task-${task.id}`,
-  title: task.title,
-  start: task.due_date,
-  end: task.due_date,
-  backgroundColor: taskColor(task),
-  borderColor: "transparent",
-  extendedProps: {
-    source: "task",
-    taskId: task.id,
-    projectId: task.project,
-    status: task.status || "todo",
-    priority: task.priority || "medium",
-    description: task.description || "",
-    project: task.project_name || "",
-  },
-});
+const mapTaskToEvent = (task) => {
+  const { start, end } = withTimeRange(task.due_date, task.end_date);
+  return {
+    id: `task-${task.id}`,
+    title: task.title,
+    start: start?.toISOString(),
+    end: end?.toISOString(),
+    backgroundColor: taskColor(task),
+    borderColor: "transparent",
+    extendedProps: {
+      source: "task",
+      taskId: task.id,
+      projectId: task.project,
+      status: task.status || "todo",
+      priority: task.priority || "medium",
+      description: task.description || "",
+      project: task.project_name || "",
+    },
+  };
+};
 
 const mapCustomEvent = (event) => ({
   id: `event-${event.id}`,
@@ -86,12 +237,16 @@ export default function CalendarClient() {
   const [projects, setProjects] = useState([]);
   const [view, setView] = useState("timeGridWeek");
   const [query, setQuery] = useState("");
+  const [visibleDate, setVisibleDate] = useState(() => new Date());
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState(null);
   const [draft, setDraft] = useState(emptyDraft);
   const [feedback, setFeedback] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const calendarRef = useRef(null);
+  const monthPickerWrapRef = useRef(null);
+  const lastSearchJump = useRef("");
 
   const loadCalendarData = useCallback(async () => {
     try {
@@ -115,6 +270,22 @@ export default function CalendarClient() {
     loadCalendarData();
   }, [loadCalendarData]);
 
+  useEffect(() => {
+    if (!isMonthPickerOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (!monthPickerWrapRef.current?.contains(event.target)) setIsMonthPickerOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setIsMonthPickerOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isMonthPickerOpen]);
+
   const resetDraft = () => {
     setDraft(emptyDraft);
     setEditingEventId(null);
@@ -128,7 +299,10 @@ export default function CalendarClient() {
       ...emptyDraft,
       date: toLocalDate(selectionInfo.start),
       startTime: toLocalTime(selectionInfo.start),
-      endTime: toLocalTime(selectionInfo.end, "10:00"),
+      endTime: toLocalTime(
+        selectionInfo.end,
+        toLocalTime(new Date((selectionInfo.start?.getTime?.() || Date.now()) + 60 * 60 * 1000), "10:30")
+      ),
       projectId: fallbackProject,
     });
     setIsModalOpen(true);
@@ -144,7 +318,7 @@ export default function CalendarClient() {
       title: event.title || "",
       date: toLocalDate(event.start),
       startTime: toLocalTime(event.start),
-      endTime: toLocalTime(event.end, toLocalTime(event.start, "10:00")),
+      endTime: toLocalTime(event.end, toLocalTime(new Date((event.start?.getTime() || Date.now()) + 60 * 60 * 1000), "10:00")),
       projectId: event.extendedProps?.projectId ? String(event.extendedProps.projectId) : "",
       status: event.extendedProps?.status || "todo",
       priority: event.extendedProps?.priority || "medium",
@@ -165,7 +339,7 @@ export default function CalendarClient() {
       if (source === "task") {
         await api(API_ENDPOINTS.TASKS.DETAIL(changeInfo.event.extendedProps.taskId), {
           method: "PUT",
-          body: JSON.stringify({ due_date: start }),
+          body: JSON.stringify({ due_date: start, end_date: end }),
         });
       } else {
         await api(API_ENDPOINTS.CALENDAR.EVENT_DETAIL(changeInfo.event.extendedProps.eventId), {
@@ -182,21 +356,43 @@ export default function CalendarClient() {
   };
 
   const filteredEvents = useMemo(() => {
-    if (!query.trim()) return events;
-    const q = query.toLowerCase();
-    return events.filter((event) => {
-      const haystack = [
-        event.title,
-        event.extendedProps?.description,
-        event.extendedProps?.project,
-        event.extendedProps?.guests,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
+    const matched = query.trim() ? events.filter((event) => matchesQuery(event, query)) : events;
+    return [...matched].sort((left, right) => new Date(left.start) - new Date(right.start));
   }, [events, query]);
+
+  const goToDate = useCallback((date) => {
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    api.gotoDate(date);
+    setVisibleDate(date);
+    setIsMonthPickerOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      lastSearchJump.current = "";
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => {
+      const signature = `${trimmed}|${filteredEvents.map((event) => event.id).join(",")}`;
+      if (signature === lastSearchJump.current) return;
+
+      const now = Date.now();
+      const upcoming = filteredEvents.find((event) => new Date(event.start).getTime() >= now);
+      const matchStart = (upcoming || filteredEvents[0])?.start;
+      if (!matchStart) return;
+
+      lastSearchJump.current = signature;
+      const nextDate = matchStart instanceof Date ? matchStart : new Date(matchStart);
+      if (Number.isNaN(nextDate.getTime())) return;
+      calendarRef.current?.getApi()?.gotoDate(nextDate);
+      setVisibleDate(nextDate);
+    }, 280);
+
+    return () => window.clearTimeout(timeout);
+  }, [filteredEvents, query]);
 
   const saveDraft = async () => {
     if (!draft.title.trim() || !draft.date) {
@@ -226,6 +422,7 @@ export default function CalendarClient() {
           priority: draft.priority,
           status: draft.status,
           due_date: start.toISOString(),
+          end_date: end.toISOString(),
           project: Number(draft.projectId),
         };
 
@@ -289,6 +486,7 @@ export default function CalendarClient() {
 
   const renderEventContent = (eventInfo) => (
     <div className={styles.eventChip} title={eventInfo.event.title}>
+      {eventInfo.timeText ? <span className={styles.eventTime}>{eventInfo.timeText}</span> : null}
       <span className={styles.eventSource}>
         {eventInfo.event.extendedProps?.source === "task" ? "Task" : "Event"}
       </span>
@@ -300,23 +498,32 @@ export default function CalendarClient() {
     <div className={styles.calendarWrapper}>
       <div className={styles.headerBar}>
         <div className={styles.leftControls}>
-          <div className={styles.monthTitle}>
-            {new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(new Date())}
-          </div>
-          <div className={styles.navButtons}>
-            <button type="button" onClick={() => calendarRef.current?.getApi().today()}>
-              Today
+          <div className={styles.monthPickerWrap} ref={monthPickerWrapRef}>
+            <button
+              type="button"
+              className={`${styles.monthTitle} ${isMonthPickerOpen ? styles.monthTitleOpen : ""}`}
+              onClick={() => setIsMonthPickerOpen((open) => !open)}
+              aria-expanded={isMonthPickerOpen}
+              aria-haspopup="dialog"
+            >
+              {new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(visibleDate)}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
             </button>
-            <button type="button" onClick={() => calendarRef.current?.getApi().prev()} aria-label="Previous">
-              {"<"}
-            </button>
-            <button type="button" onClick={() => calendarRef.current?.getApi().next()} aria-label="Next">
-              {">"}
-            </button>
+            {isMonthPickerOpen && <MonthPicker selectedDate={visibleDate} onSelect={goToDate} />}
           </div>
         </div>
         <div className={styles.rightControls}>
-          <button type="button" className={styles.addBtn} onClick={() => openDraftForSelection({ start: new Date() })}>
+          <button
+            type="button"
+            className={styles.addBtn}
+            onClick={() => {
+              const start = new Date();
+              openDraftForSelection({ start, end: new Date(start.getTime() + 60 * 60 * 1000) });
+            }}
+          >
             Add
           </button>
           <div className={styles.viewTabs}>
@@ -342,12 +549,19 @@ export default function CalendarClient() {
               Month
             </button>
           </div>
-          <input
-            className={styles.searchInput}
-            placeholder="Search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
+          <label className={styles.searchWrap}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M16 16l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            <input
+              className={styles.searchInput}
+              placeholder="Search tasks, projects, or dates"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              aria-label="Search calendar"
+            />
+          </label>
         </div>
       </div>
 
@@ -362,10 +576,21 @@ export default function CalendarClient() {
         eventClick={openDraftForEvent}
         editable
         selectable
+        selectMirror
+        nowIndicator
+        eventResizableFromStart
+        forceEventDuration
+        defaultTimedEventDuration="01:00:00"
+        displayEventEnd
+        eventTimeFormat={{ hour: "numeric", minute: "2-digit", meridiem: "short" }}
         eventDrop={updateEventDate}
         eventResize={updateEventDate}
         ref={calendarRef}
         viewDidMount={(arg) => setView(arg.view.type)}
+        datesSet={(arg) => {
+          setView(arg.view.type);
+          setVisibleDate(arg.view.calendar.getDate());
+        }}
         eventContent={renderEventContent}
         eventClassNames={() => ""}
       />
@@ -426,23 +651,21 @@ export default function CalendarClient() {
 
               <div className={styles.timeRow}>
                 <div className={styles.timeField}>
-                  <span>{draft.type === "task" ? "Due" : "Start"}</span>
+                  <span>Start</span>
                   <input
                     type="time"
                     value={draft.startTime}
                     onChange={(event) => setDraft({ ...draft, startTime: event.target.value })}
                   />
                 </div>
-                {draft.type === "event" && (
-                  <div className={styles.timeField}>
-                    <span>End</span>
-                    <input
-                      type="time"
-                      value={draft.endTime}
-                      onChange={(event) => setDraft({ ...draft, endTime: event.target.value })}
-                    />
-                  </div>
-                )}
+                <div className={styles.timeField}>
+                  <span>End</span>
+                  <input
+                    type="time"
+                    value={draft.endTime}
+                    onChange={(event) => setDraft({ ...draft, endTime: event.target.value })}
+                  />
+                </div>
               </div>
 
               {draft.type === "task" ? (
