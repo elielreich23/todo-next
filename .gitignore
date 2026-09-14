@@ -54,3 +54,6 @@ bandit-report.json
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Graphify (locally-generated knowledge graph, do not commit)
+graphify-out/
