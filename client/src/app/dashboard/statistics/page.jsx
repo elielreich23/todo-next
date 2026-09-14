@@ -8,6 +8,7 @@ import styles from '../style/statistics.module.scss';
 import { DashboardSkeleton } from '../../../components/SkeletonLoader';
 
 export default function StatisticsPage() {
+  // Statistics page state tracks the backend aggregate payload and route-level load/error states.
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,6 +16,7 @@ export default function StatisticsPage() {
   const { user, isLoading: userLoading } = useUser();
   const router = useRouter();
 
+  // Load statistics after auth resolves; unauthenticated users are sent back to sign in.
   useEffect(() => {
     // Wait for user context to finish loading
     if (userLoading) {
@@ -58,6 +60,7 @@ export default function StatisticsPage() {
     loadStatistics();
   }, [user, userLoading, router]);
 
+  // Utility kept local for future file/storage stats cards.
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -83,11 +86,13 @@ export default function StatisticsPage() {
 
   return (
     <div className={styles.statisticsPage}>
+      {/* Page header explains the reporting scope for dashboard analytics. */}
       <div className={styles.header}>
         <h1>Statistics</h1>
         <p>View your task and project statistics</p>
       </div>
 
+      {/* Top-level stat cards summarize tasks, priorities, projects, and activity. */}
       <div className={styles.statsGrid}>
         {/* Task Overview Cards */}
         <div className={styles.statCard}>
@@ -238,7 +243,7 @@ export default function StatisticsPage() {
         </div>
       </div>
 
-      {/* Tasks by Project */}
+      {/* Tasks by Project: horizontal bars compare workload across projects. */}
       {stats.projects.tasks_by_project && stats.projects.tasks_by_project.length > 0 && (
         <div className={styles.statCard} style={{ marginTop: '2rem' }}>
           <div className={styles.statCardHeader}>
@@ -267,7 +272,7 @@ export default function StatisticsPage() {
         </div>
       )}
 
-      {/* Daily Completion Trend */}
+      {/* Daily Completion Trend: compact 7-day chart for recent completed work. */}
       {stats.trends && stats.trends.daily_completions && (
         <div className={styles.statCard} style={{ marginTop: '2rem' }}>
           <div className={styles.statCardHeader}>

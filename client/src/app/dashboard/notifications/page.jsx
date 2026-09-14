@@ -12,6 +12,7 @@ import { NotificationListSkeleton } from '../../../components/SkeletonLoader';
 import styles from './notifications.module.scss';
 
 function NotificationsContent() {
+  // Notification state keeps the list, selected detail, loading status, and unread count together.
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedId = searchParams.get('id');
@@ -21,7 +22,7 @@ function NotificationsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch all notifications
+  // Fetch notifications and honor a selected URL id for direct-linking into a detail view.
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
@@ -49,7 +50,7 @@ function NotificationsContent() {
     }
   };
 
-  // Mark notification as read
+  // Mark one notification as read and mirror the change in local list/detail state.
   const markAsRead = async (id) => {
     try {
       await api(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id), {
@@ -67,7 +68,7 @@ function NotificationsContent() {
     }
   };
 
-  // Mark all as read
+  // Bulk read action clears the unread badge without requiring a full refetch.
   const markAllAsRead = async () => {
     try {
       await api(API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ, {
@@ -85,7 +86,7 @@ function NotificationsContent() {
     }
   };
 
-  // Handle notification click
+  // Selecting a notification updates both local detail state and the shareable URL query.
   const handleNotificationClick = (notification) => {
     setSelectedNotification(notification);
     if (!notification.is_read) {
@@ -99,7 +100,7 @@ function NotificationsContent() {
     fetchNotifications();
   }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Get user display name from notification
+  // Display helpers derive concise sender/action/time text from backend notification payloads.
   const getUserDisplayName = (notification) => {
     const message = notification.message || '';
     // Extract name before "has" (e.g., "John Doe has assigned...")
@@ -110,7 +111,6 @@ function NotificationsContent() {
     return fallback ? fallback[1] : 'User';
   };
 
-  // Get action text from notification
   const getActionText = (notification) => {
     const message = notification.message || '';
     // Extract task ID from message (ID: 123) or use task field
@@ -135,7 +135,6 @@ function NotificationsContent() {
     return taskId ? `${action} #${taskId}` : action;
   };
 
-  // Format time ago
   const getTimeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -153,6 +152,7 @@ function NotificationsContent() {
 
   return (
     <div className={styles.notificationsPage}>
+      {/* Notifications header exposes unread cleanup when there is something to clear. */}
       <div className={styles.header}>
         <h1>Notifications</h1>
         {unreadCount > 0 && (
@@ -162,8 +162,10 @@ function NotificationsContent() {
         )}
       </div>
 
+      {/* Master/detail layout: list selection on the left and full notification details on demand. */}
       <div className={styles.content}>
         <div className={styles.notificationsList}>
+          {/* List states cover loading, empty inbox, and interactive notification rows. */}
           {isLoading ? (
             <NotificationListSkeleton count={5} />
           ) : notifications.length === 0 ? (
@@ -209,6 +211,7 @@ function NotificationsContent() {
         </div>
 
         {selectedNotification && (
+          /* Detail pane surfaces the full message plus related task/project metadata. */
           <div className={styles.notificationDetail}>
             <div className={styles.detailHeader}>
               <button
@@ -270,6 +273,7 @@ function NotificationsContent() {
 
 export default function NotificationsPage() {
   return (
+    // Suspense is required because the content reads URL search params on the client.
     <Suspense fallback={
       <div className={styles.notificationsPage}>
         <div className={styles.header}>

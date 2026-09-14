@@ -8,6 +8,7 @@ import UserAutocomplete from '../UserAutocomplete/UserAutocomplete';
 import TaskFileUpload from './TaskFileUpload';
 import TaskCommentsEditor from './TaskCommentsEditor';
 import styles from '../WizardModal/wizardModal.module.scss';
+import { api } from '../../lib/api';
 import {
   TASK_CATEGORIES,
   TASK_DURATION_OPTIONS,
@@ -20,6 +21,22 @@ const mapPriorityLabel = (label) => label?.toLowerCase();
 const formatPriorityForForm = (priority) => {
   if (!priority) return 'Medium';
   return priority.charAt(0).toUpperCase() + priority.slice(1);
+};
+const addMinutes = (date, minutes) => new Date(date.getTime() + minutes * 60 * 1000);
+
+const combineDateAndTime = (date, time, fallbackTime = '09:00') => {
+  if (!date) return undefined;
+  return new Date(`${date}T${time || fallbackTime}:00`).toISOString();
+};
+
+const resolveEndDateTime = (date, startTime, endTime) => {
+  const start = new Date(`${date}T${startTime || '09:00'}:00`);
+  let end = new Date(`${date}T${endTime || '10:00'}:00`);
+  if (Number.isNaN(start.getTime())) return undefined;
+  if (Number.isNaN(end.getTime()) || end <= start) {
+    end = addMinutes(start, 60);
+  }
+  return end.toISOString();
 };
 
 export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
@@ -191,6 +208,20 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
         defaultValue: task.dueDate,
       },
       {
+        name: 'dueStartTime',
+        label: 'Start Time',
+        placeholder: '',
+        type: 'time',
+        defaultValue: task.dueStartTime || '09:00',
+      },
+      {
+        name: 'dueEndTime',
+        label: 'End Time',
+        placeholder: '',
+        type: 'time',
+        defaultValue: task.dueEndTime || '10:00',
+      },
+      {
         name: 'status',
         label: 'Status',
         placeholder: 'Select status',
@@ -262,7 +293,10 @@ export default function TaskEditModal({ isOpen, onClose, task, projectId }) {
             duration: vals.duration,
             progress: parseInt(vals.progress, 10) || 0,
             totalSteps: parseInt(vals.totalSteps, 10) || 0,
-            dueDate: vals.dueDate,
+            dueDate: combineDateAndTime(vals.dueDate, vals.dueStartTime),
+            endDate: resolveEndDateTime(vals.dueDate, vals.dueStartTime, vals.dueEndTime),
+            dueStartTime: vals.dueStartTime,
+            dueEndTime: vals.dueEndTime,
             status: vals.status || task.status,
             attachments,
             comments,

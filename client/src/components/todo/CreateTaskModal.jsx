@@ -19,6 +19,23 @@ import {
 
 const mapPriorityLabel = (label) => label?.toLowerCase();
 
+const addMinutes = (date, minutes) => new Date(date.getTime() + minutes * 60 * 1000);
+
+const combineDateAndTime = (date, time, fallbackTime = '09:00') => {
+  if (!date) return undefined;
+  return new Date(`${date}T${time || fallbackTime}:00`).toISOString();
+};
+
+const resolveEndDateTime = (date, startTime, endTime) => {
+  const start = new Date(`${date}T${startTime || '09:00'}:00`);
+  let end = new Date(`${date}T${endTime || '10:00'}:00`);
+  if (Number.isNaN(start.getTime())) return undefined;
+  if (Number.isNaN(end.getTime()) || end <= start) {
+    end = addMinutes(start, 60);
+  }
+  return end.toISOString();
+};
+
 export default function CreateTaskModal({ isOpen, onClose, projectId, defaultStatus }) {
   const { createTask, createProjectAndWait, projects } = useProjects();
   const { user } = useUser();
@@ -135,6 +152,20 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
       },
       { name: 'dueDate', label: 'Due Date', placeholder: '', type: 'date' },
       {
+        name: 'dueStartTime',
+        label: 'Start Time',
+        placeholder: '',
+        type: 'time',
+        defaultValue: '09:00',
+      },
+      {
+        name: 'dueEndTime',
+        label: 'End Time',
+        placeholder: '',
+        type: 'time',
+        defaultValue: '10:00',
+      },
+      {
         name: 'status',
         label: 'Status',
         placeholder: 'Select status',
@@ -222,7 +253,10 @@ export default function CreateTaskModal({ isOpen, onClose, projectId, defaultSta
             duration: vals.duration,
             progress: parseInt(vals.progress, 10) || 0,
             totalSteps: parseInt(vals.totalSteps, 10) || 0,
-            dueDate: vals.dueDate,
+            dueDate: combineDateAndTime(vals.dueDate, vals.dueStartTime),
+            endDate: resolveEndDateTime(vals.dueDate, vals.dueStartTime, vals.dueEndTime),
+            dueStartTime: vals.dueStartTime,
+            dueEndTime: vals.dueEndTime,
             status: vals.status || defaultStatus || TASK_STATUS.TODO,
             attachments,
             comments,

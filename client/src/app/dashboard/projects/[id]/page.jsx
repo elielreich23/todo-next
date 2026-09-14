@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useProjects } from '../../../../contexts/ProjectsContext';
 import projStyles from './project.module.scss';
 
-// Lazy load heavy components
+// Lazy load heavy project/task modals so the detail page can render quickly.
 const ProjectWizard = dynamic(() => import('../../../../components/ProjectWizard/ProjectWizard'), {
   loading: () => null,
   ssr: false,
@@ -23,6 +23,7 @@ const TaskEditModal = dynamic(() => import('../../../../components/todo').then(m
 });
 
 export default function ProjectDetailPage() {
+  // Project detail state is driven by the route id plus local form/modal controls.
   const params = useParams();
   const router = useRouter();
   const { projects, updateProject, getProjectTasks, createTask, deleteProject } = useProjects();
@@ -42,6 +43,7 @@ export default function ProjectDetailPage() {
 
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
+  // Guard against stale or invalid project ids in the route.
   if (!project) {
     return (
       <div style={{ padding: '2rem' }}>
@@ -53,6 +55,7 @@ export default function ProjectDetailPage() {
 
   const tasks = getProjectTasks(projectId);
 
+  // Project form handlers update local fields first, then persist through ProjectsContext.
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -69,6 +72,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className={projStyles.projectPage}>
+      {/* Project header offers page-level actions and modal entry points. */}
       <div className={projStyles.pageHeader}>
         <h2>{project.name}</h2>
         <div className={projStyles.actions}>
@@ -80,8 +84,10 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
+      {/* Detail grid separates editable project metadata from the project's task list. */}
       <div className={projStyles.contentGrid}>
         <div className={projStyles.card}>
+          {/* Project metadata form updates title, category, duration, description, and deletion. */}
           <h3>Project details</h3>
           <div className={projStyles.fieldGroup}>
             <label className={projStyles.label}>Title</label>
@@ -100,6 +106,7 @@ export default function ProjectDetailPage() {
         </div>
 
         <div className={projStyles.card}>
+          {/* Project tasks can be created inline or opened for richer editing. */}
           <h3>Project tasks</h3>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <input className={projStyles.input} value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} placeholder="Task title" />
@@ -121,10 +128,11 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
+      {/* Shared project/task modals keep create and edit behavior aligned with the main board. */}
       <ProjectWizard isOpen={isCreateProjectOpen} onClose={() => setIsCreateProjectOpen(false)} onCreate={() => setIsCreateProjectOpen(false)} />
       <CreateTaskModal isOpen={isCreateTaskOpen} onClose={() => setIsCreateTaskOpen(false)} projectId={projectId} />
 
-      {/* Task Edit Modal */}
+      {/* Task edit modal opens for the selected project task. */}
       {editingTaskId && (
         <TaskEditModal
           isOpen={!!editingTaskId}

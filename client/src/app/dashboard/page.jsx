@@ -24,6 +24,7 @@ const TaskDrawer = dynamic(() => import('../../components/todo').then(mod => ({ 
 });
 
 function DashboardPageContent() {
+  // Board state combines project context data with local UI state for modals, drawers, and menus.
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
@@ -45,6 +46,7 @@ function DashboardPageContent() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
 
+  // Close task action menus when focus moves outside the dropdown area.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -58,6 +60,7 @@ function DashboardPageContent() {
 
   const taskToEdit = editingTaskId ? tasks.find((t) => t.id === editingTaskId) : null;
 
+  // Keep edit and detail overlays in sync when a task is deleted or moved out from under the page.
   useEffect(() => {
     if (editingTaskId && !taskToEdit) {
       setEditingTaskId(null);
@@ -70,6 +73,7 @@ function DashboardPageContent() {
     }
   }, [drawerTaskId, tasks]);
 
+  // Command palette and URL query hooks can open the create-task flow from outside this page.
   useEffect(() => {
     const handler = () => setIsCreateOpen(true);
     window.addEventListener('command-palette:new-task', handler);
@@ -85,6 +89,7 @@ function DashboardPageContent() {
     }
   }, [searchParams, router]);
 
+  // Task mutations delegate optimistic updates and rollback behavior to ProjectsContext.
   const handleDropdownToggle = (taskId) => {
     setOpenDropdown(openDropdown === taskId ? null : taskId);
   };
@@ -116,6 +121,7 @@ function DashboardPageContent() {
     }
   };
 
+  // Only show tasks for the active project; columns below group this list by status.
   const projectTasks = useMemo(() => {
     if (!selectedProjectId) return [];
     return tasks.filter((t) => t.projectId === selectedProjectId);
@@ -129,6 +135,7 @@ function DashboardPageContent() {
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
 
+  // Initial and empty-project states keep the board from rendering incomplete project data.
   if (projectsLoading && projects.length === 0) {
     return <DashboardSkeleton />;
   }
@@ -156,6 +163,7 @@ function DashboardPageContent() {
 
   return (
     <div className={styles.dashboardPage}>
+      {/* Board header: current project context and primary create-task action. */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h1>{selectedProject.name}</h1>
@@ -171,6 +179,7 @@ function DashboardPageContent() {
         </div>
       </div>
 
+      {/* Kanban board: each column accepts dropped task cards and updates task status. */}
       <div className={styles.boardWrapper}>
         {columns.map((col) => (
           <div
@@ -226,6 +235,7 @@ function DashboardPageContent() {
               aria-label={`${col.title} column - drop tasks here`}
               data-column={col.key}
             >
+              {/* Task cards expose detail, edit, delete, move-project, drag, and pending states. */}
               {projectTasks
                 .filter((t) => t.status === col.key)
                 .map((t) => (
@@ -269,6 +279,7 @@ function DashboardPageContent() {
         ))}
       </div>
 
+      {/* Detail drawer keeps quick task review separate from full edit mode. */}
       <TaskDrawer
         taskId={drawerTaskId}
         isOpen={!!drawerTaskId}
@@ -279,6 +290,7 @@ function DashboardPageContent() {
         }}
       />
 
+      {/* Create and edit modals own their forms while this page chooses the active project/status. */}
       <CreateTaskModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
@@ -300,6 +312,7 @@ function DashboardPageContent() {
 
 export default function DashboardPage() {
   return (
+    // Suspense is required because this route reads search params on the client.
     <Suspense fallback={<DashboardSkeleton />}>
       <DashboardPageContent />
     </Suspense>

@@ -11,6 +11,8 @@ import { api } from "../../../lib/api";
 import styles from "./calendar.module.scss";
 
 const calendarPlugins = [dayGridPlugin, timeGridPlugin, interactionPlugin];
+
+// Shared draft shape for both task-backed calendar items and standalone custom events.
 const emptyDraft = {
   type: "task",
   title: "",
@@ -28,7 +30,11 @@ const emptyDraft = {
 
 const pad = (value) => String(value).padStart(2, "0");
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const MONTH_NAMES = Array.from({ length: 12 }, (_, month) =>
+  new Intl.DateTimeFormat(undefined, { month: "long" }).format(new Date(2024, month, 1))
+);
 
+// Date/search helpers normalize FullCalendar values and make fuzzy calendar search forgiving.
 const toLocalDate = (date) => {
   if (!date) return "";
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -116,6 +122,7 @@ const matchesQuery = (event, query) => {
   return tokens.every((token) => tokenMatches(haystack, token));
 };
 
+// Month picker helpers build the compact date chooser used in the custom calendar header.
 const buildMonthCells = (cursor) => {
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -129,20 +136,39 @@ const buildMonthCells = (cursor) => {
 };
 
 function MonthPicker({ selectedDate, onSelect }) {
+  // Local cursor lets users browse months/years before committing a date to the calendar.
   const [cursor, setCursor] = useState(() => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
   const todayKey = toLocalDate(new Date());
   const selectedKey = toLocalDate(selectedDate);
+  const setCursorMonth = (month) => setCursor(new Date(cursor.getFullYear(), Number(month), 1));
+  const setCursorYear = (year) => {
+    const nextYear = Number(year);
+    if (!Number.isInteger(nextYear) || nextYear < 1900 || nextYear > 9999) return;
+    setCursor(new Date(nextYear, cursor.getMonth(), 1));
+  };
 
   return (
     <div className={styles.monthPicker} role="dialog" aria-label="Choose a date">
       <div className={styles.monthPickerHeader}>
-        <button type="button" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label="Previous month">
-          {"<"}
-        </button>
-        <span>{new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(cursor)}</span>
-        <button type="button" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))} aria-label="Next month">
-          {">"}
-        </button>
+        <select
+          value={cursor.getMonth()}
+          onChange={(event) => setCursorMonth(event.target.value)}
+          aria-label="Calendar month"
+        >
+          {MONTH_NAMES.map((month, index) => (
+            <option key={month} value={index}>
+              {month}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min="1900"
+          max="9999"
+          value={cursor.getFullYear()}
+          onChange={(event) => setCursorYear(event.target.value)}
+          aria-label="Calendar year"
+        />
       </div>
       <div className={styles.monthPickerWeekdays}>
         {WEEKDAYS.map((day) => (
@@ -171,12 +197,27 @@ function MonthPicker({ selectedDate, onSelect }) {
   );
 }
 
+// Event mapping helpers translate API tasks/events into the single shape FullCalendar expects.
 const toLocalTime = (date, fallback = "09:30") => {
   if (!date) return fallback;
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
 const buildDate = (date, time) => new Date(`${date}T${time || "00:00"}:00`);
+
+const formatDurationLabel = (date, startTime, endTime) => {
+  if (!date || !startTime || !endTime) return "";
+  const start = buildDate(date, startTime);
+  let end = buildDate(date, endTime);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "";
+  if (end <= start) end = new Date(start.getTime() + 30 * 60 * 1000);
+  const minutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (hours && remainder) return `${hours}h ${remainder}m`;
+  if (hours) return hours === 1 ? "1 hour" : `${hours} hours`;
+  return `${remainder} min`;
+};
 
 const withTimeRange = (startValue, endValue) => {
   const start = startValue instanceof Date ? startValue : startValue ? new Date(startValue) : null;
@@ -233,6 +274,7 @@ const mapCustomEvent = (event) => ({
 });
 
 export default function CalendarClient() {
+  // Calendar state tracks fetched items, toolbar controls, modal drafts, and save feedback.
   const [events, setEvents] = useState([]);
   const [projects, setProjects] = useState([]);
   const [view, setView] = useState("timeGridWeek");
@@ -248,6 +290,7 @@ export default function CalendarClient() {
   const monthPickerWrapRef = useRef(null);
   const lastSearchJump = useRef("");
 
+  // Load tasks, custom events, and projects together so calendar creation has all needed metadata.
   const loadCalendarData = useCallback(async () => {
     try {
       const [tasksResponse, eventsResponse, projectsResponse] = await Promise.all([
@@ -270,6 +313,7 @@ export default function CalendarClient() {
     loadCalendarData();
   }, [loadCalendarData]);
 
+  // Close the date picker from outside clicks or Escape without affecting the main calendar.
   useEffect(() => {
     if (!isMonthPickerOpen) return undefined;
     const onPointerDown = (event) => {
@@ -292,6 +336,7 @@ export default function CalendarClient() {
     setFeedback("");
   };
 
+  // Create/edit entry points convert calendar selections or clicked events into editable drafts.
   const openDraftForSelection = (selectionInfo) => {
     resetDraft();
     const fallbackProject = projects[0]?.id ? String(projects[0].id) : "";
@@ -330,6 +375,7 @@ export default function CalendarClient() {
     setIsModalOpen(true);
   };
 
+  // Dragging or resizing an item updates the correct backend resource, then reloads canonical data.
   const updateEventDate = async (changeInfo) => {
     const source = changeInfo.event.extendedProps?.source;
     const start = changeInfo.event.start?.toISOString();
@@ -355,6 +401,7 @@ export default function CalendarClient() {
     }
   };
 
+  // Search filters locally and sorts results so jump-to-match behavior is predictable.
   const filteredEvents = useMemo(() => {
     const matched = query.trim() ? events.filter((event) => matchesQuery(event, query)) : events;
     return [...matched].sort((left, right) => new Date(left.start) - new Date(right.start));
@@ -368,6 +415,7 @@ export default function CalendarClient() {
     setIsMonthPickerOpen(false);
   }, []);
 
+  // When a search narrows results, jump to the first upcoming match after a short debounce.
   useEffect(() => {
     const trimmed = query.trim();
     if (!trimmed) {
@@ -394,6 +442,7 @@ export default function CalendarClient() {
     return () => window.clearTimeout(timeout);
   }, [filteredEvents, query]);
 
+  // Persist the modal draft as either a task or a standalone event based on the selected type.
   const saveDraft = async () => {
     if (!draft.title.trim() || !draft.date) {
       setFeedback("Add a title and date before saving.");
@@ -459,6 +508,7 @@ export default function CalendarClient() {
     }
   };
 
+  // Only standalone custom events can be deleted here; task deletion stays in task workflows.
   const deleteCurrentEvent = async () => {
     if (!editingEventId?.startsWith("event-")) return;
     setIsSaving(true);
@@ -496,6 +546,7 @@ export default function CalendarClient() {
 
   return (
     <div className={styles.calendarWrapper}>
+      {/* Calendar toolbar: date picker, item creation, view tabs, and fuzzy search. */}
       <div className={styles.headerBar}>
         <div className={styles.leftControls}>
           <div className={styles.monthPickerWrap} ref={monthPickerWrapRef}>
@@ -567,6 +618,7 @@ export default function CalendarClient() {
 
       {feedback && <div className={styles.inlineAlert}>{feedback}</div>}
 
+      {/* FullCalendar owns grid interactions; local handlers bridge those interactions to API state. */}
       <FullCalendar
         plugins={calendarPlugins}
         initialView="timeGridWeek"
@@ -595,6 +647,7 @@ export default function CalendarClient() {
         eventClassNames={() => ""}
       />
 
+      {/* Add/edit modal shares one form for tasks and custom events, with type-specific fields. */}
       {isModalOpen && (
         <div className={styles.modalOverlay} onClick={closeModal}>
           <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
@@ -667,6 +720,11 @@ export default function CalendarClient() {
                   />
                 </div>
               </div>
+              {draft.type === "task" && formatDurationLabel(draft.date, draft.startTime, draft.endTime) ? (
+                <p className={styles.durationHint}>
+                  Duration: {formatDurationLabel(draft.date, draft.startTime, draft.endTime)}
+                </p>
+              ) : null}
 
               {draft.type === "task" ? (
                 <div className={styles.timeRow}>

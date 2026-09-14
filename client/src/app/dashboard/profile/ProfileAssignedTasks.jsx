@@ -126,6 +126,7 @@ function mapServerStatus(status) {
   return status || 'todo';
 }
 
+// Normalize API, context, and mock tasks into the TaskCard contract used by the dashboard.
 function normalizeAssignedTask(task) {
   const commentCount = task.comment_count ?? task.comments?.length ?? 0;
   const attachmentCount = task.attachment_count ?? task.attachments?.length ?? 0;
@@ -154,6 +155,7 @@ function TaskSection({
   onDropdownToggle,
   onOpenTask,
 }) {
+  // Each assigned-task section previews a few cards and expands without refetching data.
   const visibleTasks = showAll ? tasks : tasks.slice(0, PREVIEW_COUNT);
 
   return (
@@ -204,6 +206,7 @@ function TaskSection({
 }
 
 export default function ProfileAssignedTasks({ profileData, user, userLoading }) {
+  // Assigned-task state combines API results, context fallback, and demo data fallback.
   const { tasks: contextTasks } = useProjects();
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -224,6 +227,7 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
   const roleLabel = profileData.role ? ` (${profileData.role})` : '';
   const locationLabel = profileData.location || DEFAULTS.NOT_SET;
 
+  // Prefer user-specific API data; fall back to locally loaded project tasks, then mock samples.
   const fetchAssignedTasks = useCallback(async () => {
     if (!user?.id) {
       setAssignedTasks(MOCK_ASSIGNED_TASKS);
@@ -267,6 +271,7 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
     }
   }, [user, contextTasks, displayName]);
 
+  // Load assigned tasks once user identity is known.
   useEffect(() => {
     if (userLoading) return;
     fetchAssignedTasks();
@@ -303,6 +308,7 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
 
   return (
     <>
+      {/* Assignee header anchors the workload view to the active profile. */}
       <div className={styles.assignedProfileHeader}>
         <div className={styles.assignedProfileAvatar}>
           <Image
@@ -327,6 +333,7 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
         </p>
       )}
 
+      {/* Ongoing and completed lists share the same task-section layout with different tones. */}
       <TaskSection
         title="Ongoing Tasks"
         accentClass={styles.taskSectionAccentOngoing}
@@ -351,6 +358,7 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
         onOpenTask={handleOpenTask}
       />
 
+      {/* Existing dashboard tasks can open in the shared detail drawer from this profile view. */}
       <TaskDrawer
         taskId={selectedTaskId}
         isOpen={Boolean(selectedTaskId)}

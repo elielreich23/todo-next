@@ -8,6 +8,7 @@ import styles from "./uploads.module.scss";
 
 const formatSize = (bytes = 0) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
 
+// Convert backend upload records into the lightweight shape used by the upload UI.
 const normalizeUpload = (upload) => ({
   id: String(upload.id),
   name: upload.name,
@@ -19,6 +20,7 @@ const normalizeUpload = (upload) => ({
 });
 
 export default function UploadsPage() {
+  // Upload state covers the file list, drag/drop affordance, previews, progress, and delete modal.
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [progressById, setProgressById] = useState({});
@@ -32,6 +34,7 @@ export default function UploadsPage() {
 
   const handleBrowse = () => inputRef.current?.click();
 
+  // Load stored uploads on entry and protect state updates if the route unmounts mid-request.
   useEffect(() => {
     let isCancelled = false;
 
@@ -62,6 +65,7 @@ export default function UploadsPage() {
     };
   }, []);
 
+  // Upload selected files with optimistic rows so progress appears immediately.
   const onFiles = useCallback((incoming) => {
     const fileList = Array.from(incoming || []);
     setError("");
@@ -113,6 +117,7 @@ export default function UploadsPage() {
     });
   }, []);
 
+  // Drag handlers keep the drop zone visual state separate from the upload logic.
   const onDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -126,6 +131,7 @@ export default function UploadsPage() {
 
   const onDragLeave = useCallback(() => setIsDragging(false), []);
 
+  // Pretty file rows avoid recalculating display-only metadata during every render branch.
   const prettyFiles = useMemo(() => files.map((file) => ({
     id: file.id,
     name: file.name,
@@ -135,6 +141,7 @@ export default function UploadsPage() {
 
   const selectedPreview = selectedFileId ? previewById[selectedFileId] : "";
 
+  // Confirmed deletes remove the backend record and clear the selected preview if needed.
   const deleteUpload = async () => {
     if (!confirmDeleteId) return;
 
@@ -151,6 +158,7 @@ export default function UploadsPage() {
 
   return (
     <div className={styles.uploadsPage}>
+      {/* Upload header gives the accepted file type and size limit for this workflow. */}
       <div className={styles.header}>
         <h1>Create or import a custom classification</h1>
         <p>Maximum file size: 50 MB - Supported format: CSV</p>
@@ -158,8 +166,10 @@ export default function UploadsPage() {
 
       {error && <div className={styles.previewPlaceholder}>{error}</div>}
 
+      {/* Main upload workspace: drop zone and uploaded file list beside the preview panel. */}
       <div className={styles.grid}>
         <section className={styles.dropSection}>
+          {/* Drop zone supports click-to-browse, drag/drop, and keyboard activation. */}
           <div
             className={`${styles.dropZone} ${isDragging ? styles.dragOver : ""}`}
             onDragOver={onDragOver}
@@ -179,6 +189,7 @@ export default function UploadsPage() {
           </div>
 
           {prettyFiles.length > 0 && (
+            /* Uploaded files show selection, progress, and delete affordances. */
             <div className={styles.uploadList}>
               {prettyFiles.map((file) => (
                 <article
@@ -214,6 +225,7 @@ export default function UploadsPage() {
           )}
         </section>
 
+        {/* Preview panel shows parsed CSV preview text and collapsible authoring help. */}
         <aside className={styles.previewSection}>
           <div className={styles.previewHeader}>Preview</div>
           {selectedFileId ? (
@@ -241,6 +253,7 @@ export default function UploadsPage() {
         </aside>
       </div>
 
+      {/* Delete confirmation prevents accidental removal of uploaded files. */}
       {confirmDeleteId && (
         <div className={styles.modalOverlay} onClick={() => setConfirmDeleteId(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>

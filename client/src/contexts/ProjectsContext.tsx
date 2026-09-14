@@ -22,6 +22,9 @@ export type Task = {
   projectId: number;
   title: string;
   dueDate?: string;
+  endDate?: string;
+  dueStartTime?: string;
+  dueEndTime?: string;
   status?: "todo" | "in-progress" | "done";
   priority?: "high" | "medium" | "low";
   description?: string;
@@ -124,6 +127,13 @@ export const useProjects = (): ProjectsContextType => {
 const formatDueDateForClient = (dueDate?: string): string | undefined => {
   if (!dueDate) return undefined;
   return dueDate.split("T")[0];
+};
+
+const formatTimeForClient = (dateTime?: string): string | undefined => {
+  if (!dateTime) return undefined;
+  const date = new Date(dateTime);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 };
 
 /**
@@ -253,6 +263,9 @@ const normalizeTask = (serverTask: any): Task => {
     projectId: Number(serverTask.project ?? serverTask.projectId),
     title: serverTask.title,
     dueDate: formatDueDateForClient(serverTask.due_date ?? serverTask.dueDate),
+    endDate: serverTask.end_date ?? serverTask.endDate,
+    dueStartTime: formatTimeForClient(serverTask.due_date ?? serverTask.dueDate),
+    dueEndTime: formatTimeForClient(serverTask.end_date ?? serverTask.endDate),
     status: mapServerToClientStatus(serverTask.status),
     priority: serverTask.priority || "medium",
     description: serverTask.description,
@@ -625,6 +638,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         projectId,
         title: data.title || "New Task",
         dueDate: data.dueDate,
+        endDate: data.endDate,
+        dueStartTime: data.dueStartTime,
+        dueEndTime: data.dueEndTime,
         status: data.status || "todo",
         priority: data.priority || "medium",
         description: data.description,
@@ -659,6 +675,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       status: mapClientToServerStatus(data.status) || "todo",
       priority: data.priority || "medium",
       due_date: normalizeDueDateForServer(data.dueDate),
+      end_date: normalizeDueDateForServer(data.endDate),
       assignee_ids: assigneeIds,
       progress: data.progress,
       total_steps: data.totalSteps,
@@ -754,6 +771,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     if (updates.priority !== undefined)    serverPayload.priority    = updates.priority;
     if (updates.status !== undefined)      serverPayload.status      = mapClientToServerStatus(updates.status);
     if (updates.dueDate !== undefined)     serverPayload.due_date    = normalizeDueDateForServer(updates.dueDate);
+    if (updates.endDate !== undefined)     serverPayload.end_date    = normalizeDueDateForServer(updates.endDate);
     if (updates.projectId !== undefined)   serverPayload.project     = updates.projectId;
     if (updates.progress !== undefined)    serverPayload.progress    = updates.progress;
     if (updates.totalSteps !== undefined)  serverPayload.total_steps = updates.totalSteps;

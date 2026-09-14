@@ -72,18 +72,26 @@
   gap: 8px;
   margin-bottom: 10px;
 
-  span {
-    font-weight: 700;
-    color: #0f172a;
-  }
-
-  button {
-    height: 28px;
-    width: 28px;
+  select,
+  input {
+    height: 32px;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     background: #fff;
-    cursor: pointer;
+    color: #0f172a;
+    font-weight: 700;
+    outline: none;
+  }
+
+  select {
+    flex: 1;
+    min-width: 0;
+    padding: 0 8px;
+  }
+
+  input {
+    width: 78px;
+    padding: 0 6px;
   }
 }
 
@@ -392,6 +400,13 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.durationHint {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
 }
 
 .timeField {
