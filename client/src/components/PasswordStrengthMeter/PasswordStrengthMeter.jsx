@@ -171,7 +171,7 @@ const PasswordStrengthMeter = memo(function PasswordStrengthMeter({
         lastCheckedPasswordRef.current = pwd;
       }
     }, 2000); // 2 second delay - only check when user finishes typing
-  }, [checkPasswordStrength, password]);
+  }, [checkPasswordStrength, password, onStrengthChange]);
 
   // Check strength when password changes (with 2 second debounce)
   useEffect(() => {

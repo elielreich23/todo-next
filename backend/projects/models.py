@@ -37,9 +37,16 @@ class Task(models.Model):
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="medium")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="todo")
     due_date = models.DateTimeField(blank=True, null=True)
+    end_date = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    progress = models.IntegerField(default=0)
+    total_steps = models.IntegerField(default=0)
+    category = models.CharField(max_length=100, blank=True, null=True)
+    duration = models.CharField(max_length=50, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks")
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tasks")

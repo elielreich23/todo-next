@@ -30,5 +30,6 @@ const CalendarClient = dynamic(() => import("./CalendarClient"), {
 });
 
 export default function CalendarPage() {
+  // FullCalendar is client-only; this route wrapper avoids SSR mismatches while the calendar hydrates.
   return <CalendarClient />;
 }

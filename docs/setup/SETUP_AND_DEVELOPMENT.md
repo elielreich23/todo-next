@@ -31,7 +31,7 @@ cd backend
 # 1. Navigate to backend directory
 cd backend
 
-# 2. Create virtual environment
+# 2. virtual environment
 python -m venv venv
 
 # 3. Activate virtual environment

@@ -14,6 +14,7 @@ const ProjectWizard = dynamic(() => import('../../components/ProjectWizard/Proje
 });
 
 export default function Dashboard({ children }) {
+  // Shell state controls the persistent dashboard chrome: navigation, sidebars, theme, and project wizard.
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useUser();
@@ -35,7 +36,7 @@ export default function Dashboard({ children }) {
   const [notification, setNotification] = useState(null);
   const whiteSidebarRef = useRef(null);
 
-  // Load theme from localStorage on component mount
+  // Theme preference is local to the dashboard shell and restored before users begin navigating.
   useEffect(() => {
     const savedTheme = localStorage.getItem('dashboard-theme');
     if (savedTheme) {
@@ -43,7 +44,7 @@ export default function Dashboard({ children }) {
     }
   }, []);
 
-  // Close white sidebar when clicking outside of it
+  // The project/task sidebar behaves like a temporary drawer on smaller workflows.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!isWhiteSidebarOpen) return;
@@ -62,7 +63,7 @@ export default function Dashboard({ children }) {
     };
   }, [isWhiteSidebarOpen]);
 
-  // Determine which page is currently active
+  // Route-to-nav mapping keeps the dark sidebar highlight aligned with the active dashboard feature.
   const getActivePage = () => {
     if (pathname.includes('/profile')) return 'profile';
     if (pathname.includes('/settings')) return 'settings';
@@ -93,11 +94,10 @@ export default function Dashboard({ children }) {
     selectProject(projectId);
     router.push('/dashboard');
 
-    // Add visual feedback
+    // Double-click loads a project into the board and gives short-lived feedback for discoverability.
     setDoubleClickFeedback(projectId);
     setTimeout(() => setDoubleClickFeedback(null), 300);
 
-    // Show notification
     setNotification(`Project "${project?.name}" loaded in dashboard`);
     setTimeout(() => setNotification(null), 3000);
   };
@@ -132,6 +132,7 @@ export default function Dashboard({ children }) {
     router.push('/dashboard');
   };
 
+  // Sidebar task counts are derived from the selected project so destructive actions stay project-scoped.
   const currentProjectId = selectedProjectId || projects[0]?.id;
   const projectTasks = tasks.filter(t => t.projectId === currentProjectId);
   const counts = {
@@ -143,7 +144,7 @@ export default function Dashboard({ children }) {
 
   return (
     <div className={`dashboard ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
-      {/* Dark Left Sidebar */}
+      {/* Primary feature navigation: compact, always visible, and route-aware. */}
       <div className="dark-sidebar">
         <div className="sidebar-top">
           <div className="top-dots">
@@ -152,7 +153,7 @@ export default function Dashboard({ children }) {
             <div className="dot"></div>
           </div>
 
-          {/* Logo - Clickable to go to dashboard */}
+          {/* Logo shortcut returns users to the main board without changing selected project state. */}
           <div className="logo" onClick={handleLogoClick}>
             <div className="logo-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -163,7 +164,7 @@ export default function Dashboard({ children }) {
           </div>
 
           <nav className="sidebar-nav">
-            {/* Dashboard button - Toggles white sidebar */}
+            {/* Dashboard button opens the project/task drawer instead of navigating away. */}
             <button
               className={`nav-item ${activePage === 'dashboard' ? 'active' : ''}`}
               onClick={toggleWhiteSidebar}
@@ -253,7 +254,7 @@ export default function Dashboard({ children }) {
         </div>
       </div>
 
-      {/* White Collapsible Sidebar */}
+      {/* Project/task drawer: project switching, quick counts, and scoped bulk-delete actions. */}
       <div className={`white-sidebar ${isWhiteSidebarOpen ? 'open' : ''}`} ref={whiteSidebarRef}>
         <div className="sidebar-header">
           <h2>Projects</h2>
@@ -391,7 +392,7 @@ export default function Dashboard({ children }) {
           </div>
         </div>
 
-        {/* Theme Toggle at bottom of white sidebar */}
+        {/* Theme toggle persists the user's dashboard color preference. */}
         <div className="theme-toggle">
           <button
             className={`theme-btn ${!isDarkMode ? 'active' : ''}`}
@@ -414,19 +415,19 @@ export default function Dashboard({ children }) {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Nested feature pages render here while the dashboard shell remains mounted. */}
       <div className="main-content">
         {children}
       </div>
 
-      {/* Project Creation Wizard */}
+      {/* Project creation is shared by the shell and project sidebar actions. */}
       <ProjectWizard
         isOpen={isProjectWizardOpen}
         onClose={closeProjectWizard}
         onCreate={handleCreateProject}
       />
 
-      {/* Notification Toast */}
+      {/* Lightweight local toast for shell-level actions such as loading a project. */}
       {notification && (
         <div className="notification-toast">
           <div className="notification-content">

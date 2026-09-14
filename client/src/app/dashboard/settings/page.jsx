@@ -18,6 +18,7 @@ const settingsCategories = [
   { id: 'integrations', name: 'Integrations', icon: '🔌', description: 'Connect external services' },
 ];
 
+// Static plan options back the billing UI until live subscription data is connected.
 const plans = [
   { id: 'basic', name: 'Basic Plan', price: '$9/month', subtitle: 'Up to 10 users, 20GB per user' },
   { id: 'business', name: 'Business Plan', price: '$19/month', subtitle: 'Up to 20 users, 40GB per user' },
@@ -25,6 +26,7 @@ const plans = [
 ];
 
 export default function SettingsPage() {
+  // Settings state is split by feature area so each category can own its own form data.
   const [selectedCategory, setSelectedCategory] = useState('basic-info');
   const [selectedPlan, setSelectedPlan] = useState('basic');
   const { user, setUser } = useUser();
@@ -56,6 +58,7 @@ export default function SettingsPage() {
   const [teamMessage, setTeamMessage] = useState('');
   const [teamLoading, setTeamLoading] = useState(false);
 
+  // Seed editable profile and notification forms from the authenticated user.
   useEffect(() => {
     if (!user) return;
     setProfileForm({
@@ -71,6 +74,7 @@ export default function SettingsPage() {
     }));
   }, [user]);
 
+  // Persist account profile fields and notification preferences through one profile endpoint.
   const saveProfile = async (event) => {
     event.preventDefault();
     setStatusMessage('');
@@ -95,6 +99,7 @@ export default function SettingsPage() {
     setNotificationPrefs((prev) => ({ ...prev, [field]: event.target.checked }));
   };
 
+  // Team data is lazy-loaded because most settings categories do not need it.
   const loadTeam = async () => {
     setTeamLoading(true);
     setTeamMessage('');
@@ -122,6 +127,7 @@ export default function SettingsPage() {
     }
   }, [selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Team mutation helpers keep the local team panel refreshed after each backend change.
   const saveTeamName = async (event) => {
     event.preventDefault();
     setTeamMessage('');
@@ -207,11 +213,13 @@ export default function SettingsPage() {
       .join('');
   };
 
+  // Render the selected settings feature while the outer page keeps the category navigation stable.
   const renderCategoryContent = () => {
     switch (selectedCategory) {
       case 'basic-info':
         return (
           <div className={styles.categoryContent}>
+            {/* Basic account information and notification prefs share the same save action. */}
             <h2>Basic Information</h2>
             <p className={styles.categoryDescription}>Update your account information and personal details.</p>
 
@@ -261,6 +269,7 @@ export default function SettingsPage() {
       case 'sessions':
         return (
           <div className={styles.categoryContent}>
+            {/* SessionManagement owns active-device listing and revocation workflows. */}
             <SessionManagement />
           </div>
         );
@@ -268,6 +277,7 @@ export default function SettingsPage() {
       case 'plans-billing':
         return (
           <div className={styles.categoryContent}>
+            {/* Billing UI is currently local form state and ready for a payments integration. */}
             <h2>Plans & Billing</h2>
             <p className={styles.categoryDescription}>Manage your subscription plan and billing details.</p>
 
@@ -334,6 +344,7 @@ export default function SettingsPage() {
       case 'team':
         return (
           <div className={styles.categoryContent}>
+            {/* Team management handles name updates, members, roles, and pending invitations. */}
             <h2>Team Management</h2>
             <p className={styles.categoryDescription}>Manage your team members and their permissions.</p>
 
@@ -450,6 +461,7 @@ export default function SettingsPage() {
       case 'appearance':
         return (
           <div className={styles.categoryContent}>
+            {/* Appearance options are grouped here for future theme persistence. */}
             <h2>Appearance</h2>
             <p className={styles.categoryDescription}>Customize the look and feel of your interface.</p>
 
@@ -485,6 +497,7 @@ export default function SettingsPage() {
       case 'notifications':
         return (
           <div className={styles.categoryContent}>
+            {/* Notification switches update local prefs and are saved with the profile form. */}
             <h2>Notification Preferences</h2>
             <p className={styles.categoryDescription}>Configure how and when you receive notifications.</p>
 
@@ -539,6 +552,7 @@ export default function SettingsPage() {
       case 'audit-trail':
         return (
           <div className={styles.categoryContent}>
+            {/* Audit trail placeholder keeps filters and list layout ready for activity data. */}
             <h2>Audit Trail</h2>
             <p className={styles.categoryDescription}>View all activity logs and system events.</p>
 
@@ -568,6 +582,7 @@ export default function SettingsPage() {
       case 'integrations':
         return (
           <div className={styles.categoryContent}>
+            {/* Integration cards are static placeholders for future provider connection flows. */}
             <h2>Integrations</h2>
             <p className={styles.categoryDescription}>Connect your favorite tools and services.</p>
 
@@ -617,11 +632,13 @@ export default function SettingsPage() {
 
   return (
     <div className={styles.settingsPage}>
+      {/* Settings page frame: category navigation on the left, selected panel on the right. */}
       <div className={styles.header}>
         <h1>Settings</h1>
       </div>
 
       <div className={styles.content}>
+        {/* Category list controls which settings feature is rendered. */}
         <div className={styles.settingsNav}>
           {settingsCategories.map((category) => (
             <button
@@ -638,6 +655,7 @@ export default function SettingsPage() {
           ))}
         </div>
 
+        {/* Detail region renders the active category without unmounting the page frame. */}
         <div className={styles.settingsDetail}>
           {renderCategoryContent()}
         </div>

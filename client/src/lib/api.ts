@@ -22,11 +22,13 @@ const pendingRequests = new Map<string, Promise<any>>();
 /**
  * Gets authentication headers for API requests
  */
-const getAuthHeaders = (): HeadersInit => {
+const getAuthHeaders = (body?: any): HeadersInit => {
   const token = getAccessToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
+  const headers: HeadersInit = {};
+
+  if (!(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -40,7 +42,20 @@ const getAuthHeaders = (): HeadersInit => {
  */
 const getRequestKey = (path: string, init?: RequestInit): string => {
   const method = init?.method || 'GET';
-  const body = init?.body ? JSON.stringify(JSON.parse(init.body as string)) : '';
+  let body = '';
+  if (init?.body) {
+    if (init.body instanceof FormData) {
+      body = 'form-data';
+    } else if (typeof init.body === 'string') {
+      try {
+        body = JSON.stringify(JSON.parse(init.body));
+      } catch {
+        body = init.body;
+      }
+    } else {
+      body = 'other-body';
+    }
+  }
   return `${method}:${path}:${body}`;
 };
 
@@ -136,7 +151,7 @@ const handleTokenRefreshAndRetry = async <T>(
     const retryResponse = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
-        ...getAuthHeaders(),
+        ...getAuthHeaders(init?.body),
         ...(init?.headers || {}),
       },
       cache: 'no-store',
@@ -160,7 +175,7 @@ const handleTokenRefreshAndRetry = async <T>(
     const retryData = await retryResponse.json() as T;
 
     if (isGetRequest && useCache && retryResponse.ok) {
-      const cacheKey = generateCacheKey(path, init?.body ? JSON.parse(init.body as string) : undefined);
+      const cacheKey = generateCacheKey(path, init?.body && typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
       const cacheConfig = getCacheConfig(path);
       apiCache.set(cacheKey, retryData, cacheConfig);
     }
@@ -260,7 +275,7 @@ export async function api<T>(path: string, init?: RequestInit, useCache: boolean
   // Check cache for GET requests
   const isGetRequest = !init?.method || init.method === 'GET';
   if (isGetRequest && useCache) {
-    const cacheKey = generateCacheKey(path, init?.body ? JSON.parse(init.body as string) : undefined);
+    const cacheKey = generateCacheKey(path, init?.body && typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
     const cachedData = apiCache.get<T>(cacheKey);
     if (cachedData !== null) {
       return cachedData;
@@ -275,7 +290,7 @@ export async function api<T>(path: string, init?: RequestInit, useCache: boolean
     res = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
-        ...getAuthHeaders(),
+        ...getAuthHeaders(init?.body),
         ...(init?.headers || {}),
       },
       cache: 'no-store',
@@ -313,7 +328,7 @@ export async function api<T>(path: string, init?: RequestInit, useCache: boolean
 
   // Cache successful GET responses
   if (isGetRequest && useCache && res.ok) {
-    const cacheKey = generateCacheKey(path, init?.body ? JSON.parse(init.body as string) : undefined);
+    const cacheKey = generateCacheKey(path, init?.body && typeof init.body === 'string' ? JSON.parse(init.body) : undefined);
     const cacheConfig = getCacheConfig(path);
     apiCache.set(cacheKey, data, cacheConfig);
   }

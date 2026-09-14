@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './wizardModal.module.scss';
 
 /**
@@ -32,11 +32,18 @@ export default function WizardModal({
   ctas = {},
   isSubmitting = false,
   error = '',
+  formKey,
   onClose,
   onSubmit,
 }) {
   const [step, setStep] = useState(1);
   const [values, setValues] = useState({});
+
+  // Keep a ref to the latest steps so the initialization effect can read them
+  // without adding `steps` as a reactive dependency (which would re-fire and
+  // wipe user-typed values every time the parent re-renders).
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
 
   const { cancelLabel, nextLabel, backLabel, submitLabel } = useMemo(
     () => ({
@@ -57,6 +64,7 @@ export default function WizardModal({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
+  // Reset step + values when modal closes.
   useEffect(() => {
     if (!isOpen) {
       setStep(1);
@@ -64,20 +72,24 @@ export default function WizardModal({
     }
   }, [isOpen]);
 
-  // Initialize form values with default values when modal opens
+  // Initialize form values with defaultValues ONLY when the modal first opens.
+  // We intentionally read `steps` via a ref here so that later parent re-renders
+  // (which produce new `steps` object references) don't trigger this effect and
+  // silently overwrite whatever the user already typed.
   useEffect(() => {
-    if (isOpen && steps && steps.length > 0) {
-      const initialValues = {};
-      steps.forEach((stepFields) => {
-        stepFields.forEach((field) => {
-          if (field.defaultValue !== undefined) {
-            initialValues[field.name] = field.defaultValue;
-          }
-        });
+    if (!isOpen) return;
+    const currentSteps = stepsRef.current;
+    if (!currentSteps || currentSteps.length === 0) return;
+    const initialValues = {};
+    currentSteps.forEach((stepFields) => {
+      stepFields.forEach((field) => {
+        if (field.defaultValue !== undefined) {
+          initialValues[field.name] = field.defaultValue;
+        }
       });
-      setValues(initialValues);
-    }
-  }, [isOpen, steps]);
+    });
+    setValues(initialValues);
+  }, [isOpen, formKey]); // re-init when a different entity is opened for editing
 
   const normalizedSteps = useMemo(() => {
     if (Array.isArray(steps) && steps.length > 0) return steps;

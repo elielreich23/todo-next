@@ -18,6 +18,7 @@ import { saveProfileToCache } from '../../../utils/profileCache';
 import ProfileAssignedTasks from './ProfileAssignedTasks';
 
 export default function ProfilePage() {
+  // Profile page state separates saved profile data from temporary edits.
   const { user, setUser, isLoading: userLoading } = useUser();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('details');
@@ -30,7 +31,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState(() => loadProfileFromCache());
   const [tempData, setTempData] = useState(() => loadProfileFromCache());
 
-  // Check authentication on mount
+  // Keep unauthenticated visitors out while still allowing cached profile data during load.
   useEffect(() => {
     if (!userLoading && !user) {
       const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -40,7 +41,7 @@ export default function ProfilePage() {
     }
   }, [user, userLoading, router]);
 
-  // Function to update profile data from user
+  // Merge server user fields into the richer dashboard profile model.
   const updateProfileFromUser = useCallback((userData) => {
     if (!userData) return;
 
@@ -55,7 +56,7 @@ export default function ProfilePage() {
     });
   }, []);
 
-  // Update profile data when user context changes
+  // Reconcile profile display from cache first, then from the authenticated user when available.
   useEffect(() => {
     const cachedData = loadProfileFromCache();
     const hasCachedData = hasProfileData(cachedData);
@@ -95,7 +96,7 @@ export default function ProfilePage() {
     }
   }, [user, userLoading, updateProfileFromUser]);
 
-  // Listen for storage changes and custom events (when user data is cached from signup/login)
+  // Listen for login/signup cache updates triggered elsewhere in the app.
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === STORAGE_KEYS.CACHED_USER_DATA) {
@@ -127,7 +128,7 @@ export default function ProfilePage() {
     };
   }, [user, updateProfileFromUser]);
 
-  // Check cache on mount to ensure we have the latest data (especially after refresh)
+  // Refresh from cache on mount so profile fields survive browser refreshes.
   useEffect(() => {
     const cachedData = loadProfileFromCache();
     if (hasProfileData(cachedData)) {
@@ -136,6 +137,7 @@ export default function ProfilePage() {
     }
   }, []);
 
+  // Edit/save toggles between local form editing and API-backed profile updates.
   const handleEditProfile = async () => {
     if (!isEditing) {
       setTempData({ ...profileData });
@@ -228,7 +230,7 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.profilePage}>
-      {/* Header */}
+      {/* Page header: search placeholder, current date, and compact user avatar. */}
       <div className={styles.header}>
         <h1>Profile Management</h1>
         <div className={styles.headerActions}>
@@ -249,7 +251,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Main Tabs */}
+      {/* Main tabs switch between personal details and assigned task workload. */}
       <div className={styles.tabs}>
         <div className={styles.tabContainer}>
           <button className={`${styles.tab} ${activeTab==='details' ? styles.active : ''}`} onClick={()=>setActiveTab('details')}>My Details</button>
@@ -263,7 +265,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Profile Content */}
+      {/* Active tab content: assigned tasks delegate to a focused component; details stay local. */}
       <div className={styles.profileContent}>
         {activeTab === 'assigned' ? (
           <ProfileAssignedTasks
@@ -273,7 +275,7 @@ export default function ProfilePage() {
           />
         ) : (
         <>
-        {/* Profile Header with Banner */}
+        {/* Profile summary banner mirrors the saved profile model. */}
         <div className={styles.profileHeader}>
           <div className={styles.bannerImage}>
             <div className={styles.bannerOverlay}></div>
@@ -303,14 +305,14 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Profile Sub-tabs */}
+        {/* Sub-tabs organize profile details, summary placeholders, and account preferences. */}
         <div className={styles.subTabs}>
           <button className={`${styles.subTab} ${activeSubTab==='overview' ? styles.active : ''}`} onClick={()=>setActiveSubTab('overview')}>Profile Overview</button>
           <button className={`${styles.subTab} ${activeSubTab==='summary' ? styles.active : ''}`} onClick={()=>setActiveSubTab('summary')}>Your Summary</button>
           <button className={`${styles.subTab} ${activeSubTab==='settings' ? styles.active : ''}`} onClick={()=>setActiveSubTab('settings')}>Account Settings</button>
         </div>
 
-        {/* Profile Content based on active sub-tab */}
+        {/* Overview form uses tempData while editing and profileData while read-only. */}
         {activeSubTab === 'overview' && (
           <div className={styles.profileForm}>
             <div className={styles.formRow}>
@@ -406,7 +408,7 @@ export default function ProfilePage() {
               </p>
             )}
 
-            {/* Action Buttons */}
+            {/* Edit actions preserve cancel/save behavior around the temporary form buffer. */}
             <div className={styles.actionButtons}>
               {isEditing ? (
                 <>
@@ -440,6 +442,7 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Summary section is ready for activity metrics once those endpoints are connected. */}
         {activeSubTab === 'summary' && (
           <div className={styles.profileForm}>
             <h3>Your Summary</h3>
@@ -461,6 +464,7 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Account settings placeholder keeps preference UI grouped with profile management. */}
         {activeSubTab === 'settings' && (
           <div className={styles.profileForm}>
             <h3>Account Settings</h3>
