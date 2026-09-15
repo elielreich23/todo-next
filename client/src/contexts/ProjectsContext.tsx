@@ -788,11 +788,12 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(serverPayload),
       });
 
       if (response.success) {
+        window.dispatchEvent(new Event('task-updated'));
         if (updates.comments && updates.comments.length > 0) {
           const newComments = updates.comments.filter((comment) => isLocalCommentId(comment.id));
           for (const comment of newComments) {
@@ -854,7 +855,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await api<{ success: boolean; task: Task }>(`/api/tasks/${id}/`, {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify({ status: serverStatus }),
       });
 
@@ -862,6 +863,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         setTasks((prev) =>
           prev.map((t) => (t.id === id ? normalizeTask(response.task) : t))
         );
+        window.dispatchEvent(new Event('task-updated'));
       }
     } catch (error) {
       if (previousStatus) {

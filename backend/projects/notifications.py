@@ -24,6 +24,7 @@ def notify_task_assignees(task, assignee_ids, actor):
             continue
         Notification.objects.create(
             recipient=assignee,
+            sender=actor,
             notification_type="task_assigned",
             title="Task Assigned",
             message=(
@@ -51,6 +52,7 @@ def create_task_update_notifications(task, actor):
     for user in users:
         Notification.objects.create(
             recipient=user,
+            sender=actor,
             notification_type="task_updated",
             title="Task Updated",
             message=f'{_actor_name(actor) if actor else "A teammate"} updated "{task.title}" in "{task.project.name}".',
@@ -76,6 +78,7 @@ def create_task_completed_notifications(task, actor):
     for user in users:
         Notification.objects.create(
             recipient=user,
+            sender=actor,
             notification_type="task_completed",
             title="Task Completed",
             message=f'{_actor_name(actor) if actor else "A teammate"} marked "{task.title}" as completed.',
@@ -97,6 +100,7 @@ def notify_project_assignees(project, assignee_ids, actor):
             continue
         Notification.objects.create(
             recipient=assignee,
+            sender=actor,
             notification_type="project_shared",
             title="Project Shared",
             message=f'{_actor_name(actor) if actor else "A teammate"} added you to project "{project.name}".',

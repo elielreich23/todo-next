@@ -34,9 +34,9 @@ export default function StatisticsPage() {
       }
     }
 
-    const loadStatistics = async () => {
+    const loadStatistics = async (showLoadingState = true) => {
       try {
-        setLoading(true);
+        if (showLoadingState) setLoading(true);
         const response = await api('/api/statistics/');
         if (response.success) {
           setStats(response.statistics);
@@ -53,11 +53,19 @@ export default function StatisticsPage() {
         }
         setError('Failed to load statistics');
       } finally {
-        setLoading(false);
+        if (showLoadingState) setLoading(false);
       }
     };
 
     loadStatistics();
+
+    const handleTaskUpdated = () => {
+      // Reload silently on background updates
+      loadStatistics(false);
+    };
+
+    window.addEventListener('task-updated', handleTaskUpdated);
+    return () => window.removeEventListener('task-updated', handleTaskUpdated);
   }, [user, userLoading, router]);
 
   // Utility kept local for future file/storage stats cards.

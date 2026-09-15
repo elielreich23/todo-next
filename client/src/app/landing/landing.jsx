@@ -321,6 +321,7 @@ export default function Home() {
               and support your team. We do not sell personal information. Contact us anytime to
               request access, correction, or deletion of your account data.
             </p>
+            <a href="/policy" className="info-link">Read full privacy policy</a>
           </article>
         </div>
       </section>
@@ -601,7 +602,8 @@ export default function Home() {
               <ul>
                 <li><a href="#about">About</a></li>
                 <li><a href="#values">Our values</a></li>
-                <li><a href="#policy">Privacy policy</a></li>
+                <li><a href="/policy">Privacy policy</a></li>
+                <li><a href="/terms">Terms of use</a></li>
                 <li><a href="#testimonials">Stories</a></li>
               </ul>
             </div>

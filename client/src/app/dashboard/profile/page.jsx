@@ -16,6 +16,8 @@ import { api } from '../../../lib/api';
 import { API_ENDPOINTS, DEFAULTS, CUSTOM_EVENTS, STORAGE_KEYS } from '../../../constants';
 import { saveProfileToCache } from '../../../utils/profileCache';
 import ProfileAssignedTasks from './ProfileAssignedTasks';
+import ProfileSummary from './ProfileSummary';
+import AvatarUpload from '../../../components/AvatarUpload/AvatarUpload';
 
 export default function ProfilePage() {
   // Profile page state separates saved profile data from temporary edits.
@@ -55,6 +57,38 @@ export default function ProfilePage() {
       return newProfileData;
     });
   }, []);
+
+  // Initialize tempData with notification and theme preferences from user
+  useEffect(() => {
+    if (user) {
+      setTempData(prev => ({
+        ...prev,
+        notification_preferences: user.notification_preferences || {
+          email: true,
+          push: true,
+          task_assignments: true,
+          project_updates: false,
+        },
+        theme_preferences: user.theme_preferences || {
+          dark_mode: false,
+          compact_view: false,
+        },
+      }));
+      setProfileData(prev => ({
+        ...prev,
+        notification_preferences: user.notification_preferences || {
+          email: true,
+          push: true,
+          task_assignments: true,
+          project_updates: false,
+        },
+        theme_preferences: user.theme_preferences || {
+          dark_mode: false,
+          compact_view: false,
+        },
+      }));
+    }
+  }, [user]);
 
   // Reconcile profile display from cache first, then from the authenticated user when available.
   useEffect(() => {
@@ -159,6 +193,14 @@ export default function ProfilePage() {
       if (tempData.email?.trim()) payload.email = tempData.email.trim();
       if (tempData.username?.trim()) payload.username = tempData.username.trim();
 
+      // Include notification and theme preferences
+      if (tempData.notification_preferences) {
+        payload.notification_preferences = tempData.notification_preferences;
+      }
+      if (tempData.theme_preferences) {
+        payload.theme_preferences = tempData.theme_preferences;
+      }
+
       const hasLocalOnlyChanges =
         tempData.phone !== profileData.phone ||
         tempData.phoneCode !== profileData.phoneCode ||
@@ -203,6 +245,40 @@ export default function ProfilePage() {
       setSaveMessage('Profile saved successfully.');
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Save account settings independently
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveMessage(null);
+
+    try {
+      const payload = {
+        notification_preferences: profileData.notification_preferences,
+        theme_preferences: profileData.theme_preferences,
+      };
+
+      if (!user) {
+        throw new Error('You must be signed in to save your settings.');
+      }
+
+      const response = await api(API_ENDPOINTS.AUTH.PROFILE_UPDATE, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+
+      if (!response?.success || !response?.user) {
+        throw new Error(response?.message || 'Failed to update settings');
+      }
+
+      setUser(response.user);
+      setSaveMessage('Settings saved successfully.');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save settings');
     } finally {
       setIsSaving(false);
     }
@@ -282,7 +358,11 @@ export default function ProfilePage() {
           </div>
           <div className={styles.profileInfo}>
             <div className={styles.profileImage}>
-              <Image src="/api/placeholder/120/120" alt="Profile" width={120} height={120} />
+              <AvatarUpload
+                currentAvatar={user?.avatar_url}
+                onAvatarChange={(updatedUser) => setUser(updatedUser)}
+                isLoading={isSaving}
+              />
             </div>
             <div className={styles.userDetails}>
               <h2 className={styles.userName}>
@@ -442,29 +522,12 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Summary section is ready for activity metrics once those endpoints are connected. */}
+        {/* Summary section with real statistics from backend API */}
         {activeSubTab === 'summary' && (
-          <div className={styles.profileForm}>
-            <h3>Your Summary</h3>
-            <p>This section will contain your activity summary, statistics, and achievements.</p>
-            <div className={styles.summaryContent}>
-              <div className={styles.summaryCard}>
-                <h4>Tasks Completed</h4>
-                <p className={styles.summaryNumber}>24</p>
-              </div>
-              <div className={styles.summaryCard}>
-                <h4>Projects Active</h4>
-                <p className={styles.summaryNumber}>3</p>
-              </div>
-              <div className={styles.summaryCard}>
-                <h4>This Month</h4>
-                <p className={styles.summaryNumber}>8</p>
-              </div>
-            </div>
-          </div>
+          <ProfileSummary user={user} />
         )}
 
-        {/* Account settings placeholder keeps preference UI grouped with profile management. */}
+        {/* Account settings with persistent preferences */}
         {activeSubTab === 'settings' && (
           <div className={styles.profileForm}>
             <h3>Account Settings</h3>
@@ -472,16 +535,81 @@ export default function ProfilePage() {
             <div className={styles.settingsContent}>
               <div className={styles.settingItem}>
                 <label>Email Notifications</label>
-                <input type="checkbox" defaultChecked />
+                <input
+                  type="checkbox"
+                  checked={profileData.notification_preferences?.email ?? true}
+                  onChange={(e) => handleInputChange('notification_preferences', {
+                    ...profileData.notification_preferences,
+                    email: e.target.checked
+                  })}
+                />
               </div>
               <div className={styles.settingItem}>
-                <label>Two-Factor Authentication</label>
-                <input type="checkbox" />
+                <label>Push Notifications</label>
+                <input
+                  type="checkbox"
+                  checked={profileData.notification_preferences?.push ?? true}
+                  onChange={(e) => handleInputChange('notification_preferences', {
+                    ...profileData.notification_preferences,
+                    push: e.target.checked
+                  })}
+                />
+              </div>
+              <div className={styles.settingItem}>
+                <label>Task Assignment Notifications</label>
+                <input
+                  type="checkbox"
+                  checked={profileData.notification_preferences?.task_assignments ?? true}
+                  onChange={(e) => handleInputChange('notification_preferences', {
+                    ...profileData.notification_preferences,
+                    task_assignments: e.target.checked
+                  })}
+                />
+              </div>
+              <div className={styles.settingItem}>
+                <label>Project Update Notifications</label>
+                <input
+                  type="checkbox"
+                  checked={profileData.notification_preferences?.project_updates ?? false}
+                  onChange={(e) => handleInputChange('notification_preferences', {
+                    ...profileData.notification_preferences,
+                    project_updates: e.target.checked
+                  })}
+                />
               </div>
               <div className={styles.settingItem}>
                 <label>Dark Mode</label>
-                <input type="checkbox" />
+                <input
+                  type="checkbox"
+                  checked={profileData.theme_preferences?.dark_mode ?? false}
+                  onChange={(e) => handleInputChange('theme_preferences', {
+                    ...profileData.theme_preferences,
+                    dark_mode: e.target.checked
+                  })}
+                />
               </div>
+              <div className={styles.settingItem}>
+                <label>Compact View</label>
+                <input
+                  type="checkbox"
+                  checked={profileData.theme_preferences?.compact_view ?? false}
+                  onChange={(e) => handleInputChange('theme_preferences', {
+                    ...profileData.theme_preferences,
+                    compact_view: e.target.checked
+                  })}
+                />
+              </div>
+            </div>
+
+            <div className={styles.actionButtons}>
+              <button
+                type="button"
+                className={styles.saveButton}
+                onClick={handleSaveSettings}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Settings'}
+              </button>
             </div>
           </div>
         )}

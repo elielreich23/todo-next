@@ -803,14 +803,35 @@
   font-size: 0.95rem;
 }
 
-.mockDataNotice {
-  margin: 0 0 1.5rem;
-  padding: 0.65rem 0.9rem;
+.assignedTasksError {
+  padding: 2rem 1rem;
+  text-align: center;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   border-radius: 8px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  color: #9a3412;
+  margin: 1.5rem 0;
+
+  p {
+    margin: 0 0 1rem 0;
+    color: #b91c1c;
+    font-size: 0.9rem;
+  }
+}
+
+.retryButton {
+  padding: 0.5rem 1rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
   font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #b91c1c;
+  }
 }
 
 .assignedProfileHeader {
@@ -987,4 +1008,98 @@
   p {
     margin: 0;
   }
+}
+
+// Summary Styles
+.summaryLoading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.summaryError {
+  padding: 2rem 1rem;
+  text-align: center;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+
+  p {
+    margin: 0 0 1rem 0;
+    color: #b91c1c;
+    font-size: 0.9rem;
+  }
+}
+
+.emptySummary {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+
+  p {
+    margin: 0;
+  }
+}
+
+.summarySubtext {
+  margin: 0.5rem 0 0;
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.trendsSection {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e9ecef;
+
+  h4 {
+    margin: 0 0 1.5rem 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+}
+
+.trendChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  height: 150px;
+  padding: 1rem 0;
+}
+
+.trendBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-width: 40px;
+}
+
+.trendBarFill {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px 4px 0 0;
+  transition: height 0.3s ease;
+  min-height: 5px;
+}
+
+.trendLabel {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.trendCount {
+  position: absolute;
+  top: -20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2c3e50;
 }

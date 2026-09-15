@@ -459,6 +459,8 @@ export default function CalendarClient() {
     setFeedback("");
 
     try {
+      let createdEvent = null;
+
       if (draft.type === "task") {
         if (!draft.projectId) {
           setFeedback("Choose a project before creating a task.");
@@ -476,10 +478,32 @@ export default function CalendarClient() {
         };
 
         const taskId = editingEventId?.startsWith("task-") ? Number(editingEventId.replace("task-", "")) : null;
-        await api(taskId ? API_ENDPOINTS.TASKS.DETAIL(taskId) : API_ENDPOINTS.TASKS.LIST, {
+
+        // Optimistic UI update
+        const optimisticEvent = {
+          id: `task-temp-${Date.now()}`,
+          title: payload.title,
+          start: payload.due_date,
+          end: payload.end_date,
+          backgroundColor: taskColor({ status: payload.status, priority: payload.priority }),
+          borderColor: "transparent",
+          extendedProps: {
+            source: "task",
+            taskId: `temp-${Date.now()}`,
+            projectId: payload.project,
+            status: payload.status,
+            priority: payload.priority,
+            description: payload.description,
+            project: projects.find((p) => String(p.id) === String(payload.project))?.name || "",
+          },
+        };
+        setEvents((prev) => [...prev.filter(e => e.id !== editingEventId), optimisticEvent]);
+
+        const response = await api(taskId ? API_ENDPOINTS.TASKS.DETAIL(taskId) : API_ENDPOINTS.TASKS.LIST, {
           method: taskId ? "PUT" : "POST",
           body: JSON.stringify(payload),
         });
+        createdEvent = response;
       } else {
         const payload = {
           title: draft.title.trim(),
@@ -492,15 +516,36 @@ export default function CalendarClient() {
         };
 
         const eventId = editingEventId?.startsWith("event-") ? Number(editingEventId.replace("event-", "")) : null;
-        await api(eventId ? API_ENDPOINTS.CALENDAR.EVENT_DETAIL(eventId) : API_ENDPOINTS.CALENDAR.EVENTS, {
+
+        // Optimistic UI update
+        const optimisticEvent = {
+          id: `event-temp-${Date.now()}`,
+          title: payload.title,
+          start: payload.start,
+          end: payload.end,
+          backgroundColor: payload.color || "#DBEAFE",
+          borderColor: "transparent",
+          extendedProps: {
+            source: "custom",
+            eventId: `temp-${Date.now()}`,
+            link: payload.link,
+            guests: payload.guests,
+            description: payload.description,
+          },
+        };
+        setEvents((prev) => [...prev.filter(e => e.id !== editingEventId), optimisticEvent]);
+
+        const response = await api(eventId ? API_ENDPOINTS.CALENDAR.EVENT_DETAIL(eventId) : API_ENDPOINTS.CALENDAR.EVENTS, {
           method: eventId ? "PUT" : "POST",
           body: JSON.stringify(payload),
         });
+        createdEvent = response;
       }
 
-      await loadCalendarData();
       setIsModalOpen(false);
       resetDraft();
+      // Load in background
+      loadCalendarData().catch(console.error);
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Failed to save calendar item.");
     } finally {

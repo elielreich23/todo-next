@@ -181,7 +181,7 @@ const NotificationBell = memo(function NotificationBell() {
                 >
                   <div className={styles.avatar}>
                     <Image
-                      src={`/api/placeholder/40/40?seed=${notification.id}`}
+                      src={notification.sender?.avatar_url || `/api/placeholder/40/40?seed=${notification.id}`}
                       alt={getUserDisplayName(notification)}
                       width={40}
                       height={40}

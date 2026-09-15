@@ -13,6 +13,8 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=40, blank=True)
     bio = models.TextField(blank=True)
     notification_preferences = models.JSONField(default=dict, blank=True)
+    avatar = models.ImageField(upload_to="avatars/%Y/%m/%d/", blank=True, null=True)
+    theme_preferences = models.JSONField(default=dict, blank=True)
 
     # Use email as the username field
     USERNAME_FIELD = "email"

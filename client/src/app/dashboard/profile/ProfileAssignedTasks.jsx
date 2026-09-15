@@ -17,109 +17,6 @@ const TaskDrawer = dynamic(
 
 const PREVIEW_COUNT = 3;
 
-/** Fallback demo data when the assigned-tasks API returns empty (remove once backend is wired). */
-const MOCK_ASSIGNED_TASKS = [
-  {
-    id: 9001,
-    title: 'Design new ui presentation',
-    project: 'Dribbble marketing',
-    status: 'in-progress',
-    dueDate: '2022-08-24',
-    progress: 7,
-    totalSteps: 10,
-    comments: Array(7).fill(null),
-    attachments: Array(2).fill(null),
-  },
-  {
-    id: 9002,
-    title: 'Resolve conflicting merge',
-    project: 'Internal project',
-    status: 'todo',
-    dueDate: '2022-08-24',
-    progress: 3,
-    totalSteps: 10,
-    comments: Array(2).fill(null),
-    attachments: Array(1).fill(null),
-  },
-  {
-    id: 9003,
-    title: 'Fixing responsive layout',
-    project: 'Portfolio redesign',
-    status: 'in-progress',
-    dueDate: '2022-08-24',
-    progress: 5,
-    totalSteps: 10,
-    comments: Array(4).fill(null),
-    attachments: Array(2).fill(null),
-  },
-  {
-    id: 9004,
-    title: 'Update onboarding flow',
-    project: 'Product launch',
-    status: 'todo',
-    dueDate: '2022-09-01',
-    progress: 2,
-    totalSteps: 10,
-    comments: Array(1).fill(null),
-    attachments: [],
-  },
-  {
-    id: 9005,
-    title: 'Review analytics dashboard',
-    project: 'Growth team',
-    status: 'in-progress',
-    dueDate: '2022-09-05',
-    progress: 6,
-    totalSteps: 10,
-    comments: Array(3).fill(null),
-    attachments: Array(1).fill(null),
-  },
-  {
-    id: 9101,
-    title: 'Design new ui presentation',
-    project: 'Dribbble marketing',
-    status: 'done',
-    dueDate: '2022-08-24',
-    progress: 10,
-    totalSteps: 10,
-    comments: Array(7).fill(null),
-    attachments: Array(2).fill(null),
-  },
-  {
-    id: 9102,
-    title: 'Resolve conflicting merge',
-    project: 'Internal project',
-    status: 'done',
-    dueDate: '2022-08-24',
-    progress: 10,
-    totalSteps: 10,
-    comments: Array(2).fill(null),
-    attachments: Array(1).fill(null),
-  },
-  {
-    id: 9103,
-    title: 'Fixing responsive layout',
-    project: 'Portfolio redesign',
-    status: 'done',
-    dueDate: '2022-08-24',
-    progress: 10,
-    totalSteps: 10,
-    comments: Array(4).fill(null),
-    attachments: Array(2).fill(null),
-  },
-  {
-    id: 9104,
-    title: 'Ship release notes',
-    project: 'Product launch',
-    status: 'done',
-    dueDate: '2022-08-20',
-    progress: 10,
-    totalSteps: 10,
-    comments: Array(5).fill(null),
-    attachments: [],
-  },
-];
-
 function mapServerStatus(status) {
   if (status === 'in_progress' || status === 'in-progress') return 'in-progress';
   if (status === 'completed' || status === 'done') return 'done';
@@ -206,11 +103,11 @@ function TaskSection({
 }
 
 export default function ProfileAssignedTasks({ profileData, user, userLoading }) {
-  // Assigned-task state combines API results, context fallback, and demo data fallback.
+  // Assigned-task state uses the official API with proper error handling.
   const { tasks: contextTasks } = useProjects();
   const [assignedTasks, setAssignedTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [usingMockData, setUsingMockData] = useState(false);
+  const [error, setError] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showAllOngoing, setShowAllOngoing] = useState(false);
   const [showAllCompleted, setShowAllCompleted] = useState(false);
@@ -227,49 +124,30 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
   const roleLabel = profileData.role ? ` (${profileData.role})` : '';
   const locationLabel = profileData.location || DEFAULTS.NOT_SET;
 
-  // Prefer user-specific API data; fall back to locally loaded project tasks, then mock samples.
+  // Fetch assigned tasks using the official API endpoint
   const fetchAssignedTasks = useCallback(async () => {
     if (!user?.id) {
-      setAssignedTasks(MOCK_ASSIGNED_TASKS);
-      setUsingMockData(true);
+      setAssignedTasks([]);
+      setError('User not authenticated');
       setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
+    setError(null);
     try {
-      const data = await api(`${API_ENDPOINTS.TASKS.LIST}?userId=${user.id}`);
+      const data = await api(`${API_ENDPOINTS.TASKS.LIST}?assignedToMe=1`);
       const rawTasks = data?.tasks || data?.results || (Array.isArray(data) ? data : []);
 
-      if (rawTasks.length > 0) {
-        setAssignedTasks(rawTasks.map(normalizeAssignedTask));
-        setUsingMockData(false);
-        return;
-      }
-
-      const contextAssigned = contextTasks.filter((task) =>
-        task.contributors?.some((name) =>
-          [displayName, user.username, user.email].filter(Boolean).some(
-            (value) => name.toLowerCase().includes(String(value).toLowerCase())
-          )
-        )
-      );
-
-      if (contextAssigned.length > 0) {
-        setAssignedTasks(contextAssigned);
-        setUsingMockData(false);
-      } else {
-        setAssignedTasks(MOCK_ASSIGNED_TASKS);
-        setUsingMockData(true);
-      }
-    } catch {
-      const contextAssigned = contextTasks.filter((task) => task.contributors?.length);
-      setAssignedTasks(contextAssigned.length > 0 ? contextAssigned : MOCK_ASSIGNED_TASKS);
-      setUsingMockData(contextAssigned.length === 0);
+      setAssignedTasks(rawTasks.map(normalizeAssignedTask));
+    } catch (err) {
+      console.error('Failed to fetch assigned tasks:', err);
+      setError(err?.message || 'Failed to load assigned tasks');
+      setAssignedTasks([]);
     } finally {
       setIsLoading(false);
     }
-  }, [user, contextTasks, displayName]);
+  }, [user]);
 
   // Load assigned tasks once user identity is known.
   useEffect(() => {
@@ -306,6 +184,29 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
     );
   }
 
+  if (error) {
+    return (
+      <div className={styles.assignedTasksError} role="alert">
+        <p>{error}</p>
+        <button
+          type="button"
+          className={styles.retryButton}
+          onClick={fetchAssignedTasks}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (assignedTasks.length === 0) {
+    return (
+      <div className={styles.emptyTasks}>
+        <p>No assigned tasks yet.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Assignee header anchors the workload view to the active profile. */}
@@ -326,12 +227,6 @@ export default function ProfileAssignedTasks({ profileData, user, userLoading })
           <p className={styles.assignedProfileLocation}>{locationLabel}</p>
         </div>
       </div>
-
-      {usingMockData && (
-        <p className={styles.mockDataNotice} role="status">
-          Showing sample tasks until assigned-task data is returned from the API.
-        </p>
-      )}
 
       {/* Ongoing and completed lists share the same task-section layout with different tones. */}
       <TaskSection

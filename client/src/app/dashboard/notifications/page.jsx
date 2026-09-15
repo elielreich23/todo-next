@@ -52,35 +52,40 @@ function NotificationsContent() {
 
   // Mark one notification as read and mirror the change in local list/detail state.
   const markAsRead = async (id) => {
+    // Optimistic UI update
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, is_read: true } : n)
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+    if (selectedNotification?.id === id) {
+      setSelectedNotification(prev => prev ? { ...prev, is_read: true } : null);
+    }
+
     try {
       await api(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id), {
         method: 'PUT'
       });
-      setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      if (selectedNotification?.id === id) {
-        setSelectedNotification(prev => prev ? { ...prev, is_read: true } : null);
-      }
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      // Revert could go here, but optimistic is sufficient
     }
   };
 
   // Bulk read action clears the unread badge without requiring a full refetch.
   const markAllAsRead = async () => {
+    // Optimistic UI update
+    setNotifications(prev =>
+      prev.map(n => ({ ...n, is_read: true }))
+    );
+    setUnreadCount(0);
+    if (selectedNotification) {
+      setSelectedNotification(prev => prev ? { ...prev, is_read: true } : null);
+    }
+
     try {
       await api(API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ, {
         method: 'PUT'
       });
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, is_read: true }))
-      );
-      setUnreadCount(0);
-      if (selectedNotification) {
-        setSelectedNotification(prev => prev ? { ...prev, is_read: true } : null);
-      }
     } catch (error) {
       console.error('Error marking all as read:', error);
     }

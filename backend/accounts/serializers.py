@@ -6,10 +6,28 @@ from .models import Team, TeamInvitation, TeamMembership, User, UserSession
 
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "username", "email", "full_name", "phone_number", "bio", "notification_preferences"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "full_name",
+            "phone_number",
+            "bio",
+            "notification_preferences",
+            "avatar",
+            "avatar_url",
+            "theme_preferences",
+        ]
         read_only_fields = ["id"]
+
+    def get_avatar_url(self, obj):
+        if obj.avatar:
+            return obj.avatar.url
+        return None
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):

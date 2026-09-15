@@ -241,7 +241,24 @@ def profile(request):
 @api_view(["PUT"])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
-    """Update user profile"""
+    """Update user profile including avatar upload"""
+    # Handle avatar upload
+    if "avatar" in request.FILES:
+        request.user.avatar = request.FILES["avatar"]
+        request.user.save()
+        serializer = UserSerializer(request.user)
+        return Response({"success": True, "message": "Avatar updated successfully", "user": serializer.data})
+
+    # Handle avatar removal
+    if request.data.get("avatar") == "null":
+        if request.user.avatar:
+            request.user.avatar.delete()
+            request.user.avatar = None
+            request.user.save()
+        serializer = UserSerializer(request.user)
+        return Response({"success": True, "message": "Avatar removed successfully", "user": serializer.data})
+
+    # Handle regular profile updates
     serializer = UserSerializer(request.user, data=request.data, partial=True)
     if serializer.is_valid():
         serializer.save()

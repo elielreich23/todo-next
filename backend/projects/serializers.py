@@ -4,11 +4,21 @@ from .models import CalendarEvent, Project, Task, TaskAttachment, TaskComment, U
 
 
 class UserLiteSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         from accounts.models import User
 
         model = User
-        fields = ["id", "username", "email", "full_name"]
+        fields = ["id", "username", "email", "full_name", "avatar_url"]
+
+    def get_avatar_url(self, obj):
+        if obj.avatar:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
 
 
 class ProjectSerializer(serializers.ModelSerializer):
