@@ -1,0 +1,73 @@
+---
+description: Graphify-first codebase exploration and token-efficient development
+alwaysApply: true
+---
+
+# Graphify-first workflow
+
+This project has a Graphify knowledge graph in `graphify-out/`.
+
+## 1. Mandatory graph-first exploration
+
+Before exploring unfamiliar code, answering architectural questions, tracing dependencies, debugging cross-file behavior, or planning implementation, consult Graphify first.
+
+Choose the narrowest relevant command:
+
+- `graphify query "<focused question>"` — discover relevant nodes, relationships, and files.
+- `graphify path "<source symbol>" "<target symbol>"` — trace dependencies between symbols.
+- `graphify explain "<concept>"` — investigate a concept and its related nodes.
+
+Do not begin broad codebase exploration with Read, Grep, or Glob before consulting Graphify.
+
+## 2. Reuse context to minimize tokens
+
+- Query Graphify once at the beginning of a task, using a specific question.
+- Reuse the returned results throughout the same task and plan.
+- Do not repeat an identical query unless new evidence, changed requirements, or missing relationships justify it.
+- For follow-up questions about the same files and behavior, use the existing graph results and conversation context first.
+- Prefer focused graph results over reading `graphify-out/GRAPH_REPORT.md` or dumping the entire graph.
+- Do not run broad searches when Graphify already identifies the relevant files and symbols.
+- Avoid unnecessary terminal commands and verbose command output.
+
+## 3. Read source files selectively
+
+After Graphify identifies the relevant files:
+
+- Read only the source sections necessary to verify behavior or make changes.
+- Use Grep or other targeted searches only to locate specific symbols, usages, or lines that the graph does not fully resolve.
+- Use `graphify-out/wiki/index.md` when it exists and contains the information needed.
+- Read `graphify-out/GRAPH_REPORT.md` only when a broader architectural overview is necessary.
+- Treat inferred graph edges as useful leads, not verified facts. Confirm important behavior in source code.
+
+## 4. Terminal command discipline
+
+Before executing a codebase-related Bash or terminal command:
+
+- Determine whether the current Graphify results already provide sufficient context.
+- Query Graphify first if the command requires understanding unfamiliar code, dependencies, or architecture.
+- Do not query Graphify for unrelated tasks or simple operations such as `git status`, listing a known directory, or checking a tool version.
+- Inspect the likely effects of commands before running them.
+- Obtain confirmation before destructive operations or actions that could overwrite important work or affect external systems.
+
+## 5. Keep the graph current
+
+After modifying application source code or project structure, run:
+
+`graphify update .`
+
+Do not update the graph after documentation-only changes, unrelated configuration edits, or other changes that cannot affect the graph.
+
+If Graphify reports that the graph is missing, stale, or unusable, investigate and repair it only as needed. Do not silently rely on an outdated graph.
+
+## 6. Subagents
+
+For every subagent tasked with codebase exploration, include these requirements explicitly:
+
+- Consult Graphify before broad source-code exploration.
+- Reuse existing graph results where possible.
+- Avoid redundant queries and unnecessary file reads.
+- Verify important conclusions against source code.
+
+## 7. Priority
+
+Graphify is the starting point for understanding the codebase, not a replacement for source-code verification, tests, or sound engineering judgment.
